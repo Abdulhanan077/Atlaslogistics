@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
-import { notFound } from "next/navigation"
+
 import Link from "next/link"
-import { MapPin, Package, CheckCircle2, Clock, Truck, ArrowLeft, Building2 } from "lucide-react"
+import { MapPin, Package, Clock, ArrowLeft, Building2 } from "lucide-react"
 import dynamic from 'next/dynamic';
 
 const TrackingMap = dynamic(() => import('@/components/TrackingMap'), {
