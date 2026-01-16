@@ -47,8 +47,8 @@ export async function POST(req: Request) {
 
         // Send Email
         if (customerEmail) {
-            // Don't wait for email to finish to speed up response
-            sendShipmentEmail({
+            // Must await in serverless/Vercel to avoid early termination
+            await sendShipmentEmail({
                 to: customerEmail,
                 trackingNumber,
                 status: "CREATED",

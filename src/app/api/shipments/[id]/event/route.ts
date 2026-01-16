@@ -43,7 +43,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         await logAction(session.user.id, "UPDATE_STATUS", id, { status, location });
 
         if (shipment.customerEmail) {
-            sendShipmentEmail({
+            await sendShipmentEmail({
                 to: shipment.customerEmail,
                 trackingNumber: shipment.trackingNumber,
                 status,
