@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN") // "SUPER_ADMIN", "ADMIN"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shipments Shipment[]
+}
+
+model Shipment {
+  id             String   @id @default(cuid())
+  trackingNumber String   @unique
+  senderInfo     String // JSON or text
+  receiverInfo   String // JSON or text
+  status         String   @default("PENDING") // PENDING, IN_TRANSIT, DELIVERED, RETURNED
+  origin         String?
+  destination    String?
+  estimatedDelivery DateTime?
+  
+  adminId        String
+  admin          User @relation(fields: [adminId], references: [id])
+
+  events         ShipmentEvent[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ShipmentEvent {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  
+  status      String
+  location    String?
+  description String?
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
