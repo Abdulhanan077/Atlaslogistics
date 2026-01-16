@@ -23,7 +23,7 @@ export async function POST(req: Request) {
                 receiverInfo,
                 origin,
                 destination,
-                destination,
+
                 estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
                 imageUrls: JSON.stringify(body.imageUrls || []), // SQLite fix
                 createdAt: body.createdAt ? new Date(body.createdAt) : undefined,
