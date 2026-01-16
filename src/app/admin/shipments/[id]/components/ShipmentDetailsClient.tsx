@@ -220,14 +220,62 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Image URLs (One per line)</label>
-                                            <textarea
-                                                rows={3}
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
-                                                value={editData.imageUrls.join('\n')}
-                                                onChange={e => setEditData({ ...editData, imageUrls: e.target.value.split('\n').filter((url: string) => url.trim() !== '') })}
-                                                placeholder="https://example.com/image1.jpg"
-                                            />
+                                            <label className="text-xs text-slate-400 block mb-1">Upload Images</label>
+                                            <div className="space-y-3">
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    accept="image/*"
+                                                    onChange={async (e) => {
+                                                        if (!e.target.files?.length) return;
+                                                        const files = Array.from(e.target.files);
+                                                        const toastId = toast.loading('Uploading images...');
+
+                                                        try {
+                                                            const newUrls = [];
+                                                            for (const file of files) {
+                                                                const response = await fetch(
+                                                                    `/api/upload?filename=${encodeURIComponent(file.name)}`,
+                                                                    {
+                                                                        method: 'POST',
+                                                                        body: file,
+                                                                    },
+                                                                );
+                                                                const newBlob = await response.json();
+                                                                newUrls.push(newBlob.url);
+                                                            }
+
+                                                            setEditData(prev => ({
+                                                                ...prev,
+                                                                imageUrls: [...prev.imageUrls, ...newUrls]
+                                                            }));
+                                                            toast.success('Images uploaded!', { id: toastId });
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                            toast.error('Upload failed', { id: toastId });
+                                                        }
+                                                    }}
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
+                                                />
+                                                {/* Preview / Remove List */}
+                                                {editData.imageUrls.length > 0 && (
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        {editData.imageUrls.map((url, i) => (
+                                                            <div key={i} className="relative group aspect-square bg-slate-900 rounded-md overflow-hidden border border-slate-700">
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img src={url} alt="preview" className="w-full h-full object-cover" />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setEditData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_, idx) => idx !== i) }))}
+                                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                >
+                                                                    <div className="w-3 h-3 flex items-center justify-center">×</div>
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
                                             <button type="submit" className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-500">Save Changes</button>
