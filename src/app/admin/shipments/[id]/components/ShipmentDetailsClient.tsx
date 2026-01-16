@@ -161,25 +161,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
     };
 
 
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this shipment? This action cannot be undone.')) return;
 
-        try {
-            const res = await fetch(`/api/shipments/${shipment.id}`, {
-                method: 'DELETE',
-            });
-            if (res.ok) {
-                router.push('/admin/dashboard');
-                router.refresh();
-                toast.success("Shipment deleted");
-            } else {
-                toast.error('Failed to delete shipment');
-            }
-        } catch (e) {
-            console.error(e);
-            toast.error('Error deleting shipment');
-        }
-    };
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
@@ -198,12 +180,6 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                     >
                         <Printer className="w-5 h-5 mr-2" />
                         Print Details
-                    </button>
-                    <button
-                        onClick={handleDelete}
-                        className="flex items-center px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20"
-                    >
-                        Delete
                     </button>
                 </div>
             </div>

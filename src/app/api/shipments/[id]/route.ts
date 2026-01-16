@@ -16,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
         // Verify ownership
         const existingShipment = await prisma.shipment.findUnique({ where: { id } });
-        if (!existingShipment || existingShipment.adminId !== session.user.id) {
+        if (!existingShipment || (existingShipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
@@ -49,7 +49,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     try {
         // Verify ownership
         const existingShipment = await prisma.shipment.findUnique({ where: { id } });
-        if (!existingShipment || existingShipment.adminId !== session.user.id) {
+        if (!existingShipment || (existingShipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 

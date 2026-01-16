@@ -13,6 +13,7 @@ export default function AdminSidebar({ role, onClose }: { role: string; onClose?
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/admin/shipments', label: 'Shipments', icon: Package },
         ...(role === 'SUPER_ADMIN' ? [{ href: '/admin/users', label: 'Manage Admins', icon: Users }] : []),
+        { href: '/admin/settings', label: 'Settings', icon: Settings },
     ];
 
     return (
