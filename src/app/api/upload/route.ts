@@ -16,9 +16,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         return new NextResponse('Filename and body are required', { status: 400 });
     }
 
-    const blob = await put(filename, request.body, {
-        access: 'public',
-    });
+    try {
+        const blob = await put(filename, request.body, {
+            access: 'public',
+        });
 
-    return NextResponse.json(blob);
+        return NextResponse.json(blob);
+    } catch (error: any) {
+        console.error("UPLOAD ERROR:", error);
+        return new NextResponse(`Server Error: ${error.message}`, { status: 500 });
+    }
 }

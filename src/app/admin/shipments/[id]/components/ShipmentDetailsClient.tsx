@@ -227,9 +227,12 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                     multiple
                                                     accept="image/*"
                                                     onChange={async (e) => {
-                                                        if (!e.target.files?.length) return;
+                                                        if (!e.target.files?.length) {
+                                                            return;
+                                                        }
                                                         const files = Array.from(e.target.files);
-                                                        e.target.value = ''; // Reset input to allow re-selecting same files
+
+                                                        e.target.value = ''; // Reset input
                                                         const toastId = toast.loading(`Uploading ${files.length} images...`);
 
                                                         try {
@@ -242,7 +245,10 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                                             body: file,
                                                                         },
                                                                     );
-                                                                    if (!response.ok) throw new Error('Upload failed');
+                                                                    if (!response.ok) {
+                                                                        const errorText = await response.text();
+                                                                        throw new Error(errorText || response.statusText);
+                                                                    }
                                                                     const newBlob = await response.json();
                                                                     return newBlob.url;
                                                                 } catch (err) {
@@ -261,11 +267,12 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                                 }));
                                                                 toast.success(`Successfully uploaded ${successUrls.length} images`, { id: toastId });
                                                             } else {
-                                                                toast.error('Failed to upload images. Please check your connection.', { id: toastId });
+                                                                // Show the error from the first failed promise if any
+                                                                toast.error('Upload failed. Check console for details.', { id: toastId });
                                                             }
-                                                        } catch (err) {
+                                                        } catch (err: any) {
                                                             console.error(err);
-                                                            toast.error('Upload system error', { id: toastId });
+                                                            toast.error(`Error: ${err.message}`, { id: toastId });
                                                         }
                                                     }}
                                                     className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
