@@ -202,7 +202,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                 </div>
 
                 <div className="text-center text-slate-500 text-sm">
-                    &copy; 2024 Logistics Platform. All rights reserved.
+                    &copy; 2026 Atlas Logistics. All rights reserved.
                 </div>
             </div>
         </div>

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Logistics Tracking Platform",
+  title: "Atlas Logistics",
   description: "Secure multi-tenant logistics and shipment tracking",
 };
 

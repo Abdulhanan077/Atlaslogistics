@@ -32,7 +32,7 @@ export default function Home() {
         </div>
 
         <h1 className="text-4xl md:text-6xl font-black text-white bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
-          Track Your Shipment
+          Track with Atlas Logistics
         </h1>
         <p className="text-lg text-slate-400 max-w-lg mx-auto">
           Enter your tracking ID to see real-time updates and delivery status.
