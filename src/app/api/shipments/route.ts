@@ -63,10 +63,18 @@ export async function GET(req: Request) {
             }
         });
 
-        const parsedShipments = shipments.map(s => ({
-            ...s,
-            imageUrls: s.imageUrls ? JSON.parse(s.imageUrls) : []
-        }));
+        const parsedShipments = shipments.map(s => {
+            let parsedImageUrls = [];
+            try {
+                parsedImageUrls = s.imageUrls ? JSON.parse(s.imageUrls) : [];
+            } catch (e) {
+                console.error("Failed to parse imageUrls for shipment", s.id, e);
+            }
+            return {
+                ...s,
+                imageUrls: parsedImageUrls
+            };
+        });
 
         return NextResponse.json(parsedShipments);
     } catch (error) {

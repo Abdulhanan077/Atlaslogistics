@@ -19,9 +19,18 @@ async function getShipment(trackingNumber: string) {
 
     if (!shipment) return null;
 
+    let parsedImageUrls = [];
+    try {
+        parsedImageUrls = shipment.imageUrls ? JSON.parse(shipment.imageUrls) : [];
+        if (!Array.isArray(parsedImageUrls)) parsedImageUrls = [];
+    } catch (e) {
+        console.error("Failed to parse imageUrls", e);
+        parsedImageUrls = [];
+    }
+
     return {
         ...shipment,
-        imageUrls: shipment.imageUrls ? JSON.parse(shipment.imageUrls) : []
+        imageUrls: parsedImageUrls
     };
 }
 
