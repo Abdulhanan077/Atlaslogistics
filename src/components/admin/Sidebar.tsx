@@ -1,11 +1,13 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { LayoutDashboard, Package, Users, Settings, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 export default function AdminSidebar({ role }: { role: string }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const viewAs = searchParams.get('viewAs');
 
     const links = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,10 +27,15 @@ export default function AdminSidebar({ role }: { role: string }) {
                 {links.map((link) => {
                     const Icon = link.icon;
                     const isActive = pathname === link.href;
+                    // Append viewAs to href if it exists and we are not going to "Manage Admins"
+                    const href = (viewAs && link.href !== '/admin/users')
+                        ? `${link.href}?viewAs=${viewAs}`
+                        : link.href;
+
                     return (
                         <Link
                             key={link.href}
-                            href={link.href}
+                            href={href}
                             className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${isActive
                                 ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
                                 : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'

@@ -21,7 +21,7 @@ export async function PATCH(
             include: { events: true }
         });
 
-        if (!shipment || shipment.adminId !== session.user.id) {
+        if (!shipment || (shipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 

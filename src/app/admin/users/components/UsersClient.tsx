@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Shield, User, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Shield, User, X, Loader2, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
     const router = useRouter();
@@ -51,13 +52,23 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
                             </div>
                         </div>
                         {user.role !== 'SUPER_ADMIN' && (
-                            <button
-                                onClick={() => handleDelete(user.id)}
-                                disabled={deletingId === user.id}
-                                className="text-slate-600 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
-                            >
-                                {deletingId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                            </button>
+                            <div className="flex flex-col gap-2">
+                                <Link
+                                    href={`/admin?viewAs=${user.id}`}
+                                    className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center"
+                                    title="View Portal"
+                                >
+                                    <ExternalLink className="w-5 h-5" />
+                                </Link>
+                                <button
+                                    onClick={() => handleDelete(user.id)}
+                                    disabled={deletingId === user.id}
+                                    className="text-slate-600 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                                    title="Delete Admin"
+                                >
+                                    {deletingId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                                </button>
+                            </div>
                         )}
                     </div>
                 ))}

@@ -14,11 +14,14 @@ async function getStats(userId: string) {
     return { total, pending, inTransit, delivered };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ viewAs?: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session) return null;
 
-    const stats = await getStats(session.user.id);
+    const { viewAs } = await searchParams;
+    const targetUserId = (session.user.role === 'SUPER_ADMIN' && viewAs) ? viewAs : session.user.id;
+
+    const stats = await getStats(targetUserId);
 
     const statCards = [
         { label: "Total Shipments", value: stats.total, icon: Package, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
@@ -29,6 +32,11 @@ export default async function DashboardPage() {
 
     return (
         <div className="space-y-6">
+            {targetUserId !== session.user.id && (
+                <div className="bg-purple-500/10 border border-purple-500/20 text-purple-400 px-4 py-3 rounded-xl mb-6 flex items-center">
+                    <span className="font-semibold mr-2">Viewing as Admin:</span> {targetUserId}
+                </div>
+            )}
             <h1 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

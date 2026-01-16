@@ -14,7 +14,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
         // Verify ownership first
         const shipment = await prisma.shipment.findUnique({ where: { id } });
-        if (!shipment || shipment.adminId !== session.user.id) {
+        if (!shipment || (shipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
