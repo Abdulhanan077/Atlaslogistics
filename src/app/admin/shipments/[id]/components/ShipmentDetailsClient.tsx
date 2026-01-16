@@ -229,30 +229,43 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                     onChange={async (e) => {
                                                         if (!e.target.files?.length) return;
                                                         const files = Array.from(e.target.files);
-                                                        const toastId = toast.loading('Uploading images...');
+                                                        e.target.value = ''; // Reset input to allow re-selecting same files
+                                                        const toastId = toast.loading(`Uploading ${files.length} images...`);
 
                                                         try {
-                                                            const newUrls: string[] = [];
-                                                            for (const file of files) {
-                                                                const response = await fetch(
-                                                                    `/api/upload?filename=${encodeURIComponent(file.name)}`,
-                                                                    {
-                                                                        method: 'POST',
-                                                                        body: file,
-                                                                    },
-                                                                );
-                                                                const newBlob = await response.json();
-                                                                newUrls.push(newBlob.url);
-                                                            }
+                                                            const uploadPromises = files.map(async (file) => {
+                                                                try {
+                                                                    const response = await fetch(
+                                                                        `/api/upload?filename=${encodeURIComponent(file.name)}`,
+                                                                        {
+                                                                            method: 'POST',
+                                                                            body: file,
+                                                                        },
+                                                                    );
+                                                                    if (!response.ok) throw new Error('Upload failed');
+                                                                    const newBlob = await response.json();
+                                                                    return newBlob.url;
+                                                                } catch (err) {
+                                                                    console.error(`Failed to upload ${file.name}`, err);
+                                                                    return null;
+                                                                }
+                                                            });
 
-                                                            setEditData(prev => ({
-                                                                ...prev,
-                                                                imageUrls: [...prev.imageUrls, ...newUrls]
-                                                            }));
-                                                            toast.success('Images uploaded!', { id: toastId });
+                                                            const results = await Promise.all(uploadPromises);
+                                                            const successUrls = results.filter((url): url is string => url !== null);
+
+                                                            if (successUrls.length > 0) {
+                                                                setEditData(prev => ({
+                                                                    ...prev,
+                                                                    imageUrls: [...prev.imageUrls, ...successUrls]
+                                                                }));
+                                                                toast.success(`Successfully uploaded ${successUrls.length} images`, { id: toastId });
+                                                            } else {
+                                                                toast.error('Failed to upload images. Please check your connection.', { id: toastId });
+                                                            }
                                                         } catch (err) {
                                                             console.error(err);
-                                                            toast.error('Upload failed', { id: toastId });
+                                                            toast.error('Upload system error', { id: toastId });
                                                         }
                                                     }}
                                                     className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
