@@ -96,7 +96,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                             </div>
                             <div>
                                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Service Provider</p>
-                                <p className="text-slate-200 font-medium">{shipment.admin.name || 'Logistics Partner'}</p>
+                                <p className="text-slate-200 font-medium">Atlas Logistics</p>
                             </div>
                         </div>
                     </div>
