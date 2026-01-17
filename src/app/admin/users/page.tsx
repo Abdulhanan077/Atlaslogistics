@@ -6,7 +6,14 @@ import UsersClient from "./components/UsersClient"
 
 export default async function UsersPage() {
     const session = await getServerSession(authOptions)
+    console.log("UsersPage Session Check:", {
+        hasSession: !!session,
+        role: session?.user?.role,
+        userId: session?.user?.id
+    });
+
     if (!session || session.user.role !== 'SUPER_ADMIN') {
+        console.log("UsersPage: Redirecting to /admin");
         redirect('/admin')
     }
 
