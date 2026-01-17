@@ -67,7 +67,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     };
 
     return (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl flex flex-col h-[600px] overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl flex flex-col h-[500px] overflow-hidden shrink-0">
             <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                 <h3 className="font-bold text-white flex items-center gap-2">
                     <MessageCircle className="w-5 h-5 text-blue-400" />
@@ -92,8 +92,8 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                             <div className="max-w-[80%]">
                                 <div
                                     className={`rounded-2xl px-4 py-3 text-sm ${msg.sender === 'ADMIN'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
+                                        ? 'bg-blue-600 text-white rounded-tr-none'
+                                        : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
                                         }`}
                                 >
                                     <p>{msg.content}</p>

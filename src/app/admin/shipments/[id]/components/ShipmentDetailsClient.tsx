@@ -531,8 +531,9 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
                 {/* Right Column: Update Form (Hidden on Print) */}
                 {/* Right Column: Update Form (Hidden on Print) */}
-                <div className="print:hidden space-y-6">
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl sticky top-6">
+                {/* Right Column: Update Form + Chat */}
+                <div className="print:hidden h-[calc(100vh-2rem)] sticky top-6 overflow-y-auto pr-2 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                         <h3 className="text-lg font-bold text-white mb-4">Update Status</h3>
                         <form onSubmit={handleUpdate} className="space-y-4">
                             {/* ... existing form fields ... */}
