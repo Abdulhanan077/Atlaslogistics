@@ -31,15 +31,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     ];
 
     // Recent Inquiries (Unread)
-    const unreadShipments: any[] = await prisma.shipment.findMany({
-        where: {
-            messages: {
-                some: {
-                    sender: 'CLIENT',
-                    isRead: false
-                }
+    // Super Admin sees ALL unread messages. Regular Admins only see their own.
+    const unreadWhere: any = {
+        messages: {
+            some: {
+                sender: 'CLIENT',
+                isRead: false
             }
-        } as any,
+        }
+    };
+
+    if (session.user.role !== 'SUPER_ADMIN') {
+        unreadWhere.adminId = session.user.id;
+    }
+
+    const unreadShipments: any[] = await prisma.shipment.findMany({
+        where: unreadWhere,
         include: {
             messages: {
                 where: { sender: 'CLIENT', isRead: false },
