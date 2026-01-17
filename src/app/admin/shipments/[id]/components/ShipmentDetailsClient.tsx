@@ -216,14 +216,14 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
                 {/* Left Column: Chat - Sticky */}
-                <div className="xl:col-span-3 order-3 xl:order-1">
+                <div className="xl:col-span-3 order-3 xl:order-1 print:hidden">
                     <div className="sticky top-6">
                         <ShipmentChat shipmentId={shipment.id} />
                     </div>
                 </div>
 
                 {/* Middle Column: Details & Visual */}
-                <div className="xl:col-span-6 space-y-6 order-1 xl:order-2">
+                <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full">
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
                         {/* Header */}
                         <div className="flex justify-between items-start mb-8">
@@ -537,7 +537,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                 </div>
 
                 {/* Right Column: Update Form */}
-                <div className="xl:col-span-3 order-2 xl:order-3">
+                <div className="xl:col-span-3 order-2 xl:order-3 print:hidden">
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl sticky top-6">
                         <h3 className="text-lg font-bold text-white mb-4">Update Status</h3>
                         <form onSubmit={handleUpdate} className="space-y-4">
