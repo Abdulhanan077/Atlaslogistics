@@ -64,7 +64,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...editEventData,
-                    timestamp: new Date(editEventData.timestamp).toISOString()
+                    timestamp: new Date(editEventData.timestamp + ':00Z').toISOString()
                 })
             });
 
@@ -99,7 +99,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    createdAt: new Date(editData.createdAt).toISOString(),
+                    createdAt: new Date(editData.createdAt + ':00Z').toISOString(),
                     origin: editData.origin,
                     destination: editData.destination,
                     customerEmail: editData.customerEmail,
@@ -153,7 +153,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    timestamp: new Date(formData.timestamp).toISOString()
+                    timestamp: new Date(formData.timestamp + ':00Z').toISOString()
                 })
             });
             if (res.ok) {

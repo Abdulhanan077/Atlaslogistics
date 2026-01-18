@@ -15,14 +15,17 @@ export default function FormattedDate({ date, className, mode = 'datetime' }: Fo
         if (!date) return;
         const d = new Date(date);
 
+        // Use UTC methods to display "static" time (ignoring viewer's timezone)
         if (mode === 'date') {
             setFormatted(d.toLocaleDateString(undefined, {
+                timeZone: 'UTC',
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
             }));
         } else {
             setFormatted(d.toLocaleString(undefined, {
+                timeZone: 'UTC',
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -32,10 +35,6 @@ export default function FormattedDate({ date, className, mode = 'datetime' }: Fo
         }
     }, [date, mode]);
 
-    // Render a placeholder or empty string to avoid layout shift if possible, 
-    // or just the formatted date once available.
-    // Using opacity-0 during hydration helps avoid flash of unstyled content if we cared about matching server HTML exactly,
-    // but here we just want the client time to appear.
     if (!formatted) return <span className={className}></span>;
 
     return <span className={className}>{formatted}</span>;
