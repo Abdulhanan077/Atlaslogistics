@@ -121,6 +121,33 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                     </div>
 
                     <div className="p-5 lg:p-8 space-y-8 lg:space-y-12">
+                        {/* Origin/Destination Cards - Always Visible */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-slate-800/30 p-6 rounded-2xl border border-slate-800">
+                                <div className="flex items-start mb-4">
+                                    <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mr-3 mt-1">
+                                        <Package className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-500 text-xs uppercase mb-1">Origin</p>
+                                        <p className="text-white text-lg font-semibold">{shipment.origin}</p>
+                                        <p className="text-slate-400 text-sm mt-1">{shipment.senderInfo}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-slate-800/30 p-6 rounded-2xl border border-slate-800">
+                                <div className="flex items-start mb-4">
+                                    <div className="w-8 h-8 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mr-3 mt-1">
+                                        <MapPin className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-500 text-xs uppercase mb-1">Destination</p>
+                                        <p className="text-white text-lg font-semibold">{shipment.destination}</p>
+                                        <p className="text-slate-400 text-sm mt-1">{shipment.receiverInfo}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         {/* Status Bar */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-end">
@@ -190,7 +217,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                         )}
 
                         {/* Route Map (Visual) */}
-                        {latestLocation ? (
+                        {latestLocation && (
                             <div className="w-full mb-8">
                                 <h3 className="text-white text-lg font-bold mb-4 flex items-center">
                                     <MapPin className="w-5 h-5 mr-3 text-slate-500" />
@@ -201,33 +228,6 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     lng={latestLocation.longitude ?? 0}
                                     locationName={latestLocation.location || 'Current Location'}
                                 />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="bg-slate-800/30 p-6 rounded-2xl border border-slate-800">
-                                    <div className="flex items-start mb-4">
-                                        <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mr-3 mt-1">
-                                            <Package className="w-4 h-4" />
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-500 text-xs uppercase mb-1">Origin</p>
-                                            <p className="text-white text-lg font-semibold">{shipment.origin}</p>
-                                            <p className="text-slate-400 text-sm mt-1">{shipment.senderInfo}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="bg-slate-800/30 p-6 rounded-2xl border border-slate-800">
-                                    <div className="flex items-start mb-4">
-                                        <div className="w-8 h-8 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mr-3 mt-1">
-                                            <MapPin className="w-4 h-4" />
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-500 text-xs uppercase mb-1">Destination</p>
-                                            <p className="text-white text-lg font-semibold">{shipment.destination}</p>
-                                            <p className="text-slate-400 text-sm mt-1">{shipment.receiverInfo}</p>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         )}
 
