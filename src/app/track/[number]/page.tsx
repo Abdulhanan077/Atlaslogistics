@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MapPin, Package, Clock, ArrowLeft, Building2 } from "lucide-react"
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import TrackingChat from "@/components/TrackingChat";
+import FormattedDate from "@/components/FormattedDate";
 
 async function getShipment(trackingNumber: string) {
     const shipment = await prisma.shipment.findUnique({
@@ -74,7 +75,7 @@ function getTimelineDotColor(status: string) {
 
 export default async function TrackingResultPage({ params }: { params: Promise<{ number: string }> }) {
     const { number } = await params;
-    const shipment = await getShipment(number);
+    const shipment: any = await getShipment(number);
 
     if (!shipment) {
         return (
@@ -130,7 +131,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                 {shipment.estimatedDelivery && (
                                     <div className="text-right">
                                         <p className="text-slate-400 text-sm mb-1">Estimated Delivery</p>
-                                        <p className="text-white font-medium">{new Date(shipment.estimatedDelivery).toLocaleDateString()}</p>
+                                        <p className="text-white font-medium"><FormattedDate date={shipment.estimatedDelivery} mode="date" /></p>
                                     </div>
                                 )}
                             </div>
@@ -249,7 +250,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                         {event.status.replace(/_/g, ' ')}
                                                     </p>
                                                     <span className="text-xs text-slate-500 font-mono bg-slate-900 px-2 py-1 rounded-md border border-slate-800 whitespace-nowrap">
-                                                        {new Date(event.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                                                        <FormattedDate date={event.timestamp} />
                                                     </span>
                                                 </div>
                                                 <p className="text-slate-300 font-medium text-sm lg:text-base">{event.location || 'Unknown Location'}</p>

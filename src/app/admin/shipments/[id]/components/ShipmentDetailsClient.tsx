@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import ShippingLabelPDF from '@/components/pdf/ShippingLabelPDF';
 import ShipmentChat from './ShipmentChat';
+import FormattedDate from '@/components/FormattedDate';
 
 const PDFDownloadLink = dynamic(
     () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
@@ -230,7 +231,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                             <div>
                                 <h1 className="text-3xl font-bold text-white print:text-black">{shipment.trackingNumber}</h1>
                                 <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-slate-400 print:text-gray-600" suppressHydrationWarning>Created on {new Date(shipment.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-slate-400 print:text-gray-600">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
                                     <button
                                         onClick={() => setIsEditing(!isEditing)}
                                         className="text-xs text-blue-400 hover:text-blue-300 print:hidden"
@@ -526,7 +527,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                     </button>
                                                 </div>
                                                 <p className="text-slate-400 text-sm print:text-gray-500">{event.description}</p>
-                                                <p className="text-slate-500 text-xs print:text-gray-400" suppressHydrationWarning>{new Date(event.timestamp).toLocaleString()}</p>
+                                                <p className="text-slate-500 text-xs print:text-gray-400"><FormattedDate date={event.timestamp} /></p>
                                             </div>
                                         )}
                                     </div>
