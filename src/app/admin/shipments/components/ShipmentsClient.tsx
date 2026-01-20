@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, MapPin, Calendar, ArrowRight, Trash2 } from 'lucide-react';
+import { Plus, Search, MapPin, Calendar, ArrowRight } from 'lucide-react';
 import CreateShipmentModal from './CreateShipmentModal';
 
 import { toast } from 'react-hot-toast';
@@ -97,12 +97,12 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                         {shipment.events[0]?.description || 'Created'}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-4">
                                             <button
                                                 onClick={() => router.push(`/admin/shipments/${shipment.id}`)}
-                                                className="text-slate-400 hover:text-white transition-colors"
+                                                className="px-3 py-1 bg-green-500/10 text-green-400 hover:bg-green-600 hover:text-white rounded-lg transition-colors text-sm font-medium"
                                             >
-                                                <ArrowRight className="w-5 h-5" />
+                                                Update
                                             </button>
                                             <button
                                                 onClick={async (e) => {
@@ -121,10 +121,10 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                                         toast.error('Error deleting shipment');
                                                     }
                                                 }}
-                                                className="text-slate-500 hover:text-red-400 transition-colors"
+                                                className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-colors text-sm font-medium"
                                                 title="Delete Shipment"
                                             >
-                                                <Trash2 className="w-5 h-5" />
+                                                Delete
                                             </button>
                                         </div>
                                     </td>
