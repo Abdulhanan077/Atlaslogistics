@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, CheckCircle2, Clock, Pencil, X, Check, FileText } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, CheckCircle2, Clock, Pencil, X, Check, FileText, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import ShippingLabelPDF from '@/components/pdf/ShippingLabelPDF';
@@ -519,12 +519,36 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                     <p className={`font-medium ${getStatusStyles(event.status).replace('bg-', 'data-').split(' ')[1]} print:text-black`}>
                                                         {event.status} - {event.location || 'No Location'}
                                                     </p>
-                                                    <button
-                                                        onClick={() => handleEditEventClick(event)}
-                                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-white print:hidden"
-                                                    >
-                                                        <Pencil className="w-3 h-3" />
-                                                    </button>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                                                        <button
+                                                            onClick={() => handleEditEventClick(event)}
+                                                            className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-blue-400"
+                                                            title="Edit Event"
+                                                        >
+                                                            <Pencil className="w-3 h-3" />
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (!confirm('Delete this tracking event? This cannot be undone.')) return;
+                                                                try {
+                                                                    const res = await fetch(`/api/shipments/${shipment.id}/event/${event.id}`, { method: 'DELETE' });
+                                                                    if (res.ok) {
+                                                                        toast.success('Event deleted');
+                                                                        router.refresh();
+                                                                    } else {
+                                                                        toast.error('Failed to delete');
+                                                                    }
+                                                                } catch (e) {
+                                                                    console.error(e);
+                                                                    toast.error('Error deleting event');
+                                                                }
+                                                            }}
+                                                            className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-red-400"
+                                                            title="Delete Event"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <p className="text-slate-400 text-sm print:text-gray-500">{event.description}</p>
                                                 <p className="text-slate-500 text-xs print:text-gray-400"><FormattedDate date={event.timestamp} /></p>
