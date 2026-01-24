@@ -227,6 +227,11 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
                 {/* Middle Column: Details & Visual */}
                 <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full">
+                    {/* Print Header */}
+                    <div className="hidden print:block text-center mb-8">
+                        <h1 className="text-4xl font-extrabold text-blue-600 tracking-wider">ATLAS LOGISTICS</h1>
+                    </div>
+
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
                         {/* Header */}
                         <div className="flex justify-between items-start mb-8">
