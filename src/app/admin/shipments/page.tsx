@@ -26,7 +26,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
         total: shipments.length,
         inTransit: shipments.filter(s => s.status === 'IN_TRANSIT').length,
         delivered: shipments.filter(s => s.status === 'DELIVERED').length,
-        exceptions: shipments.filter(s => ['PAUSED', 'RETURNED'].includes(s.status)).length
+        exceptions: shipments.filter(s => ['ON_HOLD', 'RETURNED'].includes(s.status)).length
     };
 
     return (

@@ -47,7 +47,7 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
                     <AlertTriangle className="w-6 h-6" />
                 </div>
                 <div>
-                    <p className="text-slate-500 text-sm font-medium">Exceptions / Paused</p>
+                    <p className="text-slate-500 text-sm font-medium">Exceptions / On Hold</p>
                     <p className="text-2xl font-bold text-white">{stats.exceptions}</p>
                 </div>
             </div>

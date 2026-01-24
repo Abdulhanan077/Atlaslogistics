@@ -124,7 +124,9 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
         switch (status) {
             case 'PENDING': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
             case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-            case 'PAUSED': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+            case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+            case 'ON_HOLD': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+            case 'OUT_FOR_DELIVERY': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
             case 'OUT_FOR_DELIVERY': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
             case 'DELIVERED': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
             case 'RETURNED': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -136,7 +138,9 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
         switch (status) {
             case 'PENDING': return 'bg-yellow-500 border-yellow-500';
             case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
-            case 'PAUSED': return 'bg-orange-500 border-orange-500';
+            case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
+            case 'ON_HOLD': return 'bg-orange-500 border-orange-500';
+            case 'OUT_FOR_DELIVERY': return 'bg-purple-500 border-purple-500';
             case 'OUT_FOR_DELIVERY': return 'bg-purple-500 border-purple-500';
             case 'DELIVERED': return 'bg-emerald-500 border-emerald-500';
             case 'RETURNED': return 'bg-red-500 border-red-500';
@@ -442,7 +446,10 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                         >
                                                             <option value="PENDING">PENDING</option>
                                                             <option value="IN_TRANSIT">IN TRANSIT</option>
-                                                            <option value="PAUSED">PAUSED</option>
+                                                            <option value="PENDING">PENDING</option>
+                                                            <option value="IN_TRANSIT">IN TRANSIT</option>
+                                                            <option value="ON_HOLD">ON HOLD</option>
+                                                            <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
                                                             <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
                                                             <option value="DELIVERED">DELIVERED</option>
                                                             <option value="RETURNED">RETURNED</option>
@@ -575,7 +582,10 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                 >
                                     <option value="PENDING">PENDING</option>
                                     <option value="IN_TRANSIT">IN TRANSIT</option>
-                                    <option value="PAUSED">PAUSED</option>
+                                    <option value="PENDING">PENDING</option>
+                                    <option value="IN_TRANSIT">IN TRANSIT</option>
+                                    <option value="ON_HOLD">ON HOLD</option>
+                                    <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
                                     <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
                                     <option value="DELIVERED">DELIVERED</option>
                                     <option value="RETURNED">RETURNED</option>

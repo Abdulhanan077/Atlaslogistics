@@ -52,7 +52,9 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                     <option value="ALL">All Statuses</option>
                     <option value="PENDING">Pending</option>
                     <option value="IN_TRANSIT">In Transit</option>
-                    <option value="PAUSED">Paused</option>
+                    <option value="IN_TRANSIT">In Transit</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
                     <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
                     <option value="DELIVERED">Delivered</option>
                     <option value="RETURNED">Returned</option>

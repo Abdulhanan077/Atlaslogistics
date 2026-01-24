@@ -53,7 +53,9 @@ function getStatusColor(status: string) {
     switch (status) {
         case 'PENDING': return 'text-yellow-500';
         case 'IN_TRANSIT': return 'text-blue-400';
-        case 'PAUSED': return 'text-orange-500';
+        case 'IN_TRANSIT': return 'text-blue-400';
+        case 'ON_HOLD': return 'text-orange-500';
+        case 'OUT_FOR_DELIVERY': return 'text-purple-400';
         case 'OUT_FOR_DELIVERY': return 'text-purple-400';
         case 'DELIVERED': return 'text-emerald-400';
         case 'RETURNED': return 'text-red-500';
@@ -65,7 +67,9 @@ function getTimelineDotColor(status: string) {
     switch (status) {
         case 'PENDING': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
         case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
-        case 'PAUSED': return 'bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.2)]';
+        case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
+        case 'ON_HOLD': return 'bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.2)]';
+        case 'OUT_FOR_DELIVERY': return 'bg-purple-500 shadow-[0_0_0_4px_rgba(168,85,247,0.2)]';
         case 'OUT_FOR_DELIVERY': return 'bg-purple-500 shadow-[0_0_0_4px_rgba(168,85,247,0.2)]';
         case 'DELIVERED': return 'bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.2)]';
         case 'RETURNED': return 'bg-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.2)]';
