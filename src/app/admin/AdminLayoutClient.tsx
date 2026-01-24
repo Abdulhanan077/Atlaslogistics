@@ -30,7 +30,7 @@ export default function AdminLayoutClient({ children, user }: { children: React.
             {/* Main Content */}
             <div className="flex-1 flex flex-col h-full overflow-hidden print:h-auto print:overflow-visible print:block">
                 {/* Mobile Header */}
-                <div className="flex items-center justify-between p-4 md:hidden border-b border-slate-800 bg-slate-900">
+                <div className="flex items-center justify-between p-4 md:hidden border-b border-slate-800 bg-slate-900 print:hidden">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
                             <Menu className="w-6 h-6" />
@@ -42,7 +42,7 @@ export default function AdminLayoutClient({ children, user }: { children: React.
                     </div>
                 </div>
 
-                <div className="hidden md:block">
+                <div className="hidden md:block print:hidden">
                     <AdminHeader user={user} />
                 </div>
 
