@@ -30,7 +30,6 @@ export default async function UsersPage() {
             deletedAt: true
         }
     })
-})
 
-return <UsersClient initialUsers={users} />
+    return <UsersClient initialUsers={users} />
 }
