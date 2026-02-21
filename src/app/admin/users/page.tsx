@@ -19,14 +19,18 @@ export default async function UsersPage() {
 
     const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
+        where: { isDeleted: false },
         select: {
             id: true,
             email: true,
             name: true,
             role: true,
-            createdAt: true
+            createdAt: true,
+            isDeleted: true,
+            deletedAt: true
         }
     })
+})
 
-    return <UsersClient initialUsers={users} />
+return <UsersClient initialUsers={users} />
 }

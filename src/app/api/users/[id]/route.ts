@@ -15,10 +15,35 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     try {
-        await prisma.user.delete({
-            where: { id }
+        await prisma.user.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+                deletedAt: new Date()
+            }
         });
         return new NextResponse("Deleted", { status: 200 });
+    } catch (error) {
+        return new NextResponse("Internal Error", { status: 500 });
+    }
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'SUPER_ADMIN') {
+        return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    try {
+        await prisma.user.update({
+            where: { id },
+            data: {
+                isDeleted: false,
+                deletedAt: null
+            }
+        });
+        return new NextResponse("Restored", { status: 200 });
     } catch (error) {
         return new NextResponse("Internal Error", { status: 500 });
     }

@@ -1,78 +1,154 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Shield, User, X, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Shield, User, X, Loader2, ExternalLink, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 
 export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [restoringId, setRestoringId] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
+    const [users, setUsers] = useState(initialUsers);
+
+    useEffect(() => {
+        if (viewMode === 'active') {
+            setUsers(initialUsers);
+        } else {
+            fetchDeletedUsers();
+        }
+    }, [initialUsers, viewMode]);
+
+    const fetchDeletedUsers = async () => {
+        try {
+            const res = await fetch('/api/users?deleted=true');
+            if (res.ok) setUsers(await res.json());
+        } catch (e) { console.error(e); }
+    };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure? This will delete the admin and their shipments.')) return;
+        if (!confirm('Are you sure? This will move the admin to the Recycle Bin.')) return;
         setDeletingId(id);
         try {
             const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-            if (res.ok) router.refresh();
-            else alert('Failed to delete');
+            if (res.ok) {
+                if (viewMode === 'active') router.refresh();
+                else fetchDeletedUsers();
+            } else alert('Failed to delete');
         } catch (e) { console.error(e); }
         finally { setDeletingId(null); }
     };
 
+    const handleRestore = async (id: string) => {
+        if (!confirm('Restore this admin account?')) return;
+        setRestoringId(id);
+        try {
+            const res = await fetch(`/api/users/${id}`, { method: 'PATCH' });
+            if (res.ok) {
+                fetchDeletedUsers();
+                router.refresh();
+            } else alert('Failed to restore');
+        } catch (e) { console.error(e); }
+        finally { setRestoringId(null); }
+    };
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-white">Manage Admins</h1>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg"
-                >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add Admin
-                </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <h1 className="text-2xl font-bold text-white">Manage Admins</h1>
+                    <div className="flex bg-slate-800 rounded-lg p-1">
+                        <button
+                            onClick={() => setViewMode('active')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'active' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Active
+                        </button>
+                        <button
+                            onClick={() => setViewMode('deleted')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'deleted' ? 'bg-red-600/50 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            Recycle Bin
+                        </button>
+                    </div>
+                </div>
+                {viewMode === 'active' && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add Admin
+                    </button>
+                )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {initialUsers.map(user => (
-                    <div key={user.id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-start justify-between group hover:border-slate-700 transition-all">
-                        <div className="flex items-start">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${user.role === 'SUPER_ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                                }`}>
-                                {user.role === 'SUPER_ADMIN' ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
+            {users.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col items-center justify-center">
+                    <Shield className="w-12 h-12 mb-4 text-slate-700" />
+                    <p>No {viewMode === 'deleted' ? 'deleted' : 'active'} admins found.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {users.map(user => (
+                        <div key={user.id} className={`bg-slate-900 border p-6 rounded-2xl flex items-start justify-between group transition-all ${viewMode === 'deleted' ? 'border-red-500/20' : 'border-slate-800 hover:border-slate-700'}`}>
+                            <div className="flex items-start">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${user.role === 'SUPER_ADMIN' ? 'bg-purple-500/20 text-purple-400' : viewMode === 'deleted' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                    {user.role === 'SUPER_ADMIN' ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-semibold">{user.name}</h3>
+                                    <p className="text-slate-400 text-sm">{user.email}</p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${user.role === 'SUPER_ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                                            {user.role.replace('_', ' ')}
+                                        </span>
+                                        {viewMode === 'deleted' && (
+                                            <span className="inline-block px-2 py-0.5 rounded text-xs font-medium border bg-red-500/10 text-red-400 border-red-500/20">
+                                                Deleted
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-white font-semibold">{user.name}</h3>
-                                <p className="text-slate-400 text-sm">{user.email}</p>
-                                <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-medium border ${user.role === 'SUPER_ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                    }`}>
-                                    {user.role.replace('_', ' ')}
-                                </span>
-                            </div>
+                            {user.role !== 'SUPER_ADMIN' && (
+                                <div className="flex flex-col gap-2">
+                                    {viewMode === 'active' && (
+                                        <Link
+                                            href={`/admin?viewAs=${user.id}`}
+                                            className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center"
+                                            title="View Portal"
+                                        >
+                                            <ExternalLink className="w-5 h-5" />
+                                        </Link>
+                                    )}
+                                    {viewMode === 'active' ? (
+                                        <button
+                                            onClick={() => handleDelete(user.id)}
+                                            disabled={deletingId === user.id}
+                                            className="text-slate-600 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                                            title="Move to Recycle Bin"
+                                        >
+                                            {deletingId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleRestore(user.id)}
+                                            disabled={restoringId === user.id}
+                                            className="text-slate-600 hover:text-green-400 p-2 rounded-lg hover:bg-green-500/10 transition-colors"
+                                            title="Restore Admin"
+                                        >
+                                            {restoringId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        {user.role !== 'SUPER_ADMIN' && (
-                            <div className="flex flex-col gap-2">
-                                <Link
-                                    href={`/admin?viewAs=${user.id}`}
-                                    className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center"
-                                    title="View Portal"
-                                >
-                                    <ExternalLink className="w-5 h-5" />
-                                </Link>
-                                <button
-                                    onClick={() => handleDelete(user.id)}
-                                    disabled={deletingId === user.id}
-                                    className="text-slate-600 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
-                                    title="Delete Admin"
-                                >
-                                    {deletingId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             {isModalOpen && <AddUserModal onClose={() => { setIsModalOpen(false); router.refresh(); }} />}
         </div>

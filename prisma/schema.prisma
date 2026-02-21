@@ -20,6 +20,9 @@ model User {
 
   shipments Shipment[]
   auditLogs AuditLog[]
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
 }
 
 model AuditLog {

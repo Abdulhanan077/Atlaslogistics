@@ -44,14 +44,22 @@ export async function GET(req: Request) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const deleted = searchParams.get("deleted") === "true";
+
     const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
+        where: {
+            isDeleted: deleted
+        },
         select: {
             id: true,
             email: true,
             name: true,
             role: true,
-            createdAt: true
+            createdAt: true,
+            isDeleted: true,
+            deletedAt: true
         }
     });
 
