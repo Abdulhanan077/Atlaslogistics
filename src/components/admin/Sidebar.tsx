@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { LayoutDashboard, Package, Users, Settings, LogOut, ScrollText } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Settings, LogOut, ScrollText, Trash2, BarChart3 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 export default function AdminSidebar({ role, onClose }: { role: string; onClose?: () => void }) {
@@ -12,10 +12,12 @@ export default function AdminSidebar({ role, onClose }: { role: string; onClose?
     const links = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/admin/shipments', label: 'Shipments', icon: Package },
+        { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
         ...(role === 'SUPER_ADMIN' ? [
             { href: '/admin/users', label: 'Manage Admins', icon: Users },
             { href: '/admin/logs', label: 'Audit Logs', icon: ScrollText }
         ] : []),
+        { href: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
         { href: '/admin/settings', label: 'Settings', icon: Settings },
     ];
 

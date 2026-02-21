@@ -63,15 +63,20 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        await prisma.shipment.delete({
-            where: { id }
+        // Soft Delete
+        await prisma.shipment.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+                deletedAt: new Date()
+            }
         });
 
-        await logAction(session.user.id, "DELETE_SHIPMENT", id, { trackingNumber: existingShipment.trackingNumber });
+        await logAction(session.user.id, "TRASH_SHIPMENT", id, { trackingNumber: existingShipment.trackingNumber });
 
         return new NextResponse(null, { status: 204 });
     } catch (err) {
-        console.error("Error deleting shipment:", err);
+        console.error("Error trashing shipment:", err);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }

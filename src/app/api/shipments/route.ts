@@ -15,8 +15,8 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { senderInfo, receiverInfo, origin, destination, estimatedDelivery, customerEmail } = body;
 
-        // Generate random tracking number (e.g., TRK-12345678)
-        const trackingNumber = `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`;
+        // Generate random tracking number (e.g., TRK12345678)
+        const trackingNumber = `TRK${Math.floor(10000000 + Math.random() * 90000000)}`;
 
         const shipment = await prisma.shipment.create({
             data: {
@@ -71,12 +71,31 @@ export async function GET(req: Request) {
     }
 
     try {
+        const { searchParams } = new URL(req.url);
+        const viewAs = searchParams.get('viewAs');
+
+        // Only enforce adminId if the user is NOT a SUPER_ADMIN,
+        // OR if they are a SUPER_ADMIN requesting to view a specific admin.
+        // If a SUPER_ADMIN requests without viewAs, they get all shipments.
+        const whereClause: any = { isDeleted: false };
+        if (session.user.role === 'SUPER_ADMIN' && viewAs) {
+            whereClause.adminId = viewAs;
+        } else if (session.user.role !== 'SUPER_ADMIN') {
+            whereClause.adminId = session.user.id;
+        }
+
         const shipments = await prisma.shipment.findMany({
-            where: {
-                adminId: session.user.id
-            },
+            where: whereClause,
             orderBy: {
                 createdAt: 'desc'
+            },
+            include: {
+                events: {
+                    orderBy: {
+                        timestamp: 'desc'
+                    },
+                    take: 1
+                }
             }
         });
 

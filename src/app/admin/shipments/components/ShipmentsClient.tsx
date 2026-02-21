@@ -7,6 +7,17 @@ import CreateShipmentModal from './CreateShipmentModal';
 
 import { toast } from 'react-hot-toast';
 
+const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+        case 'DELIVERED': return 'bg-green-500/10 text-green-400 border-green-500/20';
+        case 'PENDING': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+        case 'ON_HOLD': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+        case 'RETURNED': return 'bg-red-500/10 text-red-400 border-red-500/20';
+        case 'OUT_FOR_DELIVERY': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+        default: return 'bg-blue-500/10 text-blue-400 border-blue-500/20'; // IN_TRANSIT and fallback
+    }
+};
+
 export default function ShipmentsClient({ initialShipments }: { initialShipments: any[] }) {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,7 +25,11 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
     const [statusFilter, setStatusFilter] = useState('ALL');
 
     const filteredShipments = initialShipments.filter(shipment => {
-        const matchesSearch = shipment.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // Normalize the search terms for dash and case insensitivity
+        const searchNormalized = searchTerm.toUpperCase().replace(/-/g, '');
+        const shipmentNormalized = shipment.trackingNumber.toUpperCase().replace(/-/g, '');
+
+        const matchesSearch = shipmentNormalized.includes(searchNormalized) ||
             shipment.receiverInfo.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'ALL' || shipment.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -86,15 +101,14 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${shipment.status === 'DELIVERED' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                            shipment.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                                'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                            }`}>
-                                            {shipment.status}
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border uppercase ${getStatusBadgeClass(shipment.status)}`}>
+                                            {shipment.status.replace(/_/g, ' ')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-400 text-sm">
-                                        {shipment.events[0]?.description || 'Created'}
+                                        <div className="max-w-xs xl:max-w-md truncate" title={shipment.events[0]?.description || 'Created'}>
+                                            {shipment.events[0]?.description || 'Created'}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-4">

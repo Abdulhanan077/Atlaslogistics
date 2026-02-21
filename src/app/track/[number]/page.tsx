@@ -7,8 +7,21 @@ import TrackingChat from "@/components/TrackingChat";
 import FormattedDate from "@/components/FormattedDate";
 
 async function getShipment(trackingNumber: string) {
-    const shipment = await prisma.shipment.findUnique({
-        where: { trackingNumber },
+    // Normalize: uppercase and remove hyphens
+    const normalizedTracking = trackingNumber.toUpperCase().replace(/-/g, '');
+
+    // Existing records in DB might have 'TRK-' or 'TRK'. We construct both to guarantee a match.
+    // e.g. TRK12345 -> 'TRK12345' (new) or 'TRK-12345' (legacy)
+    const legacyTracking = normalizedTracking.startsWith('TRK') ? normalizedTracking.replace('TRK', 'TRK-') : normalizedTracking;
+
+    const shipment = await prisma.shipment.findFirst({
+        where: {
+            OR: [
+                { trackingNumber: normalizedTracking },
+                { trackingNumber: legacyTracking }
+            ],
+            isDeleted: false
+        },
         include: {
             admin: {
                 select: { name: true, email: true } // Only expose needed public info

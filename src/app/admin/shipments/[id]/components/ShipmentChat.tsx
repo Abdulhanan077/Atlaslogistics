@@ -6,6 +6,7 @@ import { Send, MessageCircle, RefreshCw } from 'lucide-react';
 interface Message {
     id: string;
     content: string;
+    imageUrl?: string | null;
     sender: 'CLIENT' | 'ADMIN';
     createdAt: string;
 }
@@ -14,6 +15,8 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -26,7 +29,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages.length]);
 
     const fetchMessages = async () => {
         try {
@@ -55,6 +58,44 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             console.error('Failed to mark read', e);
         }
     }
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Using the public route we created, admins and clients hit the same quick-path
+            const uploadRes = await fetch(`/api/upload/public?filename=${encodeURIComponent(file.name)}`, {
+                method: 'POST',
+                body: file,
+            });
+
+            if (uploadRes.ok) {
+                const blob = await uploadRes.json();
+
+                // Immediately send as message
+                await fetch(`/api/shipments/${shipmentId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: '', // Optional text
+                        imageUrl: blob.url,
+                        sender: 'ADMIN'
+                    })
+                });
+                fetchMessages();
+            }
+        } catch (error) {
+            console.error('Image upload failed', error);
+        } finally {
+            setUploadingImage(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -112,7 +153,11 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                                         : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
                                         }`}
                                 >
-                                    <p>{msg.content}</p>
+                                    {msg.imageUrl && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={msg.imageUrl} alt="Attachment" className="max-w-full rounded-xl mb-2 border border-slate-700/50" />
+                                    )}
+                                    {msg.content && <p>{msg.content}</p>}
                                 </div>
                                 <p className={`text-[10px] mt-1 px-1 ${msg.sender === 'ADMIN' ? 'text-right text-slate-500' : 'text-slate-500'
                                     }`}>
@@ -131,6 +176,22 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900">
                 <div className="flex gap-2">
                     <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={sending || uploadingImage}
+                        className="p-2.5 text-slate-400 hover:text-white bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl transition-colors disabled:opacity-50"
+                        title="Attach Picture"
+                    >
+                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />} {/* Using basic icons to avoid import issues temporarily */}
+                    </button>
+                    <input
                         type="text"
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
@@ -139,7 +200,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                     />
                     <button
                         type="submit"
-                        disabled={sending || !newMessage.trim()}
+                        disabled={sending || uploadingImage || !newMessage.trim()}
                         className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors"
                     >
                         <Send className="w-5 h-5" />

@@ -26,24 +26,28 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const session = await getServerSession(authOptions);
 
     try {
-        const { content, sender } = await req.json();
+        const { content, sender, imageUrl } = await req.json();
 
         // Validation
-        if (!content) return new NextResponse("Content required", { status: 400 });
+        if (!content && !imageUrl) return new NextResponse("Content or Image required", { status: 400 });
 
         // Determine role:
         // If session exists and user is admin/super_admin, they can be "ADMIN".
         // Otherwise, it's a "CLIENT".
 
-        let actualSender = "CLIENT";
-        if (session && (session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN')) {
-            actualSender = "ADMIN";
-            // If the request specifically says "ADMIN" and they are authorized, allow it.
+        let actualSender = sender === 'CLIENT' ? 'CLIENT' : 'ADMIN';
+
+        // If trying to send as ADMIN, verify they actually have an admin session
+        if (actualSender === 'ADMIN') {
+            if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
+                return new NextResponse("Unauthorized", { status: 401 });
+            }
         }
 
         const message = await (prisma as any).message.create({
             data: {
-                content,
+                content: content || "",
+                imageUrl: imageUrl || null,
                 sender: actualSender,
                 shipmentId: id
             }

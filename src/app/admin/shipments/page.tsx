@@ -9,10 +9,23 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
     if (!session) return null
 
     const { viewAs } = await searchParams;
-    const targetUserId = (session.user.role === 'SUPER_ADMIN' && viewAs) ? viewAs : session.user.id;
+    let targetUserId: string | null = session.user.id;
+
+    if (session.user.role === 'SUPER_ADMIN') {
+        if (viewAs) {
+            targetUserId = viewAs;
+        } else {
+            targetUserId = null;
+        }
+    }
+
+    const whereClause: any = { isDeleted: false };
+    if (targetUserId) {
+        whereClause.adminId = targetUserId;
+    }
 
     const shipments = await prisma.shipment.findMany({
-        where: { adminId: targetUserId },
+        where: whereClause,
         orderBy: { createdAt: 'desc' },
         include: {
             events: {

@@ -1,11 +1,10 @@
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  provider = "sqlite"
+  url = "file:./dev.db"
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -23,62 +22,66 @@ model User {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String   // e.g., "CREATE_SHIPMENT", "UPDATE_STATUS"
-  entityId  String   // The ID of the shipment or entity affected
-  details   String?  // JSON string of details
-  
-  adminId   String
-  admin     User     @relation(fields: [adminId], references: [id])
-  
+  id       String  @id @default(cuid())
+  action   String // e.g., "CREATE_SHIPMENT", "UPDATE_STATUS"
+  entityId String // The ID of the shipment or entity affected
+  details  String? // JSON string of details
+
+  adminId String
+  admin   User   @relation(fields: [adminId], references: [id])
+
   createdAt DateTime @default(now())
 }
 
 model Shipment {
-  id             String   @id @default(cuid())
-  trackingNumber String   @unique
-  senderInfo     String // JSON or text
-  receiverInfo   String // JSON or text
-  status         String   @default("PENDING") // PENDING, IN_TRANSIT, DELIVERED, RETURNED
-  origin         String?
-  destination    String?
-  customerEmail  String?
+  id                String    @id @default(cuid())
+  trackingNumber    String    @unique
+  senderInfo        String // JSON or text
+  receiverInfo      String // JSON or text
+  status            String    @default("PENDING") // PENDING, IN_TRANSIT, DELIVERED, RETURNED
+  origin            String?
+  destination       String?
+  customerEmail     String?
   estimatedDelivery DateTime?
-  
+
   productDescription String?
-  imageUrls        String   @default("[]") // JSON string for SQLite compatibility
+  imageUrls          String  @default("[]") // JSON string for SQLite compatibility
 
-  adminId        String
-  admin          User @relation(fields: [adminId], references: [id])
+  adminId String
+  admin   User   @relation(fields: [adminId], references: [id])
 
-  events         ShipmentEvent[]
+  events ShipmentEvent[]
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  messages       Message[]
+  messages Message[]
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
 }
 
 model Message {
-  id         String   @id @default(cuid())
-  content    String
-  sender     String   // "CLIENT" or "ADMIN"
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  
+  id        String   @id @default(cuid())
+  content   String
+  sender    String // "CLIENT" or "ADMIN"
+  imageUrl  String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
   shipmentId String
   shipment   Shipment @relation(fields: [shipmentId], references: [id])
 }
 
 model ShipmentEvent {
-  id          String   @id @default(uuid())
-  shipmentId  String
-  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(uuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
   status      String
   location    String
-  latitude    Float?   // GPS Latitude
-  longitude   Float?   // GPS Longitude
+  latitude    Float? // GPS Latitude
+  longitude   Float? // GPS Longitude
   description String?
   timestamp   DateTime @default(now())
   createdAt   DateTime @default(now())

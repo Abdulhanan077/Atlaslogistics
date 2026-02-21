@@ -6,6 +6,7 @@ import { Send, MessageCircle, X, Loader2, User, Phone } from 'lucide-react';
 interface Message {
     id: string;
     content: string;
+    imageUrl?: string | null;
     sender: 'CLIENT' | 'ADMIN';
     createdAt: string;
 }
@@ -16,6 +17,8 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Poll for new messages every 5 seconds when open
@@ -32,7 +35,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages, isOpen]);
+    }, [messages.length, isOpen]);
 
     const fetchMessages = async () => {
         try {
@@ -43,6 +46,42 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
             }
         } catch (e) {
             console.error("Failed to fetch messages", e);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const uploadRes = await fetch(`/api/upload/public?filename=${encodeURIComponent(file.name)}`, {
+                method: 'POST',
+                body: file,
+            });
+
+            if (uploadRes.ok) {
+                const blob = await uploadRes.json();
+
+                await fetch(`/api/shipments/${shipmentId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: '',
+                        imageUrl: blob.url,
+                        sender: 'CLIENT'
+                    })
+                });
+                fetchMessages();
+            }
+        } catch (error) {
+            console.error('Image upload failed', error);
+        } finally {
+            setUploadingImage(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -125,11 +164,15 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                 >
                                     <div
                                         className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.sender === 'CLIENT'
-                                                ? 'bg-blue-600 text-white rounded-tr-none'
-                                                : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
+                                            ? 'bg-blue-600 text-white rounded-tr-none'
+                                            : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
                                             }`}
                                     >
-                                        <p>{msg.content}</p>
+                                        {msg.imageUrl && (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={msg.imageUrl} alt="Attached" className="max-w-full rounded-xl mb-2 border border-slate-700/50" />
+                                        )}
+                                        {msg.content && <p>{msg.content}</p>}
                                         <p className={`text-[10px] mt-1 ${msg.sender === 'CLIENT' ? 'text-blue-200' : 'text-slate-500'}`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
@@ -142,6 +185,22 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                     {/* Input Area */}
                     <form onSubmit={handleSend} className="p-3 bg-slate-800 border-t border-slate-700 flex gap-2">
                         <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={sending || uploadingImage}
+                            className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl transition-colors disabled:opacity-50"
+                            title="Attach Picture"
+                        >
+                            {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                        </button>
+                        <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
@@ -150,7 +209,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                         />
                         <button
                             type="submit"
-                            disabled={sending || !newMessage.trim()}
+                            disabled={sending || uploadingImage || !newMessage.trim()}
                             className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}

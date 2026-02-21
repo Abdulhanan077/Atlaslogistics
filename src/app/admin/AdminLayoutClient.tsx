@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import AdminSidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/Header';
-import { Menu } from 'lucide-react';
+import { Menu, Trash2 } from 'lucide-react';
 
 export default function AdminLayoutClient({ children, user }: { children: React.ReactNode, user: any }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

@@ -3,8 +3,12 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Package, Truck, CheckCircle, Clock } from "lucide-react"
 
-async function getStats(userId: string) {
-    const where = { adminId: userId };
+async function getStats(userId: string | null) {
+    const where: any = { isDeleted: false };
+    if (userId) {
+        where.adminId = userId;
+    }
+
     const [total, pending, inTransit, delivered] = await Promise.all([
         prisma.shipment.count({ where }),
         prisma.shipment.count({ where: { ...where, status: "PENDING" } }),
@@ -19,7 +23,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     if (!session) return null;
 
     const { viewAs } = await searchParams;
-    const targetUserId = (session.user.role === 'SUPER_ADMIN' && viewAs) ? viewAs : session.user.id;
+    let targetUserId: string | null = session.user.id; // Default to self
+
+    if (session.user.role === 'SUPER_ADMIN') {
+        if (viewAs) {
+            targetUserId = viewAs; // View as specific admin
+        } else {
+            targetUserId = null; // View ALL shipments system-wide
+        }
+    }
 
     const stats = await getStats(targetUserId);
 
@@ -33,6 +45,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     // Recent Inquiries (Unread)
     // Super Admin sees ALL unread messages. Regular Admins only see their own.
     const unreadWhere: any = {
+        isDeleted: false,
         messages: {
             some: {
                 sender: 'CLIENT',
@@ -41,8 +54,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         }
     };
 
-    if (session.user.role !== 'SUPER_ADMIN') {
-        unreadWhere.adminId = session.user.id;
+    if (targetUserId) {
+        unreadWhere.adminId = targetUserId;
     }
 
     const unreadShipments: any[] = await prisma.shipment.findMany({
@@ -59,9 +72,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
     return (
         <div className="space-y-6">
-            {targetUserId !== session.user.id && (
+            {session.user.role === 'SUPER_ADMIN' && viewAs && (
                 <div className="bg-purple-500/10 border border-purple-500/20 text-purple-400 px-4 py-3 rounded-xl mb-6 flex items-center">
                     <span className="font-semibold mr-2">Viewing as Admin:</span> {targetUserId}
+                </div>
+            )}
+            {session.user.role === 'SUPER_ADMIN' && !viewAs && (
+                <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-3 rounded-xl mb-6 flex items-center">
+                    <span className="font-semibold mr-2">System Wide Overview:</span> Viewing all shipments across all admins.
                 </div>
             )}
             <h1 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h1>
