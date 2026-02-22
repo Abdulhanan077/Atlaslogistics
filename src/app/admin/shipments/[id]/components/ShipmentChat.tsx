@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, RefreshCw } from 'lucide-react';
+import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -16,6 +16,8 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editingContent, setEditingContent] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -26,10 +28,10 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     }, [shipmentId]);
 
     useEffect(() => {
-        if (scrollRef.current) {
+        if (scrollRef.current && !editingMessageId) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages.length]);
+    }, [messages.length, editingMessageId]);
 
     const fetchMessages = async () => {
         try {
@@ -39,9 +41,6 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                 setMessages(data);
 
                 // Mark as read if latest message is from client
-                // We do this optimistically or just call the API
-                const hasUnread = data.some((m: Message) => m.sender === 'CLIENT'); // simplistic check, ideally check isRead but we assume if we are fetching, we are reading. 
-                // Actually, just calling mark-read endpoint is safer if we want to clear the dashboard notification.
                 if (data.length > 0) {
                     markAsRead();
                 }
@@ -68,7 +67,6 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             const formData = new FormData();
             formData.append('file', file);
 
-            // Using the public route we created, admins and clients hit the same quick-path
             const uploadRes = await fetch(`/api/upload/public?filename=${encodeURIComponent(file.name)}`, {
                 method: 'POST',
                 body: file,
@@ -77,12 +75,11 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             if (uploadRes.ok) {
                 const blob = await uploadRes.json();
 
-                // Immediately send as message
                 await fetch(`/api/shipments/${shipmentId}/messages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        content: '', // Optional text
+                        content: '',
                         imageUrl: blob.url,
                         sender: 'ADMIN'
                     })
@@ -108,7 +105,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: newMessage,
-                    sender: 'ADMIN' // Auth handled by API, but this is for clarity
+                    sender: 'ADMIN'
                 })
             });
 
@@ -120,6 +117,36 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             console.error(e);
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleDeleteMessage = async (messageId: string) => {
+        if (!confirm('Are you sure you want to delete this message? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/messages/${messageId}`, { method: 'DELETE' });
+            if (res.ok) {
+                setMessages(prev => prev.filter(m => m.id !== messageId));
+            }
+        } catch (e) {
+            console.error('Failed to delete message:', e);
+        }
+    };
+
+    const handleSaveEdit = async (messageId: string) => {
+        if (!editingContent.trim()) return;
+        try {
+            const res = await fetch(`/api/messages/${messageId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editingContent })
+            });
+            if (res.ok) {
+                setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: editingContent } : m));
+                setEditingMessageId(null);
+                setEditingContent('');
+            }
+        } catch (e) {
+            console.error('Failed to update message:', e);
         }
     };
 
@@ -144,21 +171,68 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                     messages.map((msg) => (
                         <div
                             key={msg.id}
-                            className={`flex ${msg.sender === 'ADMIN' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex ${msg.sender === 'ADMIN' ? 'justify-end' : 'justify-start'} group relative`}
                         >
-                            <div className="max-w-[80%]">
-                                <div
-                                    className={`rounded-2xl px-4 py-3 text-sm ${msg.sender === 'ADMIN'
-                                        ? 'bg-blue-600 text-white rounded-tr-none'
-                                        : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
-                                        }`}
-                                >
-                                    {msg.imageUrl && (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={msg.imageUrl} alt="Attachment" className="max-w-full rounded-xl mb-2 border border-slate-700/50" />
-                                    )}
-                                    {msg.content && <p>{msg.content}</p>}
+                            {msg.sender === 'ADMIN' && editingMessageId !== msg.id && (
+                                <div className="absolute top-0 -left-16 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-1">
+                                    <button
+                                        onClick={() => { setEditingMessageId(msg.id); setEditingContent(msg.content || ''); }}
+                                        className="text-slate-500 hover:text-blue-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                                        title="Edit message"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteMessage(msg.id)}
+                                        className="text-slate-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                                        title="Delete message"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </div>
+                            )}
+
+                            <div className="max-w-[80%]">
+                                {editingMessageId === msg.id ? (
+                                    <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 flex flex-col gap-2 min-w-[250px] shadow-lg">
+                                        <textarea
+                                            value={editingContent}
+                                            onChange={(e) => setEditingContent(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"
+                                            rows={3}
+                                            autoFocus
+                                            spellCheck={false}
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => setEditingMessageId(null)}
+                                                className="text-slate-400 hover:text-white px-2 py-1 text-xs font-medium rounded-md hover:bg-slate-700 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={() => handleSaveEdit(msg.id)}
+                                                disabled={!editingContent.trim()}
+                                                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-3 py-1 text-xs font-bold rounded-md transition-colors flex items-center gap-1"
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className={`rounded-2xl px-4 py-3 text-sm flex flex-col ${msg.sender === 'ADMIN'
+                                            ? 'bg-blue-600 text-white rounded-tr-none'
+                                            : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
+                                            }`}
+                                    >
+                                        {msg.imageUrl && (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={msg.imageUrl} alt="Attachment" className="max-w-full rounded-xl mb-2 border border-blue-500/50" />
+                                        )}
+                                        {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
+                                    </div>
+                                )}
                                 <p className={`text-[10px] mt-1 px-1 ${msg.sender === 'ADMIN' ? 'text-right text-slate-500' : 'text-slate-500'
                                     }`}>
                                     <span suppressHydrationWarning>
@@ -189,7 +263,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                         className="p-2.5 text-slate-400 hover:text-white bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl transition-colors disabled:opacity-50"
                         title="Attach Picture"
                     >
-                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />} {/* Using basic icons to avoid import issues temporarily */}
+                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
                     </button>
                     <input
                         type="text"
