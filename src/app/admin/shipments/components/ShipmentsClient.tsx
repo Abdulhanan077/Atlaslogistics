@@ -121,6 +121,30 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                             <button
                                                 onClick={async (e) => {
                                                     e.stopPropagation();
+                                                    if (!confirm('Are you sure you want to clone this shipment? A new TRK ID will be generated.')) return;
+
+                                                    const loadingToast = toast.loading('Cloning shipment...');
+                                                    try {
+                                                        const res = await fetch(`/api/shipments/${shipment.id}/clone`, { method: 'POST' });
+                                                        if (res.ok) {
+                                                            toast.success('Shipment cloned successfully!', { id: loadingToast });
+                                                            router.refresh();
+                                                        } else {
+                                                            toast.error('Failed to clone shipment', { id: loadingToast });
+                                                        }
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        toast.error('Error cloning shipment', { id: loadingToast });
+                                                    }
+                                                }}
+                                                className="px-2.5 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg transition-colors text-xs font-medium"
+                                                title="Clone Shipment"
+                                            >
+                                                Clone
+                                            </button>
+                                            <button
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
                                                     if (!confirm('Are you sure you want to delete this shipment?')) return;
                                                     try {
                                                         const res = await fetch(`/api/shipments/${shipment.id}`, { method: 'DELETE' });
