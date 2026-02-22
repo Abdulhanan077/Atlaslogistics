@@ -171,10 +171,10 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                     messages.map((msg) => (
                         <div
                             key={msg.id}
-                            className={`flex ${msg.sender === 'ADMIN' ? 'justify-end' : 'justify-start'} group relative`}
+                            className={`flex ${msg.sender === 'ADMIN' ? 'justify-end' : 'justify-start'} group w-full`}
                         >
                             {msg.sender === 'ADMIN' && editingMessageId !== msg.id && (
-                                <div className="absolute top-0 -left-16 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-1">
+                                <div className="flex flex-col justify-center sm:flex-row items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity mr-2">
                                     <button
                                         onClick={() => { setEditingMessageId(msg.id); setEditingContent(msg.content || ''); }}
                                         className="text-slate-500 hover:text-blue-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
