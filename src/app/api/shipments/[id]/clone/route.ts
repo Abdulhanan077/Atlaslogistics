@@ -44,9 +44,9 @@ export async function POST(
                 adminId: session.user.id, // Assign to the admin who clicked 'Clone'
                 events: {
                     create: {
-                        status: 'PENDING',
-                        location: 'System',
-                        description: 'Shipment created (Cloned)',
+                        status: 'CREATED',
+                        location: originalShipment.origin || 'System',
+                        description: 'Shipment created',
                     }
                 }
             }
