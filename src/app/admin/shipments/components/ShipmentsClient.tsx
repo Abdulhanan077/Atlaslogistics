@@ -114,7 +114,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                         <div className="flex items-center gap-4">
                                             <button
                                                 onClick={() => router.push(`/admin/shipments/${shipment.id}`)}
-                                                className="px-3 py-1 bg-green-500/10 text-green-400 hover:bg-green-600 hover:text-white rounded-lg transition-colors text-sm font-medium"
+                                                className="px-2.5 py-1 bg-green-500/10 text-green-400 hover:bg-green-600 hover:text-white rounded-lg transition-colors text-xs font-medium"
                                             >
                                                 Update
                                             </button>
@@ -135,7 +135,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                                         toast.error('Error deleting shipment');
                                                     }
                                                 }}
-                                                className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-colors text-sm font-medium"
+                                                className="px-2.5 py-1 bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-colors text-xs font-medium"
                                                 title="Delete Shipment"
                                             >
                                                 Delete
