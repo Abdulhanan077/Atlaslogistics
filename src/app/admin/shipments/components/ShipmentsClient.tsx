@@ -10,7 +10,8 @@ import { toast } from 'react-hot-toast';
 const getStatusBadgeClass = (status: string) => {
     switch (status) {
         case 'DELIVERED': return 'bg-green-500/10 text-green-400 border-green-500/20';
-        case 'CREATED': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+        case 'CREATED':
+        case 'PENDING': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
         case 'ON_HOLD': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
         case 'RETURNED': return 'bg-red-500/10 text-red-400 border-red-500/20';
         case 'OUT_FOR_DELIVERY': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
@@ -70,6 +71,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                 >
                     <option value="ALL">All Statuses</option>
                     <option value="CREATED">Created</option>
+                    <option value="PENDING">Pending</option>
                     <option value="IN_TRANSIT">In Transit</option>
                     <option value="ON_HOLD">On Hold</option>
                     <option value="OUT_FOR_DELIVERY">Out for Delivery</option>

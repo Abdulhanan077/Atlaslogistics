@@ -56,7 +56,7 @@ async function getShipment(trackingNumber: string) {
 function getStatusProgress(status: string) {
     switch (status) {
         case 'CREATED': return 10;
-        case 'CREATED': return 10;
+        case 'PENDING': return 10;
         case 'IN_TRANSIT': return 50;
         case 'OUT_FOR_DELIVERY': return 80;
         case 'DELIVERED': return 100;
@@ -68,7 +68,7 @@ function getStatusProgress(status: string) {
 function getStatusColor(status: string) {
     switch (status) {
         case 'CREATED': return 'text-yellow-500';
-        case 'IN_TRANSIT': return 'text-blue-400';
+        case 'PENDING': return 'text-yellow-500';
         case 'IN_TRANSIT': return 'text-blue-400';
         case 'ON_HOLD': return 'text-orange-500';
         case 'OUT_FOR_DELIVERY': return 'text-purple-400';
@@ -82,7 +82,7 @@ function getStatusColor(status: string) {
 function getTimelineDotColor(status: string) {
     switch (status) {
         case 'CREATED': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
-        case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
+        case 'PENDING': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
         case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
         case 'ON_HOLD': return 'bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.2)]';
         case 'OUT_FOR_DELIVERY': return 'bg-purple-500 shadow-[0_0_0_4px_rgba(168,85,247,0.2)]';
@@ -96,6 +96,7 @@ function getTimelineDotColor(status: string) {
 export default async function TrackingResultPage({ params }: { params: Promise<{ number: string }> }) {
     const { number } = await params;
     const shipment: any = await getShipment(number);
+    const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } });
 
     if (!shipment) {
         return (
@@ -135,7 +136,9 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                             </div>
                             <div>
                                 <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Service Provider</p>
-                                <p className="text-slate-200 font-medium">Atlas Logistics</p>
+                                <p className="text-slate-200 font-medium pb-2 border-b border-slate-700/50 mb-2">{settings?.companyName || 'Atlas Logistics'}</p>
+                                {settings?.supportEmail && <p className="text-xs text-slate-400">Support: {settings.supportEmail}</p>}
+                                {settings?.supportPhone && <p className="text-xs text-slate-400">Call: {settings.supportPhone}</p>}
                             </div>
                         </div>
                     </div>
@@ -292,8 +295,8 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                     </div>
                 </div>
 
-                <div className="text-center text-slate-500 text-sm">
-                    &copy; 2026 Atlas Logistics. All rights reserved.
+                <div className="text-center text-slate-500 text-sm mt-8">
+                    &copy; {new Date().getFullYear()} {settings?.companyName || 'Atlas Logistics'}. All rights reserved.
                 </div>
             </div>
 

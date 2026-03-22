@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check } from 'lucide-react';
+import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check, Paperclip } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -151,7 +151,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     };
 
     return (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl flex flex-col h-[700px] overflow-hidden shrink-0">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl flex flex-col h-[600px] max-h-[calc(100vh-120px)] overflow-hidden w-full">
             <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                 <h3 className="font-bold text-white flex items-center gap-2">
                     <MessageCircle className="w-5 h-5 text-blue-400" />
@@ -194,7 +194,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
 
                             <div className="max-w-[80%]">
                                 {editingMessageId === msg.id ? (
-                                    <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 flex flex-col gap-2 min-w-[250px] shadow-lg">
+                                    <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 flex flex-col gap-2 w-full shadow-lg">
                                         <textarea
                                             value={editingContent}
                                             onChange={(e) => setEditingContent(e.target.value)}
@@ -221,7 +221,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                                     </div>
                                 ) : (
                                     <div
-                                        className={`rounded-2xl px-4 py-3 text-sm flex flex-col ${msg.sender === 'ADMIN'
+                                        className={`rounded-2xl px-4 py-3 text-sm flex flex-col break-words min-w-0 ${msg.sender === 'ADMIN'
                                             ? 'bg-blue-600 text-white rounded-tr-none'
                                             : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
                                             }`}
@@ -247,8 +247,8 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                 )}
             </div>
 
-            <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900">
-                <div className="flex gap-2">
+            <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900 shrink-0">
+                <div className="flex gap-2 items-center w-full min-w-0">
                     <input
                         type="file"
                         accept="image/*"
@@ -263,19 +263,19 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                         className="p-2.5 text-slate-400 hover:text-white bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl transition-colors disabled:opacity-50"
                         title="Attach Picture"
                     >
-                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5 shrink-0" />}
                     </button>
                     <input
                         type="text"
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
-                        placeholder="Reply only visible to customer..."
-                        className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-500"
+                        placeholder="Type a message..."
+                        className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors placeholder:text-slate-500"
                     />
                     <button
                         type="submit"
                         disabled={sending || uploadingImage || !newMessage.trim()}
-                        className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors"
+                        className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors shrink-0"
                     >
                         <Send className="w-5 h-5" />
                     </button>

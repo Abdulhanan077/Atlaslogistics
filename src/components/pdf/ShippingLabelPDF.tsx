@@ -73,9 +73,10 @@ const styles = StyleSheet.create({
 
 interface ShippingLabelProps {
     shipment: any;
+    settings?: { companyName: string, logoUrl: string, supportEmail: string, supportPhone: string } | null;
 }
 
-const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => {
+const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment, settings }) => {
     const sender = parseShipmentInfo(shipment.senderInfo);
     const receiver = parseShipmentInfo(shipment.receiverInfo);
     
@@ -84,7 +85,10 @@ const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => {
         <Page size="A4" style={styles.page}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.title}>Atlas Logistics</Text>
+                    {settings?.logoUrl && (
+                        <Image src={settings.logoUrl} style={{ width: 100, height: 100, objectFit: 'contain', marginBottom: 10 }} />
+                    )}
+                    <Text style={styles.title}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
                     <Text style={styles.trackingNumber}>{shipment.trackingNumber}</Text>
                 </View>
                 <View>
@@ -133,7 +137,7 @@ const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => {
             </View>
 
             <Text style={styles.footer}>
-                Thank you for choosing Atlas Logistics. For support, visit support.atlaslogistics.com
+                Thank you for choosing {settings?.companyName || 'Atlas Logistics'}. For support, contact {settings?.supportEmail || 'support@atlaslogistics.com'}
             </Text>
         </Page>
     </Document>

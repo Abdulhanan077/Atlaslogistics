@@ -127,9 +127,10 @@ const styles = StyleSheet.create({
 
 interface ShipmentDetailsPDFProps {
     shipment: any;
+    settings?: { companyName: string, logoUrl: string, supportEmail: string, supportPhone: string } | null;
 }
 
-const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment }) => {
+const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment, settings }) => {
     const sender = parseShipmentInfo(shipment.senderInfo);
     const receiver = parseShipmentInfo(shipment.receiverInfo);
 
@@ -144,7 +145,8 @@ const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment }) => 
 
     const getStatusStyle = (status: string) => {
         switch (status?.toUpperCase()) {
-            case 'CREATED': return { color: '#ca8a04', borderColor: '#fef08a', backgroundColor: '#fefce8' };
+            case 'CREATED':
+            case 'PENDING': return { color: '#ca8a04', borderColor: '#fef08a', backgroundColor: '#fefce8' };
             case 'IN_TRANSIT': return { color: '#2563eb', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' };
             case 'ON_HOLD': return { color: '#ea580c', borderColor: '#fed7aa', backgroundColor: '#fff7ed' };
             case 'OUT_FOR_DELIVERY': return { color: '#9333ea', borderColor: '#e9d5ff', backgroundColor: '#faf5ff' };
@@ -159,7 +161,10 @@ const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment }) => 
     return (
         <Document>
             <Page size="A4" style={styles.page}>
-                <Text style={styles.mainHeader}>ATLAS LOGISTICS</Text>
+                {settings?.logoUrl && (
+                    <Image src={settings.logoUrl} style={{ width: 120, height: 120, objectFit: 'contain', alignSelf: 'center', marginBottom: 10 }} />
+                )}
+                <Text style={styles.mainHeader}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
 
                 <View style={styles.card}>
                     {/* Header Row */}

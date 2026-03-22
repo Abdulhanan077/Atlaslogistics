@@ -11,7 +11,7 @@ async function getStats(userId: string | null) {
 
     const [total, pending, inTransit, delivered] = await Promise.all([
         prisma.shipment.count({ where }),
-        prisma.shipment.count({ where: { ...where, status: "CREATED" } }),
+        prisma.shipment.count({ where: { ...where, status: { in: ["CREATED", "PENDING"] } } }),
         prisma.shipment.count({ where: { ...where, status: "IN_TRANSIT" } }),
         prisma.shipment.count({ where: { ...where, status: "DELIVERED" } })
     ]);
@@ -109,10 +109,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                             <h3 className="font-semibold text-blue-400 mb-1">Manage Shipments</h3>
                             <p className="text-slate-400 text-xs text-sm">View and update all shipments</p>
                         </a>
+                        <a href="/admin/settings" className="hover:no-underline block p-4 border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-colors">
+                            <h3 className="font-semibold text-emerald-400 mb-1">Platform Settings</h3>
+                            <p className="text-slate-400 text-xs">Manage your brand logo and details</p>
+                        </a>
                         {session.user.role === 'SUPER_ADMIN' && (
                             <a href="/admin/users" className="hover:no-underline block p-4 border border-purple-500/20 bg-purple-500/10 hover:bg-purple-500/20 rounded-xl transition-colors">
                                 <h3 className="font-semibold text-purple-400 mb-1">Manage Admins</h3>
-                                <p className="text-slate-400 text-xs text-sm">Create and modify admin accounts</p>
+                                <p className="text-slate-400 text-xs">Create and modify admin accounts</p>
                             </a>
                         )}
                     </div>

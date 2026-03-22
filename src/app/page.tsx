@@ -1,13 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Package, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
   const [trackingId, setTrackingId] = useState('');
+  const [companyName, setCompanyName] = useState('Atlas Logistics');
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.companyName) setCompanyName(data.companyName);
+      })
+      .catch((err) => console.error('Failed to load settings', err));
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +42,7 @@ export default function Home() {
         </div>
 
         <h1 className="text-4xl md:text-6xl font-black text-white bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
-          Track with Atlas Logistics
+          Track with {companyName}
         </h1>
         <p className="text-lg text-slate-400 max-w-lg mx-auto">
           Enter your tracking ID to see real-time updates and delivery status.
@@ -61,11 +71,13 @@ export default function Home() {
           </div>
         </form>
 
-        <div className="pt-12">
-          <Link href="/login" className="text-slate-500 hover:text-white text-sm transition-colors">
-            Are you an administrator? Login here
-          </Link>
-        </div>
+
+      </div>
+
+      <div className="absolute bottom-6 w-full text-center z-10">
+        <p className="text-slate-500 text-md">
+          <Link href="/login" className="hover:text-slate-400 transition-colors">&copy;</Link> {new Date().getFullYear()} {companyName}. All rights reserved.
+        </p>
       </div>
     </div>
   );

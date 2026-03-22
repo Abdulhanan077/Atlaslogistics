@@ -55,9 +55,11 @@ export async function POST(req: Request) {
             const sender = parseShipmentInfo(senderInfo);
             const receiver = parseShipmentInfo(receiverInfo);
 
+            const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } });
+
             let pdfBuffer;
             try {
-                pdfBuffer = await renderToBuffer(React.createElement(ShipmentDetailsPDF, { shipment }) as any);
+                pdfBuffer = await renderToBuffer(React.createElement(ShipmentDetailsPDF, { shipment, settings }) as any);
             } catch (err) {
                 console.error("Failed to generate PDF label", err);
             }

@@ -18,6 +18,8 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
         }
     });
 
+    const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } });
+
     if (!shipment) notFound();
 
     // Enforce isolation
@@ -45,5 +47,5 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
         imageUrls: parsedImageUrls
     };
 
-    return <ShipmentDetailsClient shipment={parsedShipment} />
+    return <ShipmentDetailsClient shipment={parsedShipment} settings={settings} />
 }

@@ -67,6 +67,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     const COLORS: Record<string, string> = {
         'DELIVERED': '#22c55e', // text-green-500
         'CREATED': '#eab308',   // text-yellow-500
+        'PENDING': '#eab308',
         'ON_HOLD': '#f97316',   // text-orange-500
         'RETURNED': '#ef4444',  // text-red-500
         'OUT_FOR_DELIVERY': '#a855f7', // text-purple-500

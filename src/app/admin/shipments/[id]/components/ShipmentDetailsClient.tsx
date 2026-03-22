@@ -18,7 +18,7 @@ const PDFDownloadLink = dynamic(
     }
 );
 
-export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
+export default function ShipmentDetailsClient({ shipment, settings }: { shipment: any, settings?: any }) {
     const router = useRouter();
     const [updating, setUpdating] = useState(false);
     const [formData, setFormData] = useState({
@@ -137,7 +137,8 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
     const getStatusStyles = (status: string) => {
         switch (status) {
-            case 'CREATED': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+            case 'CREATED':
+            case 'PENDING': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
             case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'ON_HOLD': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
@@ -150,7 +151,8 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
     const getTimelineDotColor = (status: string) => {
         switch (status) {
-            case 'CREATED': return 'bg-yellow-500 border-yellow-500';
+            case 'CREATED':
+            case 'PENDING': return 'bg-yellow-500 border-yellow-500';
             case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
             case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
             case 'ON_HOLD': return 'bg-orange-500 border-orange-500';
@@ -210,7 +212,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                 </button>
                 <div className="flex gap-3">
                     <PDFDownloadLink
-                        document={<ShippingLabelPDF shipment={shipment} />}
+                        document={<ShippingLabelPDF shipment={shipment} settings={settings} />}
                         fileName={`LABEL-${shipment.trackingNumber}.pdf`}
                         className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20"
                     >
@@ -244,7 +246,8 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                 <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full">
                     {/* Print Header */}
                     <div className="hidden print:block text-center mb-8">
-                        <h1 className="text-4xl font-extrabold text-blue-600 tracking-wider">ATLAS LOGISTICS</h1>
+                        {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="w-32 h-32 object-contain mx-auto mb-4" />}
+                        <h1 className="text-4xl font-extrabold text-blue-600 tracking-wider uppercase">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
@@ -540,7 +543,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                             value={editEventData.status}
                                                             onChange={e => setEditEventData({ ...editEventData, status: e.target.value })}
                                                         >
-                                                            <option value="CREATED">CREATED</option>
+                                                            <option value="PENDING">PENDING</option>
                                                             <option value="IN_TRANSIT">IN TRANSIT</option>
                                                             <option value="ON_HOLD">ON HOLD</option>
                                                             <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
@@ -673,7 +676,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                     value={formData.status}
                                     onChange={e => setFormData({ ...formData, status: e.target.value })}
                                 >
-                                    <option value="CREATED">CREATED</option>
+                                    <option value="PENDING">PENDING</option>
                                     <option value="IN_TRANSIT">IN TRANSIT</option>
                                     <option value="ON_HOLD">ON HOLD</option>
                                     <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>

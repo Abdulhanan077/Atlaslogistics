@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Package, Lock, Mail } from 'lucide-react';
+import { Package, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const router = useRouter();
 
@@ -62,17 +64,29 @@ export default function LoginPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-slate-300 text-sm font-medium ml-1">Password</label>
+                        <div className="flex justify-between items-center ml-1 mt-4">
+                            <label className="text-slate-300 text-sm font-medium">Password</label>
+                            <Link href="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                                Forgot password?
+                            </Link>
+                        </div>
                         <div className="relative group">
                             <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
+                                className="w-full bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-12 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
                                 placeholder="••••••••"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 
