@@ -280,3 +280,88 @@ export async function sendPasswordResetEmail(to: string, resetCode: string) {
         console.error('Failed to dispatch password reset email:', error);
     }
 }
+
+export async function sendChatNotification(to: string, trackingNumber: string, shipmentId: string, messageContent: string, isToAdmin: boolean) {
+    if (!process.env.SCALEWAY_SMTP_USER || !process.env.SCALEWAY_SMTP_PASSWORD) {
+        console.warn('SCALEWAY_SMTP_USER or SCALEWAY_SMTP_PASSWORD is/are not set. Skipping email.');
+        return;
+    }
+
+    try {
+        // @ts-ignore
+        const settings = await (prisma as any).siteSettings.findUnique({ where: { id: "default" } });
+        const companyName = settings?.companyName || 'Atlas Logistics';
+        const emailHeaderName = `${companyName} <${process.env.SCALEWAY_SENDER_EMAIL || 'noreply@yourdomain.com'}>`;
+        
+        const actionUrl = isToAdmin 
+            ? `${process.env.NEXTAUTH_URL}/admin/shipments/${shipmentId}`
+            : `${process.env.NEXTAUTH_URL}/track/${trackingNumber}`;
+
+        const html = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>New Chat Message</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding: 40px 0;">
+                    <tr>
+                        <td align="center">
+                            <table width="100%" max-width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                <tr>
+                                    <td align="center" style="background-color: #0f172a; padding: 30px 20px;">
+                                        ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="${companyName} Logo" style="height: 60px; margin-bottom: 15px; display: block;" />` : ''}
+                                        <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; text-transform: uppercase;">New Message Received</h1>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 40px 30px;">
+                                        <p style="font-size: 16px; line-height: 1.5; color: #334155; margin: 0 0 20px 0;">
+                                            ${isToAdmin ? 'A customer has replied to their shipment tracking thread.' : 'An administrator has replied to your tracking thread.'}
+                                        </p>
+                                        <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px 20px; border-radius: 4px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-bottom: 24px;">
+                                            <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Tracking Number: ${trackingNumber}</p>
+                                            <p style="margin: 12px 0 0 0; font-size: 15px; color: #0f172a; font-style: italic;">"${messageContent}"</p>
+                                        </div>
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 30px;">
+                                            <tr>
+                                                <td align="center">
+                                                    <a href="${actionUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center; border: 1px solid #1d4ed8;">
+                                                        ${isToAdmin ? 'View in Dashboard' : 'Reply & Track'}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="background-color: #f8fafc; padding: 24px 30px; border-top: 1px solid #e2e8f0;">
+                                        <p style="margin: 0; font-size: 13px; color: #64748b;">
+                                            &copy; ${new Date().getFullYear()} ${companyName}. All rights reserved.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
+
+        const mailOptions: any = {
+            from: emailHeaderName,
+            to: to,
+            subject: `New Message Regarding Shipment ${trackingNumber}`,
+            html: html,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Chat notification sent securely config to ${to}`, info.messageId);
+        return info;
+    } catch (error) {
+        console.error('Failed to dispatch chat notification email:', error);
+    }
+}

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { sendChatNotification } from "@/lib/email";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -52,6 +53,42 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 shipmentId: id
             }
         });
+
+        // Fire email notification synchronously to prevent Next.js from aggressively killing the background worker
+        try {
+            const shipment = await (prisma as any).shipment.findUnique({
+                where: { id },
+                include: { admin: true }
+            });
+
+            if (shipment) {
+                if (actualSender === 'ADMIN') {
+                    // Admin replied. Notify Customer if email exists.
+                    if (shipment.customerEmail) {
+                        await sendChatNotification(
+                            shipment.customerEmail, 
+                            shipment.trackingNumber, 
+                            shipment.id, 
+                            content || "[Image attachment]", 
+                            false
+                        );
+                    }
+                } else {
+                    // Customer replied. Notify Admin.
+                    if (shipment.admin && shipment.admin.email) {
+                        await sendChatNotification(
+                            shipment.admin.email, 
+                            shipment.trackingNumber, 
+                            shipment.id, 
+                            content || "[Image attachment]", 
+                            true
+                        );
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Background chat email error:", err);
+        }
 
         return NextResponse.json(message);
     } catch (e) {
