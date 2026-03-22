@@ -5,6 +5,7 @@ import { MapPin, Package, Clock, ArrowLeft, Building2 } from "lucide-react"
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import TrackingChat from "@/components/TrackingChat";
 import FormattedDate from "@/components/FormattedDate";
+import { parseShipmentInfo } from '@/lib/utils';
 
 async function getShipment(trackingNumber: string) {
     // Normalize: uppercase and remove hyphens
@@ -46,13 +47,15 @@ async function getShipment(trackingNumber: string) {
 
     return {
         ...shipment,
-        imageUrls: parsedImageUrls
+        imageUrls: parsedImageUrls,
+        parsedSender: parseShipmentInfo(shipment.senderInfo),
+        parsedReceiver: parseShipmentInfo(shipment.receiverInfo)
     };
 }
 
 function getStatusProgress(status: string) {
     switch (status) {
-        case 'PENDING': return 10;
+        case 'CREATED': return 10;
         case 'CREATED': return 10;
         case 'IN_TRANSIT': return 50;
         case 'OUT_FOR_DELIVERY': return 80;
@@ -64,7 +67,7 @@ function getStatusProgress(status: string) {
 
 function getStatusColor(status: string) {
     switch (status) {
-        case 'PENDING': return 'text-yellow-500';
+        case 'CREATED': return 'text-yellow-500';
         case 'IN_TRANSIT': return 'text-blue-400';
         case 'IN_TRANSIT': return 'text-blue-400';
         case 'ON_HOLD': return 'text-orange-500';
@@ -78,7 +81,7 @@ function getStatusColor(status: string) {
 
 function getTimelineDotColor(status: string) {
     switch (status) {
-        case 'PENDING': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
+        case 'CREATED': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
         case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
         case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
         case 'ON_HOLD': return 'bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.2)]';
@@ -148,7 +151,10 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     <div>
                                         <p className="text-slate-500 text-xs uppercase mb-1">Origin</p>
                                         <p className="text-white text-lg font-semibold">{shipment.origin}</p>
-                                        <p className="text-slate-400 text-sm mt-1">{shipment.senderInfo}</p>
+                                        <div className="mt-1">
+                                            {shipment.parsedSender.name && <p className="text-slate-300 font-medium">{shipment.parsedSender.name}</p>}
+                                            {shipment.parsedSender.address && <p className="text-slate-400 text-sm">{shipment.parsedSender.address}</p>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -160,7 +166,10 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     <div>
                                         <p className="text-slate-500 text-xs uppercase mb-1">Destination</p>
                                         <p className="text-white text-lg font-semibold">{shipment.destination}</p>
-                                        <p className="text-slate-400 text-sm mt-1">{shipment.receiverInfo}</p>
+                                        <div className="mt-1">
+                                            {shipment.parsedReceiver.name && <p className="text-slate-300 font-medium">{shipment.parsedReceiver.name}</p>}
+                                            {shipment.parsedReceiver.address && <p className="text-slate-400 text-sm">{shipment.parsedReceiver.address}</p>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

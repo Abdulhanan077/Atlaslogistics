@@ -4,6 +4,10 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { sendShipmentEmail } from "@/lib/email";
 import { logAction } from "@/lib/logger";
+import { parseShipmentInfo } from "@/lib/utils";
+import React from 'react';
+import { renderToBuffer } from '@react-pdf/renderer';
+import ShipmentDetailsPDF from '@/components/pdf/ShipmentDetailsPDF';
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -29,7 +33,8 @@ export async function POST(req: Request) {
                 estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
                 imageUrls: JSON.stringify(body.imageUrls || []), // SQLite fix
                 createdAt: body.createdAt ? new Date(body.createdAt) : undefined,
-                status: "PENDING",
+                productDescription: body.productDescription,
+                status: "CREATED",
                 adminId: session.user.id,
                 events: {
                     create: {
@@ -47,13 +52,33 @@ export async function POST(req: Request) {
 
         // Send Email
         if (customerEmail) {
+            const sender = parseShipmentInfo(senderInfo);
+            const receiver = parseShipmentInfo(receiverInfo);
+
+            let pdfBuffer;
+            try {
+                pdfBuffer = await renderToBuffer(React.createElement(ShipmentDetailsPDF, { shipment }) as any);
+            } catch (err) {
+                console.error("Failed to generate PDF label", err);
+            }
+
             // Must await in serverless/Vercel to avoid early termination
             await sendShipmentEmail({
                 to: customerEmail,
                 trackingNumber,
                 status: "CREATED",
                 location: origin || "System",
-                description: "Your shipment has been created."
+                receiverName: receiver.name,
+                receiverAddress: receiver.address,
+                senderName: sender.name,
+                origin,
+                destination,
+                estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toLocaleDateString() : undefined,
+                productDescription: body.productDescription,
+                attachment: pdfBuffer ? {
+                    filename: `Label-${trackingNumber}.pdf`,
+                    content: pdfBuffer
+                } : undefined
             });
         }
 

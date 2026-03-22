@@ -14,7 +14,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const body = await req.json();
 
         // Allowed fields to update
-        const { createdAt, status, origin, destination, trackingNumber, productDescription, imageUrls } = body;
+        const { createdAt, status, origin, destination, trackingNumber, productDescription, imageUrls, senderInfo, receiverInfo, customerEmail } = body;
 
         // Verify ownership
         const existingShipment = await prisma.shipment.findUnique({ where: { id } });
@@ -30,7 +30,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         if (trackingNumber) updateData.trackingNumber = trackingNumber;
         if (productDescription !== undefined) updateData.productDescription = productDescription;
         if (imageUrls !== undefined) updateData.imageUrls = JSON.stringify(imageUrls); // SQLite fix
-        if (body.estimatedDelivery) updateData.estimatedDelivery = new Date(body.estimatedDelivery);
+        if (body.estimatedDelivery !== undefined) updateData.estimatedDelivery = body.estimatedDelivery ? new Date(body.estimatedDelivery) : null;
+        if (senderInfo !== undefined) updateData.senderInfo = senderInfo;
+        if (receiverInfo !== undefined) updateData.receiverInfo = receiverInfo;
+        if (customerEmail !== undefined) updateData.customerEmail = customerEmail;
 
         const updatedShipment = await prisma.shipment.update({
             where: { id },

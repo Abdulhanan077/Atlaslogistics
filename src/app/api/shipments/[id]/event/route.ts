@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { sendShipmentEmail } from "@/lib/email";
 import { logAction } from "@/lib/logger";
+import { parseShipmentInfo } from "@/lib/utils";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -43,12 +44,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         await logAction(session.user.id, "UPDATE_STATUS", id, { status, location });
 
         if (shipment.customerEmail) {
+            const receiver = parseShipmentInfo(shipment.receiverInfo);
+            
+            const truncatedDesc = description 
+                ? (description.length > 150 ? description.substring(0, 147) + '...' : description)
+                : "Status updated";
+
             await sendShipmentEmail({
                 to: shipment.customerEmail,
                 trackingNumber: shipment.trackingNumber,
                 status,
                 location: location || "In Transit",
-                description: description || "Status updated"
+                description: truncatedDesc,
+                receiverName: receiver.name
             });
         }
 

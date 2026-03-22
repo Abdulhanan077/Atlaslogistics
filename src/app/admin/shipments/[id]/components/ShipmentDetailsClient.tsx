@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import ShippingLabelPDF from '@/components/pdf/ShippingLabelPDF';
 import ShipmentChat from './ShipmentChat';
 import FormattedDate from '@/components/FormattedDate';
+import { parseShipmentInfo } from '@/lib/utils';
 
 const PDFDownloadLink = dynamic(
     () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
@@ -83,6 +84,10 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
     // Main Shipment Edit State (existing)
     const [isEditing, setIsEditing] = useState(false);
+    
+    const parsedSender = parseShipmentInfo(shipment.senderInfo);
+    const parsedReceiver = parseShipmentInfo(shipment.receiverInfo);
+    
     const [editData, setEditData] = useState({
         createdAt: new Date(shipment.createdAt).toISOString().slice(0, 16),
         origin: shipment.origin || '',
@@ -90,7 +95,13 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
         customerEmail: shipment.customerEmail || '',
         productDescription: shipment.productDescription || '',
         imageUrls: shipment.imageUrls || [],
-        estimatedDelivery: shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toISOString().slice(0, 16) : ''
+        estimatedDelivery: shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toISOString().slice(0, 16) : '',
+        senderName: parsedSender.name,
+        senderPhone: parsedSender.phone,
+        senderAddress: parsedSender.address,
+        receiverName: parsedReceiver.name,
+        receiverPhone: parsedReceiver.phone,
+        receiverAddress: parsedReceiver.address,
     });
 
     const handleEditSubmit = async (e: React.FormEvent) => {
@@ -106,7 +117,9 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                     customerEmail: editData.customerEmail,
                     productDescription: editData.productDescription,
                     imageUrls: editData.imageUrls,
-                    estimatedDelivery: editData.estimatedDelivery ? new Date(editData.estimatedDelivery + ':00Z').toISOString() : null
+                    estimatedDelivery: editData.estimatedDelivery ? new Date(editData.estimatedDelivery + ':00Z').toISOString() : null,
+                    senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress }),
+                    receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress })
                 })
             });
             if (res.ok) {
@@ -124,7 +137,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
     const getStatusStyles = (status: string) => {
         switch (status) {
-            case 'PENDING': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+            case 'CREATED': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
             case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'ON_HOLD': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
@@ -137,7 +150,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
 
     const getTimelineDotColor = (status: string) => {
         switch (status) {
-            case 'PENDING': return 'bg-yellow-500 border-yellow-500';
+            case 'CREATED': return 'bg-yellow-500 border-yellow-500';
             case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
             case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
             case 'ON_HOLD': return 'bg-orange-500 border-orange-500';
@@ -274,25 +287,81 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                 onChange={e => setEditData({ ...editData, estimatedDelivery: e.target.value })}
                                             />
                                         </div>
-                                        <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Origin</label>
-                                            <input
-                                                type="text"
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                                                value={editData.origin}
-                                                onChange={e => setEditData({ ...editData, origin: e.target.value })}
-                                                placeholder="Origin location"
-                                            />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Sender Inputs */}
+                                            <div className="space-y-3 bg-slate-900/50 p-3 rounded border border-slate-700">
+                                                <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider block mb-2">Sender Info</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    value={editData.senderName}
+                                                    onChange={e => setEditData({ ...editData, senderName: e.target.value })}
+                                                    placeholder="Sender Name"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    value={editData.senderPhone}
+                                                    onChange={e => setEditData({ ...editData, senderPhone: e.target.value })}
+                                                    placeholder="Sender Phone"
+                                                />
+                                                <textarea
+                                                    rows={2}
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
+                                                    value={editData.senderAddress}
+                                                    onChange={e => setEditData({ ...editData, senderAddress: e.target.value })}
+                                                    placeholder="Sender Address"
+                                                />
+                                            </div>
+
+                                            {/* Receiver Inputs */}
+                                            <div className="space-y-3 bg-slate-900/50 p-3 rounded border border-slate-700">
+                                                <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider block mb-2">Receiver Info</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    value={editData.receiverName}
+                                                    onChange={e => setEditData({ ...editData, receiverName: e.target.value })}
+                                                    placeholder="Receiver Name"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    value={editData.receiverPhone}
+                                                    onChange={e => setEditData({ ...editData, receiverPhone: e.target.value })}
+                                                    placeholder="Receiver Phone"
+                                                />
+                                                <textarea
+                                                    rows={2}
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
+                                                    value={editData.receiverAddress}
+                                                    onChange={e => setEditData({ ...editData, receiverAddress: e.target.value })}
+                                                    placeholder="Receiver Address"
+                                                />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Destination</label>
-                                            <input
-                                                type="text"
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                                                value={editData.destination}
-                                                onChange={e => setEditData({ ...editData, destination: e.target.value })}
-                                                placeholder="Destination location"
-                                            />
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-slate-400 block mb-1">Origin</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    value={editData.origin}
+                                                    onChange={e => setEditData({ ...editData, origin: e.target.value })}
+                                                    placeholder="Origin location"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-slate-400 block mb-1">Destination</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    value={editData.destination}
+                                                    onChange={e => setEditData({ ...editData, destination: e.target.value })}
+                                                    placeholder="Destination location"
+                                                />
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="text-xs text-slate-400 block mb-1">Customer Email</label>
@@ -408,12 +477,20 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                             <div>
                                 <p className="text-slate-500 text-sm font-medium uppercase mb-1">From</p>
                                 <p className="text-white text-lg font-semibold print:text-black">{shipment.origin}</p>
-                                <p className="text-slate-400 text-sm print:text-gray-600">{shipment.senderInfo}</p>
+                                <div className="mt-2 space-y-1">
+                                    {parsedSender.name && <p className="text-slate-300 font-medium print:text-black">{parsedSender.name}</p>}
+                                    {parsedSender.phone && <p className="text-slate-400 text-sm print:text-gray-600">{parsedSender.phone}</p>}
+                                    {parsedSender.address && <p className="text-slate-400 text-sm print:text-gray-600">{parsedSender.address}</p>}
+                                </div>
                             </div>
                             <div className="text-right">
                                 <p className="text-slate-500 text-sm font-medium uppercase mb-1">To</p>
                                 <p className="text-white text-lg font-semibold print:text-black">{shipment.destination}</p>
-                                <p className="text-slate-400 text-sm print:text-gray-600">{shipment.receiverInfo}</p>
+                                <div className="mt-2 space-y-1 flex flex-col items-end">
+                                    {parsedReceiver.name && <p className="text-slate-300 font-medium print:text-black">{parsedReceiver.name}</p>}
+                                    {parsedReceiver.phone && <p className="text-slate-400 text-sm print:text-gray-600">{parsedReceiver.phone}</p>}
+                                    {parsedReceiver.address && <p className="text-slate-400 text-sm print:text-gray-600">{parsedReceiver.address}</p>}
+                                </div>
                             </div>
                         </div>
 
@@ -463,7 +540,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                                             value={editEventData.status}
                                                             onChange={e => setEditEventData({ ...editEventData, status: e.target.value })}
                                                         >
-                                                            <option value="PENDING">PENDING</option>
+                                                            <option value="CREATED">CREATED</option>
                                                             <option value="IN_TRANSIT">IN TRANSIT</option>
                                                             <option value="ON_HOLD">ON HOLD</option>
                                                             <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
@@ -596,7 +673,7 @@ export default function ShipmentDetailsClient({ shipment }: { shipment: any }) {
                                     value={formData.status}
                                     onChange={e => setFormData({ ...formData, status: e.target.value })}
                                 >
-                                    <option value="PENDING">PENDING</option>
+                                    <option value="CREATED">CREATED</option>
                                     <option value="IN_TRANSIT">IN TRANSIT</option>
                                     <option value="ON_HOLD">ON HOLD</option>
                                     <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>

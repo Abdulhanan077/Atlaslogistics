@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { parseShipmentInfo } from '@/lib/utils';
 
 const styles = StyleSheet.create({
     page: {
@@ -74,7 +75,11 @@ interface ShippingLabelProps {
     shipment: any;
 }
 
-const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => (
+const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => {
+    const sender = parseShipmentInfo(shipment.senderInfo);
+    const receiver = parseShipmentInfo(shipment.receiverInfo);
+    
+    return (
     <Document>
         <Page size="A4" style={styles.page}>
             <View style={styles.header}>
@@ -91,12 +96,14 @@ const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => (
                 <View style={styles.addressBlock}>
                     <Text style={styles.label}>From:</Text>
                     <Text style={styles.value}>{shipment.origin}</Text>
-                    <Text style={[styles.value, { fontSize: 10, marginTop: 4, fontWeight: 'normal' }]}>{shipment.senderInfo}</Text>
+                    <Text style={[styles.value, { fontSize: 10, marginTop: 4, fontWeight: 'normal' }]}>{sender.name}</Text>
+                    <Text style={[styles.value, { fontSize: 10, marginTop: 2, fontWeight: 'normal' }]}>{sender.address}</Text>
                 </View>
                 <View style={styles.addressBlock}>
                     <Text style={styles.label}>To:</Text>
                     <Text style={styles.value}>{shipment.destination}</Text>
-                    <Text style={[styles.value, { fontSize: 10, marginTop: 4, fontWeight: 'normal' }]}>{shipment.receiverInfo}</Text>
+                    <Text style={[styles.value, { fontSize: 10, marginTop: 4, fontWeight: 'normal' }]}>{receiver.name}</Text>
+                    <Text style={[styles.value, { fontSize: 10, marginTop: 2, fontWeight: 'normal' }]}>{receiver.address}</Text>
                 </View>
             </View>
 
@@ -130,6 +137,7 @@ const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment }) => (
             </Text>
         </Page>
     </Document>
-);
+    );
+};
 
 export default ShippingLabelPDF;

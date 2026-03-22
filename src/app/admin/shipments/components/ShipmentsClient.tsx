@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, MapPin, Calendar, ArrowRight } from 'lucide-react';
 import CreateShipmentModal from './CreateShipmentModal';
-
+import { parseShipmentInfo } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
 const getStatusBadgeClass = (status: string) => {
     switch (status) {
         case 'DELIVERED': return 'bg-green-500/10 text-green-400 border-green-500/20';
-        case 'PENDING': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+        case 'CREATED': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
         case 'ON_HOLD': return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
         case 'RETURNED': return 'bg-red-500/10 text-red-400 border-red-500/20';
         case 'OUT_FOR_DELIVERY': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
@@ -21,6 +21,7 @@ const getStatusBadgeClass = (status: string) => {
 export default function ShipmentsClient({ initialShipments }: { initialShipments: any[] }) {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [shipmentToClone, setShipmentToClone] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -40,7 +41,10 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-2xl font-bold text-white">Manage Shipments</h1>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                        setShipmentToClone(null);
+                        setIsModalOpen(true);
+                    }}
                     className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-600/20"
                 >
                     <Plus className="w-5 h-5 mr-2" />
@@ -65,7 +69,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                     className="bg-slate-900 border border-slate-800 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
                     <option value="ALL">All Statuses</option>
-                    <option value="PENDING">Pending</option>
+                    <option value="CREATED">Created</option>
                     <option value="IN_TRANSIT">In Transit</option>
                     <option value="ON_HOLD">On Hold</option>
                     <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
@@ -91,7 +95,9 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                 <tr key={shipment.id} className="hover:bg-slate-800/30 transition-colors group">
                                     <td className="px-6 py-4">
                                         <span className="font-mono text-blue-400 font-medium">{shipment.trackingNumber}</span>
-                                        <div className="text-slate-500 text-xs mt-1">{shipment.receiverInfo}</div>
+                                        <div className="text-slate-500 text-xs mt-1">
+                                            {parseShipmentInfo(shipment.receiverInfo).name || 'Unknown Receiver'}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center text-slate-300 text-sm">
@@ -119,23 +125,10 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                                 Update
                                             </button>
                                             <button
-                                                onClick={async (e) => {
+                                                onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (!confirm('Are you sure you want to clone this shipment? A new TRK ID will be generated.')) return;
-
-                                                    const loadingToast = toast.loading('Cloning shipment...');
-                                                    try {
-                                                        const res = await fetch(`/api/shipments/${shipment.id}/clone`, { method: 'POST' });
-                                                        if (res.ok) {
-                                                            toast.success('Shipment cloned successfully!', { id: loadingToast });
-                                                            router.refresh();
-                                                        } else {
-                                                            toast.error('Failed to clone shipment', { id: loadingToast });
-                                                        }
-                                                    } catch (e) {
-                                                        console.error(e);
-                                                        toast.error('Error cloning shipment', { id: loadingToast });
-                                                    }
+                                                    setShipmentToClone(shipment);
+                                                    setIsModalOpen(true);
                                                 }}
                                                 className="px-2.5 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg transition-colors text-xs font-medium"
                                                 title="Clone Shipment"
@@ -178,7 +171,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                 </div>
             </div>
 
-            {isModalOpen && <CreateShipmentModal onClose={() => { setIsModalOpen(false); router.refresh(); }} />}
+            {isModalOpen && <CreateShipmentModal onClose={() => { setIsModalOpen(false); setShipmentToClone(null); router.refresh(); }} initialData={shipmentToClone} />}
         </div>
     );
 }

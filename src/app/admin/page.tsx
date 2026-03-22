@@ -11,7 +11,7 @@ async function getStats(userId: string | null) {
 
     const [total, pending, inTransit, delivered] = await Promise.all([
         prisma.shipment.count({ where }),
-        prisma.shipment.count({ where: { ...where, status: "PENDING" } }),
+        prisma.shipment.count({ where: { ...where, status: "CREATED" } }),
         prisma.shipment.count({ where: { ...where, status: "IN_TRANSIT" } }),
         prisma.shipment.count({ where: { ...where, status: "DELIVERED" } })
     ]);
