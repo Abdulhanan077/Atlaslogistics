@@ -301,7 +301,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                         <FormattedDate date={event.timestamp} />
                                                     </span>
                                                 </div>
-                                                <p className="text-slate-300 font-medium text-sm lg:text-base">{event.location || 'Unknown Location'}</p>
+                                                <p className={`font-medium text-sm lg:text-base ${getStatusColor(event.status)}`}>{event.location || 'Unknown Location'}</p>
                                             </div>
                                             {event.description && (
                                                 <p className="text-slate-400 text-xs lg:text-sm leading-relaxed border-t border-slate-800/50 pt-2 mt-2">{event.description}</p>
