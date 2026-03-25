@@ -13,7 +13,10 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
         where: { id },
         include: {
             events: {
-                orderBy: { createdAt: 'desc' }
+                orderBy: [
+                    { timestamp: 'desc' },
+                    { createdAt: 'desc' }
+                ]
             }
         }
     });
@@ -42,8 +45,23 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
         parsedImageUrls = [];
     }
 
+    // Sort events: latest by timestamp/createdAt first, but "CREATED" always last
+    const sortedEvents = [...shipment.events].sort((a, b) => {
+        if (a.status === 'CREATED' && b.status !== 'CREATED') return 1;
+        if (a.status !== 'CREATED' && b.status === 'CREATED') return -1;
+        
+        const timeA = new Date(a.timestamp).getTime();
+        const timeB = new Date(b.timestamp).getTime();
+        if (timeB !== timeA) return timeB - timeA;
+        
+        const createdA = new Date(a.createdAt).getTime();
+        const createdB = new Date(b.createdAt).getTime();
+        return createdB - createdA;
+    });
+
     const parsedShipment = {
         ...shipment,
+        events: sortedEvents,
         imageUrls: parsedImageUrls
     };
 

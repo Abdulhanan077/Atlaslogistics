@@ -21,25 +21,45 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // Transaction: Add event + Update shipment status
-        // Using interactive transaction to ensure consistency
-        const result = await prisma.$transaction([
-            prisma.shipmentEvent.create({
-                data: {
-                    shipmentId: id,
-                    status,
-                    location,
-                    description,
-                    latitude: latitude ? parseFloat(latitude) : null,
-                    longitude: longitude ? parseFloat(longitude) : null,
-                    timestamp: timestamp ? new Date(timestamp) : undefined // Use provided timestamp or default to now()
-                }
-            }),
-            prisma.shipment.update({
+        // Add the event
+        const newEvent = await prisma.shipmentEvent.create({
+            data: {
+                shipmentId: id,
+                status,
+                location,
+                description,
+                latitude: latitude ? parseFloat(latitude) : null,
+                longitude: longitude ? parseFloat(longitude) : null,
+                timestamp: timestamp ? new Date(timestamp) : undefined
+            }
+        });
+
+        // Sync the main shipment status with the actually latest event (handles backdating)
+        // Prioritize non-CREATED events to ensure "Created" doesn't override manual updates
+        let latestEvent = await prisma.shipmentEvent.findFirst({
+            where: { shipmentId: id, status: { not: 'CREATED' } },
+            orderBy: [
+                { timestamp: 'desc' },
+                { createdAt: 'desc' }
+            ]
+        });
+
+        if (!latestEvent) {
+            latestEvent = await prisma.shipmentEvent.findFirst({
+                where: { shipmentId: id },
+                orderBy: [
+                    { timestamp: 'desc' },
+                    { createdAt: 'desc' }
+                ]
+            });
+        }
+
+        if (latestEvent) {
+            await prisma.shipment.update({
                 where: { id },
-                data: { status }
-            })
-        ]);
+                data: { status: latestEvent.status }
+            });
+        }
 
         await logAction(session.user.id, "UPDATE_STATUS", id, { status, location });
 
@@ -60,7 +80,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             });
         }
 
-        return NextResponse.json(result);
+        return NextResponse.json(newEvent);
     } catch (err) {
         console.error(err);
         return new NextResponse("Internal Error", { status: 500 });

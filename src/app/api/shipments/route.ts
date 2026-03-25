@@ -118,9 +118,10 @@ export async function GET(req: Request) {
             },
             include: {
                 events: {
-                    orderBy: {
-                        timestamp: 'desc'
-                    },
+                    orderBy: [
+                        { timestamp: 'desc' },
+                        { createdAt: 'desc' }
+                    ],
                     take: 1
                 }
             }

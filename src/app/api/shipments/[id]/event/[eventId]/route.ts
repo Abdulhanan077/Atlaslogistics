@@ -44,10 +44,24 @@ export async function PATCH(
         });
 
         // Check if we need to sync the main shipment status
-        const latestEvent = await prisma.shipmentEvent.findFirst({
-            where: { shipmentId: id },
-            orderBy: { timestamp: 'desc' }
+        let latestEvent = await prisma.shipmentEvent.findFirst({
+            where: { shipmentId: id, status: { not: 'CREATED' } },
+            orderBy: [
+                { timestamp: 'desc' },
+                { createdAt: 'desc' }
+            ]
         });
+
+        // Fallback to ANY latest event (like CREATED) if no other events exist
+        if (!latestEvent) {
+            latestEvent = await prisma.shipmentEvent.findFirst({
+                where: { shipmentId: id },
+                orderBy: [
+                    { timestamp: 'desc' },
+                    { createdAt: 'desc' }
+                ]
+            });
+        }
 
         if (latestEvent) {
             await prisma.shipment.update({
@@ -69,6 +83,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string; eventId: string }> }
 ) {
     const { id, eventId } = await params;
+    console.log(`DELETE request for shipment ${id}, event ${eventId}`);
+
     const session = await getServerSession(authOptions);
     if (!session) return new NextResponse("Unauthorized", { status: 401 });
 
@@ -79,8 +95,23 @@ export async function DELETE(
             include: { events: true }
         });
 
-        if (!shipment || (shipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
+        if (!shipment) return new NextResponse("Shipment not found", { status: 404 });
+
+        if (shipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN') {
             return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        // Verify if the event exists and belongs to this shipment
+        const eventToDelete = await prisma.shipmentEvent.findUnique({
+            where: { id: eventId }
+        });
+
+        if (!eventToDelete) {
+            return new NextResponse("Event not found", { status: 404 });
+        }
+
+        if (eventToDelete.shipmentId !== id) {
+            return new NextResponse("Event does not belong to this shipment", { status: 400 });
         }
 
         // Delete the event
@@ -89,10 +120,24 @@ export async function DELETE(
         });
 
         // Sync the main shipment status with the NEW latest event
-        const latestEvent = await prisma.shipmentEvent.findFirst({
-            where: { shipmentId: id },
-            orderBy: { timestamp: 'desc' }
+        let latestEvent = await prisma.shipmentEvent.findFirst({
+            where: { shipmentId: id, status: { not: 'CREATED' } },
+            orderBy: [
+                { timestamp: 'desc' },
+                { createdAt: 'desc' }
+            ]
         });
+
+        // Fallback to ANY latest event (like CREATED) if no other updates exist
+        if (!latestEvent) {
+            latestEvent = await prisma.shipmentEvent.findFirst({
+                where: { shipmentId: id },
+                orderBy: [
+                    { timestamp: 'desc' },
+                    { createdAt: 'desc' }
+                ]
+            });
+        }
 
         if (latestEvent) {
             await prisma.shipment.update({
@@ -100,20 +145,16 @@ export async function DELETE(
                 data: { status: latestEvent.status }
             });
         } else {
-            // If no events left, maybe revert to CREATED or keep as is? 
-            // Let's assume 'CREATED' is a safe fallback if no history exists, 
-            // or just leave it alone if that's preferred. The plan said "maybe set to CREATED".
-            // Let's set it to CREATED to be safe if they delete everything.
             await prisma.shipment.update({
                 where: { id },
-                data: { status: 'PENDING' } // Or whatever the initial status should be. 'PENDING' is usually safe.
+                data: { status: 'PENDING' }
             });
         }
 
         return new NextResponse(null, { status: 204 });
 
     } catch (err) {
-        console.error(err);
-        return new NextResponse("Internal Error", { status: 500 });
+        console.error("DELETE event error:", err);
+        return new NextResponse(err instanceof Error ? err.message : "Internal Error", { status: 500 });
     }
 }

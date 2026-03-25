@@ -28,7 +28,10 @@ async function getShipment(trackingNumber: string) {
                 select: { name: true, email: true } // Only expose needed public info
             },
             events: {
-                orderBy: { createdAt: 'desc' }
+                orderBy: [
+                    { timestamp: 'desc' },
+                    { createdAt: 'desc' }
+                ]
             }
         }
     });
@@ -45,8 +48,23 @@ async function getShipment(trackingNumber: string) {
         parsedImageUrls = [];
     }
 
+    // Sort events: latest by timestamp/createdAt first, but "CREATED" always last
+    const sortedEvents = [...shipment.events].sort((a, b) => {
+        if (a.status === 'CREATED' && b.status !== 'CREATED') return 1;
+        if (a.status !== 'CREATED' && b.status === 'CREATED') return -1;
+        
+        const timeA = new Date(a.timestamp).getTime();
+        const timeB = new Date(b.timestamp).getTime();
+        if (timeB !== timeA) return timeB - timeA;
+        
+        const createdA = new Date(a.createdAt).getTime();
+        const createdB = new Date(b.createdAt).getTime();
+        return createdB - createdA;
+    });
+
     return {
         ...shipment,
+        events: sortedEvents,
         imageUrls: parsedImageUrls,
         parsedSender: parseShipmentInfo(shipment.senderInfo),
         parsedReceiver: parseShipmentInfo(shipment.receiverInfo)
@@ -57,6 +75,7 @@ function getStatusProgress(status: string) {
     switch (status) {
         case 'CREATED': return 10;
         case 'PENDING': return 10;
+        case 'ON_HOLD': return 30;
         case 'IN_TRANSIT': return 50;
         case 'OUT_FOR_DELIVERY': return 80;
         case 'DELIVERED': return 100;
@@ -68,7 +87,7 @@ function getStatusProgress(status: string) {
 function getStatusColor(status: string) {
     switch (status) {
         case 'CREATED': return 'text-yellow-500';
-        case 'PENDING': return 'text-yellow-500';
+        case 'PENDING': return 'text-indigo-500';
         case 'IN_TRANSIT': return 'text-blue-400';
         case 'ON_HOLD': return 'text-orange-500';
         case 'OUT_FOR_DELIVERY': return 'text-purple-400';
@@ -82,7 +101,7 @@ function getStatusColor(status: string) {
 function getTimelineDotColor(status: string) {
     switch (status) {
         case 'CREATED': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
-        case 'PENDING': return 'bg-yellow-500 shadow-[0_0_0_4px_rgba(234,179,8,0.2)]';
+        case 'PENDING': return 'bg-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.2)]';
         case 'IN_TRANSIT': return 'bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.2)]';
         case 'ON_HOLD': return 'bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.2)]';
         case 'OUT_FOR_DELIVERY': return 'bg-purple-500 shadow-[0_0_0_4px_rgba(168,85,247,0.2)]';

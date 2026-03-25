@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, CheckCircle2, Clock, Pencil, X, Check, FileText, Trash2 } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, CheckCircle2, Clock, Pencil, X, Check, FileText, Trash2, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import ShippingLabelPDF from '@/components/pdf/ShippingLabelPDF';
@@ -22,7 +22,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     const router = useRouter();
     const [updating, setUpdating] = useState(false);
     const [formData, setFormData] = useState({
-        status: 'IN_TRANSIT',
+        status: 'PENDING',
         location: '',
         description: '',
         latitude: '',
@@ -34,6 +34,82 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         setFormData(prev => ({ ...prev, timestamp: new Date().toISOString().slice(0, 16) }));
     }, []);
 
+    const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+
+    const handleResendEmail = async (eventId: string) => {
+        setSendingEmailId(eventId);
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}/event/${eventId}/resend`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                toast.success("Email resent successfully");
+            } else {
+                const error = await res.text();
+                toast.error(error || "Failed to resend email");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error resending email");
+        } finally {
+            setSendingEmailId(null);
+        }
+    };
+    const actuallyDeleteEvent = async (eventId: string) => {
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}/event/${eventId}`, { method: 'DELETE' });
+            if (res.ok) {
+                toast.dismiss(); // Clear all toasts
+                toast.success('Event deleted', { duration: 3000 });
+                router.refresh();
+            } else {
+                toast.dismiss(); 
+                const errorText = await res.text();
+                toast.error(`Failed to delete: ${errorText || res.statusText}`, { duration: 5000 });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Error deleting event');
+        }
+    };
+
+    const handleDeleteEvent = (eventId: string) => {
+        toast.dismiss(); // Prevent stacking multiple dialogs
+        toast((t) => (
+            <div className="flex flex-col gap-3 p-1">
+                <p className="font-semibold text-sm">Delete this tracking event?</p>
+                <div className="flex gap-2 justify-end">
+                    <button 
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            actuallyDeleteEvent(eventId);
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white hover:bg-red-500 rounded-lg transition-colors shadow-sm"
+                    >
+                        Confirm Delete
+                    </button>
+                </div>
+            </div>
+        ), {
+            duration: Infinity, // Keep confirmation visible until action
+            position: 'top-center',
+            style: {
+                background: '#ffffff',
+                color: '#1e293b',
+                padding: '12px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+            }
+        });
+    };
 
     // Event Edit State
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -137,9 +213,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
     const getStatusStyles = (status: string) => {
         switch (status) {
-            case 'CREATED':
-            case 'PENDING': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-            case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+            case 'CREATED': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+            case 'PENDING': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
             case 'IN_TRANSIT': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'ON_HOLD': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
             case 'OUT_FOR_DELIVERY': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
@@ -151,9 +226,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
     const getTimelineDotColor = (status: string) => {
         switch (status) {
-            case 'CREATED':
-            case 'PENDING': return 'bg-yellow-500 border-yellow-500';
-            case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
+            case 'CREATED': return 'bg-yellow-500 border-yellow-500';
+            case 'PENDING': return 'bg-indigo-500 border-indigo-500';
             case 'IN_TRANSIT': return 'bg-blue-500 border-blue-500';
             case 'ON_HOLD': return 'bg-orange-500 border-orange-500';
             case 'OUT_FOR_DELIVERY': return 'bg-purple-500 border-purple-500';
@@ -622,34 +696,32 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                     <p className={`font-medium ${getStatusStyles(event.status).replace('bg-', 'data-').split(' ')[1]}`}>
                                                         {event.status} - {event.location || 'No Location'}
                                                     </p>
-                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                                                    <div className="flex gap-1 opacity-40 group-hover:opacity-100 focus-within:opacity-100 transition-opacity print:hidden">
                                                         <button
-                                                            onClick={() => handleEditEventClick(event)}
-                                                            className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-blue-400"
-                                                            title="Edit Event"
+                                                            onClick={(e) => { e.stopPropagation(); handleResendEmail(event.id); }}
+                                                            disabled={sendingEmailId === event.id}
+                                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-green-400 disabled:opacity-50 transition-colors"
+                                                            title="Resend Email"
                                                         >
-                                                            <Pencil className="w-3 h-3" />
+                                                            {sendingEmailId === event.id ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : (
+                                                                <Mail className="w-4 h-4" />
+                                                            )}
                                                         </button>
                                                         <button
-                                                            onClick={async () => {
-                                                                if (!confirm('Delete this tracking event? This cannot be undone.')) return;
-                                                                try {
-                                                                    const res = await fetch(`/api/shipments/${shipment.id}/event/${event.id}`, { method: 'DELETE' });
-                                                                    if (res.ok) {
-                                                                        toast.success('Event deleted');
-                                                                        router.refresh();
-                                                                    } else {
-                                                                        toast.error('Failed to delete');
-                                                                    }
-                                                                } catch (e) {
-                                                                    console.error(e);
-                                                                    toast.error('Error deleting event');
-                                                                }
-                                                            }}
-                                                            className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-red-400"
+                                                            onClick={(e) => { e.stopPropagation(); handleEditEventClick(event); }}
+                                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-blue-400 transition-colors"
+                                                            title="Edit Event"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}
+                                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
                                                             title="Delete Event"
                                                         >
-                                                            <Trash2 className="w-3 h-3" />
+                                                            <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     </div>
                                                 </div>
