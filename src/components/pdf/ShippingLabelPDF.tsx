@@ -84,11 +84,12 @@ const ShippingLabelPDF: React.FC<ShippingLabelProps> = ({ shipment, settings }) 
     <Document>
         <Page size="A4" style={styles.page}>
             <View style={styles.header}>
-                <View>
-                    {settings?.logoUrl && (
-                        <Image src={settings.logoUrl} style={{ width: 100, height: 100, objectFit: 'contain', marginBottom: 10 }} />
+                <View style={{ flex: 1 }}>
+                    {settings?.logoUrl ? (
+                        <Image src={settings.logoUrl} style={{ width: 120, height: 50, objectFit: 'contain', marginBottom: 8 }} />
+                    ) : (
+                        <Text style={styles.title}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
                     )}
-                    <Text style={styles.title}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
                     <Text style={styles.trackingNumber}>{shipment.trackingNumber}</Text>
                 </View>
                 <View>

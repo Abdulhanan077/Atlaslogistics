@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Mail, Phone, Upload, Loader2, Save, Moon, Sun } from 'lucide-react';
+import { Building2, Mail, Phone, Upload, Loader2, Save, Moon, Sun, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/components/ThemeProvider';
 
@@ -121,10 +121,28 @@ export default function SettingsDashboard() {
                                     <>
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={settings.logoUrl} alt="Logo" className="absolute inset-0 w-full h-full object-contain p-4 bg-white" />
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <p className="text-white font-medium flex items-center gap-2">
-                                                <Upload className="w-4 h-4" /> Change Logo
-                                            </p>
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                            <div className="relative">
+                                                <input 
+                                                    type="file" 
+                                                    accept="image/*" 
+                                                    onChange={handleLogoUpload}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                                />
+                                                <p className="text-white font-medium flex items-center gap-2 pointer-events-none">
+                                                    <Upload className="w-4 h-4" /> Change
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSettings(prev => ({ ...prev, logoUrl: '' }));
+                                                }}
+                                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors relative z-20"
+                                            >
+                                                <Trash2 className="w-4 h-4" /> Remove
+                                            </button>
                                         </div>
                                     </>
                                 ) : (

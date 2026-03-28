@@ -96,10 +96,12 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                             <table width="100%" max-width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
                                 <!-- Header -->
                                 <tr>
-                                    <td align="center" style="background-color: #0f172a; padding: 30px 20px;">
-                                        ${settings?.logoUrl ? `<img src="${settings.logoUrl}" alt="${companyName} Logo" style="height: 60px; margin-bottom: 15px; display: block;" />` : ''}
-                                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${companyName}</h1>
-                                        <p style="color: #94a3b8; margin: 8px 0 0 0; font-size: 14px;">Premium Delivery Network</p>
+                                    <td align="center" style="background-color: #0f172a; padding: 40px 20px; border-bottom: 4px solid #2563eb;">
+                                        ${settings?.logoUrl 
+                                            ? `<img src="${settings.logoUrl}" alt="${companyName}" style="height: 60px; max-width: 250px; object-fit: contain; display: block;" />`
+                                            : `<div style="color: #ffffff; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin: 0;">${companyName}</div>`
+                                        }
+                                        <div style="color: #60a5fa; margin-top: 10px; font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Freight & Logistics Service</div>
                                     </td>
                                 </tr>
                                 

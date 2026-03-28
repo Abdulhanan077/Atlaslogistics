@@ -359,7 +359,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 {settings?.logoUrl ? (
                                     <img src={settings.logoUrl} alt="Logo" className="w-48 h-24 object-contain object-left mb-2" />
                                 ) : (
-                                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
+                                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none mb-1">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
                                 )}
                                 <p className="text-sm text-slate-500 font-bold tracking-[0.2em] uppercase mt-1">Shipment Waybill</p>
                             </div>

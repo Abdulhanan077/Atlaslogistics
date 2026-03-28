@@ -161,10 +161,13 @@ const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment, setti
     return (
         <Document>
             <Page size="A4" style={styles.page}>
-                {settings?.logoUrl && (
-                    <Image src={settings.logoUrl} style={{ width: 120, height: 120, objectFit: 'contain', alignSelf: 'center', marginBottom: 10 }} />
+                {settings?.logoUrl ? (
+                    <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                        <Image src={settings.logoUrl} style={{ width: 150, height: 75, objectFit: 'contain' }} />
+                    </View>
+                ) : (
+                    <Text style={styles.mainHeader}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
                 )}
-                <Text style={styles.mainHeader}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
 
                 <View style={styles.card}>
                     {/* Header Row */}
