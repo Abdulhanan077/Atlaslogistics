@@ -379,46 +379,46 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 </div>
 
                                 {isEditing && (
-                                    <form onSubmit={handleEditSubmit} className="mt-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700 space-y-3 max-w-md print:hidden">
+                                    <form onSubmit={handleEditSubmit} className="mt-4 p-4 bg-brand-bg/50 rounded-lg border border-brand-border space-y-3 max-w-md print:hidden">
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Creation Date</label>
+                                            <label className="text-xs text-brand-text-muted block mb-1">Creation Date</label>
                                             <input
                                                 type="datetime-local"
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                 value={editData.createdAt}
                                                 onChange={e => setEditData({ ...editData, createdAt: e.target.value })}
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Estimated Delivery</label>
+                                            <label className="text-xs text-brand-text-muted block mb-1">Estimated Delivery</label>
                                             <input
                                                 type="datetime-local"
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                 value={editData.estimatedDelivery}
                                                 onChange={e => setEditData({ ...editData, estimatedDelivery: e.target.value })}
                                             />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Sender Inputs */}
-                                            <div className="space-y-3 bg-slate-900/50 p-3 rounded border border-slate-700">
-                                                <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider block mb-2">Sender Info</label>
+                                            <div className="space-y-3 bg-brand-bg/30 p-3 rounded border border-brand-border">
+                                                <label className="text-xs font-semibold text-blue-500 uppercase tracking-wider block mb-2">Sender Info</label>
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                     value={editData.senderName}
                                                     onChange={e => setEditData({ ...editData, senderName: e.target.value })}
                                                     placeholder="Sender Name"
                                                 />
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                     value={editData.senderPhone}
                                                     onChange={e => setEditData({ ...editData, senderPhone: e.target.value })}
                                                     placeholder="Sender Phone"
                                                 />
                                                 <textarea
                                                     rows={2}
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none"
                                                     value={editData.senderAddress}
                                                     onChange={e => setEditData({ ...editData, senderAddress: e.target.value })}
                                                     placeholder="Sender Address"
@@ -426,25 +426,25 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             </div>
 
                                             {/* Receiver Inputs */}
-                                            <div className="space-y-3 bg-slate-900/50 p-3 rounded border border-slate-700">
-                                                <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider block mb-2">Receiver Info</label>
+                                            <div className="space-y-3 bg-brand-bg/30 p-3 rounded border border-brand-border">
+                                                <label className="text-xs font-semibold text-blue-500 uppercase tracking-wider block mb-2">Receiver Info</label>
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                     value={editData.receiverName}
                                                     onChange={e => setEditData({ ...editData, receiverName: e.target.value })}
                                                     placeholder="Receiver Name"
                                                 />
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                     value={editData.receiverPhone}
                                                     onChange={e => setEditData({ ...editData, receiverPhone: e.target.value })}
                                                     placeholder="Receiver Phone"
                                                 />
                                                 <textarea
                                                     rows={2}
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none"
                                                     value={editData.receiverAddress}
                                                     onChange={e => setEditData({ ...editData, receiverAddress: e.target.value })}
                                                     placeholder="Receiver Address"
@@ -457,17 +457,17 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 <label className="text-xs text-brand-text-muted block mb-1">Origin</label>
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                     value={editData.origin}
                                                     onChange={e => setEditData({ ...editData, origin: e.target.value })}
                                                     placeholder="Origin location"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-xs text-slate-400 block mb-1">Destination</label>
+                                                <label className="text-xs text-brand-text-muted block mb-1">Destination</label>
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                     value={editData.destination}
                                                     onChange={e => setEditData({ ...editData, destination: e.target.value })}
                                                     placeholder="Destination location"
@@ -478,24 +478,24 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             <label className="text-xs text-brand-text-muted block mb-1">Customer Email</label>
                                             <input
                                                 type="email"
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                 value={editData.customerEmail}
                                                 onChange={e => setEditData({ ...editData, customerEmail: e.target.value })}
                                                 placeholder="customer@example.com"
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Product Description</label>
+                                            <label className="text-xs text-brand-text-muted block mb-1">Product Description</label>
                                             <textarea
                                                 rows={3}
-                                                className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
+                                                className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none"
                                                 value={editData.productDescription}
                                                 onChange={e => setEditData({ ...editData, productDescription: e.target.value })}
                                                 placeholder="Describe the shipment contents..."
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Upload Images</label>
+                                            <label className="text-xs text-brand-text-muted block mb-1">Upload Images</label>
                                             <div className="space-y-3">
                                                 <input
                                                     type="file"
@@ -549,13 +549,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                             e.target.value = ''; // Reset input at the end
                                                         }
                                                     }}
-                                                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
                                                 />
                                                 {/* Preview / Remove List */}
                                                 {editData.imageUrls.length > 0 && (
                                                     <div className="grid grid-cols-3 gap-2">
                                                         {editData.imageUrls.map((url: string, i: number) => (
-                                                            <div key={i} className="relative group aspect-square bg-slate-900 rounded-md overflow-hidden border border-slate-700">
+                                                            <div key={i} className="relative group aspect-square bg-brand-bg rounded-md overflow-hidden border border-brand-border">
                                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                                 <img src={url} alt="preview" className="w-full h-full object-cover" />
                                                                 <button
@@ -572,7 +572,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button type="submit" className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-500">Save Changes</button>
+                                            <button type="submit" className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-500 shadow-lg shadow-blue-500/20">Save Changes</button>
                                         </div>
                                     </form>
                                 )}
@@ -583,10 +583,10 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         </div>
 
                         {/* Route Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-800 print:border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-brand-border print:border-gray-200">
                             <div>
                                 <p className="text-brand-text-muted text-sm font-medium uppercase mb-1">From</p>
-                                <p className="text-white text-lg font-semibold print:text-black">{shipment.origin}</p>
+                                <p className="text-brand-text text-lg font-semibold print:text-black">{shipment.origin}</p>
                                 <div className="mt-2 space-y-1">
                                     {parsedSender.name && <p className="text-brand-text font-medium print:text-black">{parsedSender.name}</p>}
                                     {parsedSender.phone && <p className="text-brand-text-muted text-sm print:text-gray-600">{parsedSender.phone}</p>}
@@ -594,8 +594,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-slate-500 text-sm font-medium uppercase mb-1">To</p>
-                                <p className="text-white text-lg font-semibold print:text-black">{shipment.destination}</p>
+                                <p className="text-brand-text-muted text-sm font-medium uppercase mb-1">To</p>
+                                <p className="text-brand-text text-lg font-semibold print:text-black">{shipment.destination}</p>
                                 <div className="mt-2 space-y-1 flex flex-col items-end">
                                     {parsedReceiver.name && <p className="text-brand-text font-medium print:text-black">{parsedReceiver.name}</p>}
                                     {parsedReceiver.phone && <p className="text-brand-text-muted text-sm print:text-gray-600">{parsedReceiver.phone}</p>}
@@ -606,22 +606,22 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                         {/* Product Details */}
                         {(shipment.productDescription || (shipment.imageUrls && shipment.imageUrls.length > 0)) && (
-                            <div className="mb-8 pb-8 border-b border-slate-800 print:border-gray-200">
-                                <h3 className="text-white font-semibold mb-4 print:text-black">Product Details</h3>
+                            <div className="mb-8 pb-8 border-b border-brand-border print:border-gray-200">
+                                <h3 className="text-brand-text font-semibold mb-4 print:text-black">Product Details</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {shipment.productDescription && (
                                         <div>
-                                            <p className="text-slate-500 text-sm font-medium uppercase mb-2">Description</p>
+                                            <p className="text-brand-text-muted text-sm font-medium uppercase mb-2">Description</p>
                                             <p className="text-brand-text print:text-black whitespace-pre-wrap">{shipment.productDescription}</p>
                                         </div>
                                     )}
                                     {shipment.imageUrls && shipment.imageUrls.length > 0 && (
                                         <div>
-                                            <p className="text-slate-500 text-sm font-medium uppercase mb-2">Attached Images</p>
+                                            <p className="text-brand-text-muted text-sm font-medium uppercase mb-2">Attached Images</p>
                                             <div className="grid grid-cols-3 gap-2">
                                                 {shipment.imageUrls.map((url: string, i: number) => (
-                                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-square bg-slate-800 rounded-lg overflow-hidden border border-slate-700 hover:border-blue-500 transition-colors relative group">
-                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-square bg-brand-surface rounded-lg overflow-hidden border border-brand-border hover:border-blue-500 transition-colors relative group">
+                                                        {/* eslint-disable-next-line @next/next-line @next/next/no-img-element */}
                                                         <img src={url} alt={`Product ${i + 1}`} className="w-full h-full object-cover" />
                                                     </a>
                                                 ))}
@@ -641,12 +641,12 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         <div className={`absolute -left-[21px] top-1 w-4 h-4 rounded-full border-2 ${getTimelineDotColor(event.status)}`}></div>
 
                                         {editingEventId === event.id ? (
-                                            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 space-y-3">
+                                            <div className="bg-brand-bg/50 p-4 rounded-lg border border-brand-border space-y-3">
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="text-xs text-slate-400 block mb-1">Status</label>
+                                                        <label className="text-xs text-brand-text-muted block mb-1">Status</label>
                                                         <select
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                            className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                             value={editEventData.status}
                                                             onChange={e => setEditEventData({ ...editEventData, status: e.target.value })}
                                                         >
@@ -659,51 +659,51 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs text-slate-400 block mb-1">Time</label>
+                                                        <label className="text-xs text-brand-text-muted block mb-1">Time</label>
                                                         <input
                                                             type="datetime-local"
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                            className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                             value={editEventData.timestamp}
                                                             onChange={e => setEditEventData({ ...editEventData, timestamp: e.target.value })}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs text-slate-400 block mb-1">Location</label>
+                                                    <label className="text-xs text-brand-text-muted block mb-1">Location</label>
                                                     <input
                                                         type="text"
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                         value={editEventData.location}
                                                         onChange={e => setEditEventData({ ...editEventData, location: e.target.value })}
                                                     />
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="text-xs text-slate-400 block mb-1">Latitude</label>
+                                                        <label className="text-xs text-brand-text-muted block mb-1">Latitude</label>
                                                         <input
                                                             type="number"
                                                             step="any"
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                            className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                             value={editEventData.latitude}
                                                             onChange={e => setEditEventData({ ...editEventData, latitude: e.target.value })}
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs text-slate-400 block mb-1">Longitude</label>
+                                                        <label className="text-xs text-brand-text-muted block mb-1">Longitude</label>
                                                         <input
                                                             type="number"
                                                             step="any"
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
+                                                            className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
                                                             value={editEventData.longitude}
                                                             onChange={e => setEditEventData({ ...editEventData, longitude: e.target.value })}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs text-slate-400 block mb-1">Description</label>
+                                                    <label className="text-xs text-brand-text-muted block mb-1">Description</label>
                                                     <textarea
                                                         rows={2}
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white resize-none"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none"
                                                         value={editEventData.description}
                                                         onChange={e => setEditEventData({ ...editEventData, description: e.target.value })}
                                                     />
@@ -711,13 +711,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => setEditingEventId(null)}
-                                                        className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white"
+                                                        className="p-1 hover:bg-brand-border rounded text-brand-text-muted hover:text-brand-text"
                                                     >
                                                         <X className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleSaveEvent(event.id)}
-                                                        className="p-1 hover:bg-blue-500/20 rounded text-blue-400 hover:text-blue-300"
+                                                        className="p-1 hover:bg-blue-500/20 rounded text-blue-500 hover:text-blue-400"
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </button>
@@ -731,11 +731,11 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                             {event.status} - {event.location || 'No Location'}
                                                         </p>
                                                     </div>
-                                                    <div className="flex items-center gap-1 sm:opacity-40 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity print:hidden shrink-0 bg-slate-800/20 rounded-lg p-0.5 sm:bg-transparent">
+                                                    <div className="flex items-center gap-1 sm:opacity-40 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity print:hidden shrink-0 bg-brand-bg/50 rounded-lg p-0.5 sm:bg-transparent">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleResendEmail(event.id); }}
                                                             disabled={sendingEmailId === event.id}
-                                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-green-400 disabled:opacity-50 transition-colors"
+                                                            className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-green-500 disabled:opacity-50 transition-colors"
                                                             title="Resend Email"
                                                         >
                                                             {sendingEmailId === event.id ? (
@@ -746,14 +746,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleEditEventClick(event); }}
-                                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-blue-400 transition-colors"
+                                                            className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-blue-500 transition-colors"
                                                             title="Edit Event"
                                                         >
                                                             <Pencil className="w-4 h-4" />
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}
-                                                            className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                                                            className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-500 transition-colors"
                                                             title="Delete Event"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -777,7 +777,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         <h3 className="text-lg font-bold text-brand-text mb-4">Update Status</h3>
                         <form onSubmit={handleUpdate} className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm text-slate-400">New Status</label>
+                                <label className="text-sm text-brand-text-muted">New Status</label>
                                 <select
                                     className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                     value={formData.status}
@@ -793,12 +793,23 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm text-slate-400">Date/Time</label>
+                                <label className="text-sm text-brand-text-muted">Date/Time</label>
                                 <input
                                     type="datetime-local"
                                     className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                     value={formData.timestamp}
                                     onChange={e => setFormData({ ...formData, timestamp: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-brand-text-muted">Location</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                    value={formData.location}
+                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                    placeholder="Current location"
                                 />
                             </div>
 

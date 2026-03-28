@@ -129,23 +129,23 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Origin</label>
-                            <input type="text" required className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.origin} onChange={e => setFormData({ ...formData, origin: e.target.value })} />
+                            <input type="text" required className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.origin} onChange={e => setFormData({ ...formData, origin: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Destination</label>
-                            <input type="text" required className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.destination} onChange={e => setFormData({ ...formData, destination: e.target.value })} />
+                            <input type="text" required className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.destination} onChange={e => setFormData({ ...formData, destination: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Customer Email (Optional)</label>
-                            <input type="email" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} placeholder="Receives tracking updates" />
+                            <input type="email" className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none placeholder:text-brand-text-muted/30" value={formData.customerEmail} onChange={e => setFormData({ ...formData, customerEmail: e.target.value })} placeholder="Receives tracking updates" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Estimated Delivery</label>
-                            <input type="date" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.estimatedDelivery} onChange={e => setFormData({ ...formData, estimatedDelivery: e.target.value })} />
+                            <input type="date" className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.estimatedDelivery} onChange={e => setFormData({ ...formData, estimatedDelivery: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Creation Date (Optional)</label>
-                            <input type="datetime-local" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.createdAt} onChange={e => setFormData({ ...formData, createdAt: e.target.value })} />
+                            <input type="datetime-local" className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.createdAt} onChange={e => setFormData({ ...formData, createdAt: e.target.value })} />
                         </div>
                     </div>
 
@@ -155,7 +155,7 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Product Description</label>
-                            <textarea rows={3} className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none resize-none" placeholder="Describe the shipment contents..." value={formData.productDescription} onChange={e => setFormData({ ...formData, productDescription: e.target.value })} />
+                            <textarea rows={3} className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none resize-none" placeholder="Describe the shipment contents..." value={formData.productDescription} onChange={e => setFormData({ ...formData, productDescription: e.target.value })} />
                         </div>
                         
                         <div className="space-y-2">
@@ -198,13 +198,13 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                                         toast.error(`Error: ${err.message}`, { id: toastId });
                                     }
                                 }}
-                                className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-sm text-brand-text-muted file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500"
+                                className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text-muted file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500"
                             />
                             {/* Image Previews */}
                             {formData.imageUrls.length > 0 && (
                                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
                                     {formData.imageUrls.map((url: string, i: number) => (
-                                        <div key={i} className="relative group aspect-square bg-slate-800 rounded-md overflow-hidden border border-brand-border/50">
+                                        <div key={i} className="relative group aspect-square bg-brand-bg rounded-md overflow-hidden border border-brand-border">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img src={url} alt="preview" className="w-full h-full object-cover" />
                                             <button

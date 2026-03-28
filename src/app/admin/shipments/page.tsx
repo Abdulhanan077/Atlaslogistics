@@ -29,7 +29,10 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
         orderBy: { createdAt: 'desc' },
         include: {
             events: {
-                orderBy: { timestamp: 'desc' },
+                orderBy: [
+                    { timestamp: 'desc' },
+                    { createdAt: 'desc' }
+                ],
                 take: 1
             }
         }
