@@ -804,19 +804,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                             <div className="space-y-2">
                                 <label className="text-sm text-brand-text-muted">Location</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                    value={formData.location}
-                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                    placeholder="Current location"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm text-slate-400">Location</label>
                                 <div className="relative">
-                                    <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+                                    <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-brand-text-muted" />
                                     <input
                                         type="text"
                                         required
