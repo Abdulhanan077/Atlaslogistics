@@ -4,7 +4,16 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { LayoutDashboard, Package, Users, Settings, LogOut, ScrollText, Trash2, BarChart3 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
-export default function AdminSidebar({ role, onClose }: { role: string; onClose?: () => void }) {
+interface SiteSettings {
+    companyName?: string | null;
+    logoUrl?: string | null;
+}
+
+export default function AdminSidebar({ role, onClose, settings }: { 
+    role: string; 
+    onClose?: () => void;
+    settings: SiteSettings | null;
+}) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const viewAs = searchParams.get('viewAs');
@@ -24,9 +33,13 @@ export default function AdminSidebar({ role, onClose }: { role: string; onClose?
     return (
         <aside className="w-full h-full bg-brand-surface border-r border-brand-border flex flex-col">
             <div className="p-6 border-b border-brand-border flex justify-between items-center">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                    Atlas Logistics
-                </h1>
+                {settings?.logoUrl ? (
+                    <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+                ) : (
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                        {settings?.companyName || 'Atlas Logistics'}
+                    </h1>
+                )}
                 {onClose && (
                     <button onClick={onClose} className="md:hidden text-brand-text-muted hover:text-brand-text">
                         <LogOut className="w-5 h-5 rotate-180" />

@@ -11,7 +11,20 @@ interface AdminUser {
     email?: string | null;
 }
 
-export default function AdminLayoutClient({ children, user }: { children: React.ReactNode, user: AdminUser }) {
+interface SiteSettings {
+    companyName?: string | null;
+    logoUrl?: string | null;
+}
+
+export default function AdminLayoutClient({ 
+    children, 
+    user,
+    settings 
+}: { 
+    children: React.ReactNode, 
+    user: AdminUser,
+    settings: SiteSettings | null
+}) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
@@ -30,7 +43,7 @@ export default function AdminLayoutClient({ children, user }: { children: React.
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
                 print:hidden
             `}>
-                <AdminSidebar role={user.role} onClose={() => setIsSidebarOpen(false)} />
+                <AdminSidebar role={user.role} onClose={() => setIsSidebarOpen(false)} settings={settings} />
             </div>
 
             {/* Main Content */}
@@ -41,7 +54,13 @@ export default function AdminLayoutClient({ children, user }: { children: React.
                         <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-brand-text-muted hover:text-brand-text rounded-lg hover:bg-brand-bg">
                             <Menu className="w-6 h-6" />
                         </button>
-                        <span className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Atlas Logistics</span>
+                        {settings?.logoUrl ? (
+                            <img src={settings.logoUrl} alt="Logo" className="h-8 w-auto object-contain" />
+                        ) : (
+                            <span className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                                {settings?.companyName || 'Atlas Logistics'}
+                            </span>
+                        )}
                     </div>
                     <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs select-none">
                         {user.name?.[0] || 'A'}

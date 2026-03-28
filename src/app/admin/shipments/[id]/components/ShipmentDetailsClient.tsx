@@ -353,9 +353,21 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                 {/* Middle Column: Details & Visual */}
                 <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full">
                     {/* Print Header */}
-                    <div className="hidden print:block text-center mb-8">
-                        {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="w-32 h-32 object-contain mx-auto mb-4" />}
-                        <h1 className="text-4xl font-extrabold text-blue-600 tracking-wider uppercase">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
+                    <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-6">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                {settings?.logoUrl ? (
+                                    <img src={settings.logoUrl} alt="Logo" className="w-48 h-24 object-contain object-left mb-2" />
+                                ) : (
+                                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
+                                )}
+                                <p className="text-sm text-slate-500 font-bold tracking-[0.2em] uppercase mt-1">Shipment Waybill</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400 uppercase font-medium">Tracking Number</p>
+                                <p className="text-xl font-bold text-slate-900">{shipment.trackingNumber}</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
