@@ -130,7 +130,10 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
         );
     }
 
-    const progress = getStatusProgress(shipment.status);
+    // Calculate progress based on the furthest milestone reached in history
+    const allProgress = shipment.events.map((e: any) => getStatusProgress(e.status));
+    const currentStatusProgress = getStatusProgress(shipment.status);
+    const progress = Math.max(...allProgress, currentStatusProgress, 0);
     const latestLocation = shipment.events.find((e: any) => e.latitude && e.longitude);
 
     return (

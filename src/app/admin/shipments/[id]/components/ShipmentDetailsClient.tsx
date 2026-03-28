@@ -360,13 +360,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                     <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
                         {/* Header */}
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold text-brand-text print:text-black">{shipment.trackingNumber}</h1>
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+                            <div className="w-full sm:w-auto">
+                                <h1 className="text-2xl sm:text-3xl font-bold text-brand-text print:text-black break-all">{shipment.trackingNumber}</h1>
                                 <div className="flex flex-col gap-1 mt-1">
-                                    <p className="text-brand-text-muted print:text-gray-600">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
+                                    <p className="text-brand-text-muted text-sm print:text-gray-600">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
                                     {shipment.estimatedDelivery && (
-                                        <p className="text-blue-400 print:text-blue-600 font-medium">
+                                        <p className="text-blue-400 print:text-blue-600 font-medium text-sm">
                                             Est. Delivery: <FormattedDate date={shipment.estimatedDelivery} mode="date" />
                                         </p>
                                     )}
@@ -506,8 +506,6 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                             return;
                                                         }
                                                         const files = Array.from(e.target.files);
-
-                                                        e.target.value = ''; // Reset input
                                                         const toastId = toast.loading(`Uploading ${files.length} images...`);
 
                                                         try {
@@ -542,12 +540,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                                 }));
                                                                 toast.success(`Successfully uploaded ${successUrls.length} images`, { id: toastId });
                                                             } else {
-                                                                // Show the error from the first failed promise if any
                                                                 toast.error('Upload failed. Check console for details.', { id: toastId });
                                                             }
                                                         } catch (err: unknown) {
                                                             console.error(err instanceof Error ? err.message : err);
                                                             toast.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`, { id: toastId });
+                                                        } finally {
+                                                            e.target.value = ''; // Reset input at the end
                                                         }
                                                     }}
                                                     className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
@@ -578,13 +577,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     </form>
                                 )}
                             </div>
-                            <div className={`px-4 py-1.5 rounded-full text-sm font-semibold border ${getStatusStyles(shipment.status)}`}>
+                            <div className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold border whitespace-nowrap self-start sm:self-auto ${getStatusStyles(shipment.status)}`}>
                                 {shipment.status}
                             </div>
                         </div>
 
                         {/* Route Info */}
-                        <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-800 print:border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-800 print:border-gray-200">
                             <div>
                                 <p className="text-brand-text-muted text-sm font-medium uppercase mb-1">From</p>
                                 <p className="text-white text-lg font-semibold print:text-black">{shipment.origin}</p>
@@ -726,11 +725,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             </div>
                                         ) : (
                                             <div className="space-y-1 relative">
-                                                <div className="flex justify-between items-start">
-                                                    <p className={`font-medium ${getStatusStyles(event.status).replace('bg-', 'data-').split(' ')[1]}`}>
-                                                        {event.status} - {event.location || 'No Location'}
-                                                    </p>
-                                                    <div className="flex gap-1 opacity-40 group-hover:opacity-100 focus-within:opacity-100 transition-opacity print:hidden">
+                                                <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`font-semibold text-sm sm:text-base break-words ${getStatusStyles(event.status).replace('bg-', 'data-').split(' ')[1]}`}>
+                                                            {event.status} - {event.location || 'No Location'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 sm:opacity-40 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity print:hidden shrink-0 bg-slate-800/20 rounded-lg p-0.5 sm:bg-transparent">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleResendEmail(event.id); }}
                                                             disabled={sendingEmailId === event.id}
