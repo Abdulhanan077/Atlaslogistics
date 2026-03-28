@@ -38,16 +38,16 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-600/20 rounded-full blur-[100px]" />
                 <div className="absolute top-1/2 -right-1/4 w-1/2 h-1/2 bg-purple-600/20 rounded-full blur-[100px]" />
             </div>
 
-            <div className="z-10 w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-8">
+            <div className="z-10 w-full max-w-md bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden p-8">
                 <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-white mb-2">Forgot Password</h1>
-                    <p className="text-slate-400">Enter your email to receive a reset link</p>
+                    <p className="text-brand-text-muted">Enter your email to receive a reset link</p>
                 </div>
 
                 {message ? (
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
                             <Link href="/reset-password" className="inline-flex justify-center items-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition-colors">
                                 Enter Reset Code <ArrowRight className="w-4 h-4 ml-2" />
                             </Link>
-                            <Link href="/login" className="inline-flex justify-center items-center text-sm text-slate-400 hover:text-white transition-colors">
+                            <Link href="/login" className="inline-flex justify-center items-center text-sm text-brand-text-muted hover:text-white transition-colors">
                                 <ArrowLeft className="w-4 h-4 mr-2" /> back to login
                             </Link>
                         </div>
@@ -75,13 +75,13 @@ export default function ForgotPasswordPage() {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-300">Email Address</label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
+                                <Mail className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80" />
                                 <input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-slate-800 border border-brand-border/50 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                                     placeholder="admin@atlaslogistics.com"
                                 />
                             </div>
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
                         </button>
                         
                         <div className="text-center">
-                            <Link href="/login" className="text-sm text-slate-500 hover:text-white transition-colors">
+                            <Link href="/login" className="text-sm text-brand-text-muted/80 hover:text-white transition-colors">
                                 Back to login
                             </Link>
                         </div>

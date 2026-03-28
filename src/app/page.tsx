@@ -27,7 +27,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background gradients */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-600/20 rounded-full blur-[100px]" />
@@ -44,15 +44,15 @@ export default function Home() {
         <h1 className="text-4xl md:text-6xl font-black text-white bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
           Track with {companyName}
         </h1>
-        <p className="text-lg text-slate-400 max-w-lg mx-auto">
+        <p className="text-lg text-brand-text-muted max-w-lg mx-auto">
           Enter your tracking ID to see real-time updates and delivery status.
         </p>
 
         <form onSubmit={handleSearch} className="relative max-w-lg mx-auto">
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity" />
-            <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-xl flex items-center p-2">
-              <Search className="w-6 h-6 text-slate-500 ml-3" />
+            <div className="relative bg-brand-surface border border-brand-border/50 rounded-2xl shadow-xl flex items-center p-2">
+              <Search className="w-6 h-6 text-brand-text-muted/80 ml-3" />
               <input
                 type="text"
                 placeholder="Enter Tracking ID (e.g. TRK-12345678)"
@@ -75,8 +75,8 @@ export default function Home() {
       </div>
 
       <div className="absolute bottom-6 w-full text-center z-10">
-        <p className="text-slate-500 text-md">
-          <Link href="/login" className="hover:text-slate-400 transition-colors">&copy;</Link> {new Date().getFullYear()} {companyName}. All rights reserved.
+        <p className="text-brand-text-muted/80 text-md">
+          <Link href="/login" className="hover:text-brand-text-muted transition-colors">&copy;</Link> {new Date().getFullYear()} {companyName}. All rights reserved.
         </p>
       </div>
     </div>

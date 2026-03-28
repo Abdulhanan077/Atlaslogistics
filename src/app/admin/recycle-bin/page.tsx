@@ -50,7 +50,7 @@ export default async function RecycleBinPage({ searchParams }: { searchParams: P
 
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-white mb-2">Recycle Bin</h1>
-                <p className="text-slate-400 text-sm">Shipments that have been deleted. You can restore them or permanently delete them here.</p>
+                <p className="text-brand-text-muted text-sm">Shipments that have been deleted. You can restore them or permanently delete them here.</p>
             </div>
 
             <RecycleBinClient initialShipments={deletedShipments} />

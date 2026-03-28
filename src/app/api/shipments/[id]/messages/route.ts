@@ -12,12 +12,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // However, the ID (UUID) is hard to guess.
 
     try {
-        const messages = await (prisma as any).message.findMany({
+        const messages = await prisma.message.findMany({
             where: { shipmentId: id },
             orderBy: { createdAt: 'asc' }
         });
         return NextResponse.json(messages);
     } catch (e) {
+        console.error("GET MESSAGES ERROR:", e);
         return new NextResponse("Error fetching messages", { status: 500 });
     }
 }
@@ -36,7 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         // If session exists and user is admin/super_admin, they can be "ADMIN".
         // Otherwise, it's a "CLIENT".
 
-        let actualSender = sender === 'CLIENT' ? 'CLIENT' : 'ADMIN';
+        const actualSender = sender === 'CLIENT' ? 'CLIENT' : 'ADMIN';
 
         // If trying to send as ADMIN, verify they actually have an admin session
         if (actualSender === 'ADMIN') {
@@ -45,7 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             }
         }
 
-        const message = await (prisma as any).message.create({
+        const message = await prisma.message.create({
             data: {
                 content: content || "",
                 imageUrl: imageUrl || null,
@@ -56,7 +57,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
         // Fire email notification synchronously to prevent Next.js from aggressively killing the background worker
         try {
-            const shipment = await (prisma as any).shipment.findUnique({
+            const shipment = await prisma.shipment.findUnique({
                 where: { id },
                 include: { admin: true }
             });

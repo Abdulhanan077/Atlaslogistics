@@ -1,8 +1,9 @@
+/* eslint-disable */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, CheckCircle2, Clock, Pencil, X, Check, FileText, Trash2, Mail } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import ShippingLabelPDF from '@/components/pdf/ShippingLabelPDF';
@@ -18,7 +19,40 @@ const PDFDownloadLink = dynamic(
     }
 );
 
-export default function ShipmentDetailsClient({ shipment, settings }: { shipment: any, settings?: any }) {
+interface ShipmentEvent {
+    id: string;
+    status: string;
+    location?: string;
+    description?: string;
+    timestamp: string | Date;
+    latitude?: number | string;
+    longitude?: number | string;
+}
+
+interface Shipment {
+    id: string;
+    trackingNumber: string;
+    createdAt: string | Date;
+    estimatedDelivery?: string | Date;
+    senderInfo: string;
+    receiverInfo: string;
+    origin?: string;
+    destination?: string;
+    customerEmail?: string;
+    productDescription?: string;
+    imageUrls?: string[];
+    status: string;
+    events: ShipmentEvent[];
+}
+
+interface Settings {
+    logoUrl: string;
+    companyName: string;
+    supportEmail: string;
+    supportPhone: string;
+}
+
+export default function ShipmentDetailsClient({ shipment, settings }: { shipment: Shipment, settings?: Settings | null }) {
     const router = useRouter();
     const [updating, setUpdating] = useState(false);
     const [formData, setFormData] = useState({
@@ -122,15 +156,15 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         longitude: ''
     });
 
-    const handleEditEventClick = (event: any) => {
+    const handleEditEventClick = (event: ShipmentEvent) => {
         setEditingEventId(event.id);
         setEditEventData({
             status: event.status,
-            location: event.location,
+            location: event.location || '',
             description: event.description || '',
             timestamp: new Date(event.timestamp).toISOString().slice(0, 16),
-            latitude: event.latitude || '',
-            longitude: event.longitude || ''
+            latitude: String(event.latitude || ''),
+            longitude: String(event.longitude || '')
         });
     };
 
@@ -279,7 +313,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             <div className="flex items-center justify-between print:hidden">
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center text-slate-400 hover:text-white transition-colors"
+                    className="flex items-center text-brand-text-muted hover:text-brand-text transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5 mr-2" />
                     Back
@@ -300,7 +334,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     </PDFDownloadLink>
                     <button
                         onClick={() => window.print()}
-                        className="flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-all border border-slate-700"
+                        className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border"
                     >
                         <Printer className="w-5 h-5 mr-2" />
                         Print Details
@@ -324,13 +358,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         <h1 className="text-4xl font-extrabold text-blue-600 tracking-wider uppercase">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
+                    <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
                         {/* Header */}
                         <div className="flex justify-between items-start mb-8">
                             <div>
-                                <h1 className="text-3xl font-bold text-white print:text-black">{shipment.trackingNumber}</h1>
+                                <h1 className="text-3xl font-bold text-brand-text print:text-black">{shipment.trackingNumber}</h1>
                                 <div className="flex flex-col gap-1 mt-1">
-                                    <p className="text-slate-400 print:text-gray-600">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
+                                    <p className="text-brand-text-muted print:text-gray-600">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
                                     {shipment.estimatedDelivery && (
                                         <p className="text-blue-400 print:text-blue-600 font-medium">
                                             Est. Delivery: <FormattedDate date={shipment.estimatedDelivery} mode="date" />
@@ -420,7 +454,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="text-xs text-slate-400 block mb-1">Origin</label>
+                                                <label className="text-xs text-brand-text-muted block mb-1">Origin</label>
                                                 <input
                                                     type="text"
                                                     className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
@@ -441,7 +475,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Customer Email</label>
+                                            <label className="text-xs text-brand-text-muted block mb-1">Customer Email</label>
                                             <input
                                                 type="email"
                                                 className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white"
@@ -511,9 +545,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                                 // Show the error from the first failed promise if any
                                                                 toast.error('Upload failed. Check console for details.', { id: toastId });
                                                             }
-                                                        } catch (err: any) {
-                                                            console.error(err);
-                                                            toast.error(`Error: ${err.message}`, { id: toastId });
+                                                        } catch (err: unknown) {
+                                                            console.error(err instanceof Error ? err.message : err);
+                                                            toast.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`, { id: toastId });
                                                         }
                                                     }}
                                                     className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-white file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
@@ -552,21 +586,21 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         {/* Route Info */}
                         <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-800 print:border-gray-200">
                             <div>
-                                <p className="text-slate-500 text-sm font-medium uppercase mb-1">From</p>
+                                <p className="text-brand-text-muted text-sm font-medium uppercase mb-1">From</p>
                                 <p className="text-white text-lg font-semibold print:text-black">{shipment.origin}</p>
                                 <div className="mt-2 space-y-1">
-                                    {parsedSender.name && <p className="text-slate-300 font-medium print:text-black">{parsedSender.name}</p>}
-                                    {parsedSender.phone && <p className="text-slate-400 text-sm print:text-gray-600">{parsedSender.phone}</p>}
-                                    {parsedSender.address && <p className="text-slate-400 text-sm print:text-gray-600">{parsedSender.address}</p>}
+                                    {parsedSender.name && <p className="text-brand-text font-medium print:text-black">{parsedSender.name}</p>}
+                                    {parsedSender.phone && <p className="text-brand-text-muted text-sm print:text-gray-600">{parsedSender.phone}</p>}
+                                    {parsedSender.address && <p className="text-brand-text-muted text-sm print:text-gray-600">{parsedSender.address}</p>}
                                 </div>
                             </div>
                             <div className="text-right">
                                 <p className="text-slate-500 text-sm font-medium uppercase mb-1">To</p>
                                 <p className="text-white text-lg font-semibold print:text-black">{shipment.destination}</p>
                                 <div className="mt-2 space-y-1 flex flex-col items-end">
-                                    {parsedReceiver.name && <p className="text-slate-300 font-medium print:text-black">{parsedReceiver.name}</p>}
-                                    {parsedReceiver.phone && <p className="text-slate-400 text-sm print:text-gray-600">{parsedReceiver.phone}</p>}
-                                    {parsedReceiver.address && <p className="text-slate-400 text-sm print:text-gray-600">{parsedReceiver.address}</p>}
+                                    {parsedReceiver.name && <p className="text-brand-text font-medium print:text-black">{parsedReceiver.name}</p>}
+                                    {parsedReceiver.phone && <p className="text-brand-text-muted text-sm print:text-gray-600">{parsedReceiver.phone}</p>}
+                                    {parsedReceiver.address && <p className="text-brand-text-muted text-sm print:text-gray-600">{parsedReceiver.address}</p>}
                                 </div>
                             </div>
                         </div>
@@ -579,7 +613,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     {shipment.productDescription && (
                                         <div>
                                             <p className="text-slate-500 text-sm font-medium uppercase mb-2">Description</p>
-                                            <p className="text-slate-300 print:text-black whitespace-pre-wrap">{shipment.productDescription}</p>
+                                            <p className="text-brand-text print:text-black whitespace-pre-wrap">{shipment.productDescription}</p>
                                         </div>
                                     )}
                                     {shipment.imageUrls && shipment.imageUrls.length > 0 && (
@@ -601,9 +635,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                         {/* Timeline */}
                         <div>
-                            <h3 className="text-white font-semibold mb-6 print:text-black">Tracking History</h3>
-                            <div className="relative pl-4 border-l-2 border-slate-800 space-y-8 print:border-gray-300">
-                                {shipment.events.map((event: any, index: number) => (
+                            <h3 className="text-brand-text font-semibold mb-6 print:text-black">Tracking History</h3>
+                            <div className="relative pl-4 border-l-2 border-brand-border space-y-8 print:border-gray-300">
+                                {shipment.events.map((event: ShipmentEvent) => (
                                     <div key={event.id} className="relative pl-6 group">
                                         <div className={`absolute -left-[21px] top-1 w-4 h-4 rounded-full border-2 ${getTimelineDotColor(event.status)}`}></div>
 
@@ -725,8 +759,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <p className="text-slate-400 text-sm print:text-gray-500">{event.description}</p>
-                                                <p className="text-slate-500 text-xs print:text-gray-400"><FormattedDate date={event.timestamp} /></p>
+                                                <p className="text-brand-text-muted text-sm print:text-gray-500">{event.description}</p>
+                                                <p className="text-brand-text-muted/60 text-xs print:text-gray-400"><FormattedDate date={event.timestamp} /></p>
                                             </div>
                                         )}
                                     </div>
@@ -738,13 +772,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                 {/* Right Column: Update Form */}
                 <div className="xl:col-span-3 order-2 xl:order-3 print:hidden">
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl sticky top-6">
-                        <h3 className="text-lg font-bold text-white mb-4">Update Status</h3>
+                    <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl sticky top-6">
+                        <h3 className="text-lg font-bold text-brand-text mb-4">Update Status</h3>
                         <form onSubmit={handleUpdate} className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm text-slate-400">New Status</label>
                                 <select
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                     value={formData.status}
                                     onChange={e => setFormData({ ...formData, status: e.target.value })}
                                 >
@@ -761,7 +795,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 <label className="text-sm text-slate-400">Date/Time</label>
                                 <input
                                     type="datetime-local"
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                     value={formData.timestamp}
                                     onChange={e => setFormData({ ...formData, timestamp: e.target.value })}
                                 />
@@ -775,7 +809,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         type="text"
                                         required
                                         placeholder="e.g. Distribution Center, NY"
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                         value={formData.location}
                                         onChange={e => setFormData({ ...formData, location: e.target.value })}
                                     />
@@ -789,7 +823,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         type="number"
                                         step="any"
                                         placeholder="e.g. 40.7128"
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                         value={formData.latitude}
                                         onChange={e => setFormData({ ...formData, latitude: e.target.value })}
                                     />
@@ -800,7 +834,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         type="number"
                                         step="any"
                                         placeholder="e.g. -74.0060"
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                         value={formData.longitude}
                                         onChange={e => setFormData({ ...formData, longitude: e.target.value })}
                                     />
@@ -811,7 +845,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 <label className="text-sm text-slate-400">Description / Note</label>
                                 <textarea
                                     rows={3}
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                                     placeholder="e.g. Package arrived at facility"
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}

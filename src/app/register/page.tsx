@@ -41,14 +41,14 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-            <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700/50 rounded-2xl shadow-xl w-full max-w-md p-8">
+        <div className="min-h-screen bg-brand-surface flex items-center justify-center p-4">
+            <div className="bg-slate-800/50 backdrop-blur-lg border border-brand-border/50/50 rounded-2xl shadow-xl w-full max-w-md p-8">
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/30">
                         <Package className="text-white w-6 h-6" />
                     </div>
                     <h1 className="text-2xl font-bold text-white">Admin Setup</h1>
-                    <p className="text-slate-400 text-sm mt-1">Register a new Master Administrator</p>
+                    <p className="text-brand-text-muted text-sm mt-1">Register a new Master Administrator</p>
                 </div>
 
                 {success ? (
@@ -66,12 +66,12 @@ export default function RegisterPage() {
                         <div className="space-y-2">
                             <label className="text-slate-300 text-sm font-medium ml-1">Full Name</label>
                             <div className="relative group">
-                                <User className="absolute left-3 top-3 w-5 h-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                                <User className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80 group-focus-within:text-emerald-500 transition-colors" />
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner"
+                                    className="w-full bg-brand-bg/50 border border-brand-border/50 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner"
                                     placeholder="John Doe"
                                     required
                                 />
@@ -81,12 +81,12 @@ export default function RegisterPage() {
                         <div className="space-y-2">
                             <label className="text-slate-300 text-sm font-medium ml-1">Email Address</label>
                             <div className="relative group">
-                                <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                                <Mail className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80 group-focus-within:text-emerald-500 transition-colors" />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner"
+                                    className="w-full bg-brand-bg/50 border border-brand-border/50 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner"
                                     placeholder="admin@logistics.com"
                                     required
                                 />
@@ -96,26 +96,26 @@ export default function RegisterPage() {
                         <div className="space-y-2">
                             <label className="text-slate-300 text-sm font-medium ml-1">Password</label>
                             <div className="relative group">
-                                <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                                <Lock className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80 group-focus-within:text-emerald-500 transition-colors" />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-12 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner"
+                                    className="w-full bg-brand-bg/50 border border-brand-border/50 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-12 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all shadow-inner"
                                     placeholder="••••••••"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                                    className="absolute right-3 top-2.5 p-1 text-brand-text-muted/80 hover:text-slate-300 transition-colors"
                                 >
                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="border-t border-slate-700/50 pt-4 mt-2"></div>
+                        <div className="border-t border-brand-border/50/50 pt-4 mt-2"></div>
 
                         <div className="space-y-2">
                             <label className="text-slate-300 text-sm font-medium ml-1">Master Verification Key</label>
@@ -125,7 +125,7 @@ export default function RegisterPage() {
                                     type="password"
                                     value={secret}
                                     onChange={(e) => setSecret(e.target.value)}
-                                    className="w-full bg-slate-950/50 border border-slate-700 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all shadow-inner"
+                                    className="w-full bg-brand-bg/50 border border-brand-border/50 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all shadow-inner"
                                     placeholder="Required to authorize setup"
                                     required
                                 />
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                         </button>
 
                         <div className="text-center mt-4">
-                            <Link href="/login" className="text-slate-500 hover:text-white transition-colors text-sm">
+                            <Link href="/login" className="text-brand-text-muted/80 hover:text-white transition-colors text-sm">
                                 Already have an account? Login here.
                             </Link>
                         </div>

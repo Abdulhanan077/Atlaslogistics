@@ -22,13 +22,13 @@ export default function AdminSidebar({ role, onClose }: { role: string; onClose?
     ];
 
     return (
-        <aside className="w-full h-full bg-slate-900 border-r border-slate-800 flex flex-col">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+        <aside className="w-full h-full bg-brand-surface border-r border-brand-border flex flex-col">
+            <div className="p-6 border-b border-brand-border flex justify-between items-center">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                     Atlas Logistics
                 </h1>
                 {onClose && (
-                    <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white">
+                    <button onClick={onClose} className="md:hidden text-brand-text-muted hover:text-brand-text">
                         <LogOut className="w-5 h-5 rotate-180" />
                     </button>
                 )}
@@ -50,7 +50,7 @@ export default function AdminSidebar({ role, onClose }: { role: string; onClose?
                             onClick={onClose}
                             className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all ${isActive
                                 ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
-                                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                                : 'text-brand-text-muted hover:bg-brand-border/20 hover:text-brand-text'
                                 }`}
                         >
                             <Icon className="w-5 h-5 mr-3" />
@@ -60,10 +60,10 @@ export default function AdminSidebar({ role, onClose }: { role: string; onClose?
                 })}
             </nav>
 
-            <div className="p-4 border-t border-slate-800">
+            <div className="p-4 border-t border-brand-border">
                 <button
                     onClick={() => signOut({ callbackUrl: '/login' })}
-                    className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-400 rounded-xl hover:bg-red-500/10 hover:text-red-400 transition-all"
+                    className="flex items-center w-full px-4 py-3 text-sm font-medium text-brand-text-muted rounded-xl hover:bg-red-500/10 hover:text-red-400 transition-all"
                 >
                     <LogOut className="w-5 h-5 mr-3" />
                     Sign Out

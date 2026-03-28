@@ -3,13 +3,19 @@
 import { useState } from 'react';
 import AdminSidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/Header';
-import { Menu, Trash2 } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
-export default function AdminLayoutClient({ children, user }: { children: React.ReactNode, user: any }) {
+interface AdminUser {
+    name?: string;
+    role: string;
+    email?: string;
+}
+
+export default function AdminLayoutClient({ children, user }: { children: React.ReactNode, user: AdminUser }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen bg-slate-900 text-white overflow-hidden print:h-auto print:overflow-visible">
+        <div className="flex h-screen bg-brand-surface text-brand-text overflow-hidden print:h-auto print:overflow-visible">
             {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div
@@ -30,9 +36,9 @@ export default function AdminLayoutClient({ children, user }: { children: React.
             {/* Main Content */}
             <div className="flex-1 flex flex-col h-full overflow-hidden print:h-auto print:overflow-visible print:block">
                 {/* Mobile Header */}
-                <div className="flex items-center justify-between p-4 md:hidden border-b border-slate-800 bg-slate-900 print:hidden">
+                <div className="flex items-center justify-between p-4 md:hidden border-b border-brand-border bg-brand-surface print:hidden">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
+                        <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-brand-text-muted hover:text-brand-text rounded-lg hover:bg-brand-bg">
                             <Menu className="w-6 h-6" />
                         </button>
                         <span className="font-bold text-lg bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Atlas Logistics</span>
@@ -46,7 +52,7 @@ export default function AdminLayoutClient({ children, user }: { children: React.
                     <AdminHeader user={user} />
                 </div>
 
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-950/50 print:p-0 print:overflow-visible print:bg-white print:text-black">
+                <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-brand-bg/50 print:p-0 print:overflow-visible print:bg-white print:text-black">
                     {children}
                 </main>
             </div>

@@ -1,0 +1,195 @@
+﻿
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\analytics\components\AnalyticsClient.tsx
+  15:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\analytics\page.tsx
+  21:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\logs\page.tsx
+  5:10  warning  'ScrollText' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\page.tsx
+    7:18  error  Unexpected any. Specify a different type                                                                                                                               @typescript-eslint/no-explicit-any
+   47:24  error  Unexpected any. Specify a different type                                                                                                                               @typescript-eslint/no-explicit-any
+   61:28  error  Unexpected any. Specify a different type                                                                                                                               @typescript-eslint/no-explicit-any
+   70:14  error  Unexpected any. Specify a different type                                                                                                                               @typescript-eslint/no-explicit-any
+  108:25  error  Do not use an `<a>` element to navigate to `/admin/shipments/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\recycle-bin\components\RecycleBinClient.tsx
+  5:18  warning  'MapPin' is defined but never used        @typescript-eslint/no-unused-vars
+  5:26  warning  'Calendar' is defined but never used      @typescript-eslint/no-unused-vars
+  9:84  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\recycle-bin\page.tsx
+  21:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\settings\page.tsx
+  45:8   warning  React Hook useEffect has missing dependencies: 'setTheme' and 'theme'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  61:18  warning  'err' is defined but never used                                                                                            @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\shipments\[id]\components\ShipmentChat.tsx
+   4:57  warning  'X' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   4:60  warning  'Check' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  28:8   warning  React Hook useEffect has a missing dependency: 'fetchMessages'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\shipments\[id]\components\ShipmentDetailsClient.tsx
+  326:26  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                                                                      @typescript-eslint/ban-ts-comment
+  356:47  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  547:71  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  548:5   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+  640:77  warning  'index' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\shipments\[id]\page.tsx
+  40:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\shipments\components\CreateShipmentModal.tsx
+    8:108  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  197:51   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  212:133  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\shipments\components\ShipmentsClient.tsx
+   5:24  warning  'MapPin' is defined but never used        @typescript-eslint/no-unused-vars
+   5:32  warning  'Calendar' is defined but never used      @typescript-eslint/no-unused-vars
+  22:83  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:60  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\shipments\page.tsx
+  22:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\admin\users\components\UsersClient.tsx
+    8:71  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  173:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\auth\forgot-password\route.ts
+   3:8   warning  'crypto' is defined but never used        @typescript-eslint/no-unused-vars
+  21:26  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\auth\register\route.ts
+  24:15  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\auth\reset-password\route.ts
+  17:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\settings\route.ts
+   6:27  warning  'req' is defined but never used           @typescript-eslint/no-unused-vars
+  46:18  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:18  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\setup\route.ts
+  10:15  warning  'superAdmin' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\shipments\[id]\messages\route.ts
+  15:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:14  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  48:42  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:47  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\shipments\[id]\route.ts
+  25:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\shipments\route.ts
+   62:117  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:28   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\upload\public\route.ts
+  20:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\upload\route.ts
+  26:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\users\[id]\route.ts
+  26:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  47:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\api\users\route.ts
+  32:27  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\forgot-password\page.tsx
+  33:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\register\page.tsx
+  38:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\reset-password\page.tsx
+    4:16  warning  'ArrowRight' is defined but never used                           @typescript-eslint/no-unused-vars
+   43:18  warning  'e' is defined but never used                                    @typescript-eslint/no-unused-vars
+  155:37  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\app\track\[number]\page.tsx
+   43:37  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  117:21  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  125:61  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  134:53  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  289:62  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  289:67  warning  'index' is defined but never used                                @typescript-eslint/no-unused-vars
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\FormattedDate.tsx
+  20:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\FormattedDate.tsx:20:13
+  18 |         // Use UTC methods to display "static" time (ignoring viewer's timezone)
+  19 |         if (mode === 'date') {
+> 20 |             setFormatted(d.toLocaleDateString(undefined, {
+     |             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  21 |                 timeZone: 'UTC',
+  22 |                 year: 'numeric',
+  23 |                 month: 'short',  react-hooks/set-state-in-effect
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\ThemeProvider.tsx
+  22:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\ThemeProvider.tsx:22:13
+  20 |         const savedTheme = localStorage.getItem('theme') as Theme | null;
+  21 |         if (savedTheme) {
+> 22 |             setThemeState(savedTheme);
+     |             ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  23 |             document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+  24 |             document.documentElement.classList.toggle('light', savedTheme === 'light');
+  25 |         } else {  react-hooks/set-state-in-effect
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\TrackingChat.tsx
+   4:43  warning  'User' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+  18:12  warning  'loading' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+  18:21  warning  'setLoading' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+  31:8   warning  React Hook useEffect has a missing dependency: 'fetchMessages'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\pdf\ShipmentDetailsPDF.tsx
+  129:15  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  142:14  warning  'e' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+  165:21  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images  jsx-a11y/alt-text
+  222:37  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images  jsx-a11y/alt-text
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\components\pdf\ShippingLabelPDF.tsx
+  75:15  error    Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  89:25  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images  jsx-a11y/alt-text
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\lib\email.ts
+   40:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   41:43  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  171:28  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  205:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  206:43  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  269:28  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  291:9   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  292:43  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  354:28  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+C:\Users\Abdul\.gemini\antigravity\scratch\logistics-platform\src\lib\logger.ts
+  3:94  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 87 problems (52 errors, 35 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

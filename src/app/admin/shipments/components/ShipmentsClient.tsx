@@ -40,7 +40,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 className="text-2xl font-bold text-white">Manage Shipments</h1>
+                <h1 className="text-2xl font-bold text-brand-text">Manage Shipments</h1>
                 <button
                     onClick={() => {
                         setShipmentToClone(null);
@@ -55,19 +55,19 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
 
             <div className="flex gap-4">
                 <div className="relative flex-1">
-                    <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
+                    <Search className="absolute left-4 top-3.5 w-5 h-5 text-brand-text-muted/80" />
                     <input
                         type="text"
                         placeholder="Search by Tracking ID or Receiver..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        className="w-full bg-brand-surface border border-brand-border text-brand-text placeholder-brand-text-muted/50 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
                 </div>
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="bg-brand-surface border border-brand-border text-brand-text rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
                     <option value="ALL">All Statuses</option>
                     <option value="CREATED">Created</option>
@@ -80,10 +80,10 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                 </select>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-950/50 text-slate-400 text-sm font-medium">
+                        <thead className="bg-brand-bg/50 text-brand-text-muted text-sm font-medium">
                             <tr>
                                 <th className="px-6 py-4">Tracking ID</th>
                                 <th className="px-6 py-4">Route</th>
@@ -92,19 +92,19 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                 <th className="px-6 py-4">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800">
+                        <tbody className="divide-y divide-brand-border">
                             {filteredShipments.map((shipment) => (
-                                <tr key={shipment.id} className="hover:bg-slate-800/30 transition-colors group">
+                                <tr key={shipment.id} className="hover:bg-brand-bg transition-colors group">
                                     <td className="px-6 py-4">
                                         <span className="font-mono text-blue-400 font-medium">{shipment.trackingNumber}</span>
-                                        <div className="text-slate-500 text-xs mt-1">
+                                        <div className="text-brand-text-muted/80 text-xs mt-1">
                                             {parseShipmentInfo(shipment.receiverInfo).name || 'Unknown Receiver'}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center text-slate-300 text-sm">
+                                        <div className="flex items-center text-brand-text-muted text-sm">
                                             <span className="max-w-[100px] truncate">{shipment.origin}</span>
-                                            <ArrowRight className="w-3 h-3 mx-2 text-slate-600" />
+                                            <ArrowRight className="w-3 h-3 mx-2 text-brand-text-muted/50" />
                                             <span className="max-w-[100px] truncate">{shipment.destination}</span>
                                         </div>
                                     </td>
@@ -113,7 +113,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                             {shipment.status.replace(/_/g, ' ')}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-400 text-sm">
+                                    <td className="px-6 py-4 text-brand-text-muted text-sm">
                                         <div className="max-w-xs xl:max-w-md truncate" title={shipment.events[0]?.description || 'Created'}>
                                             {shipment.events[0]?.description || 'Created'}
                                         </div>
@@ -166,7 +166,7 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                         </tbody>
                     </table>
                     {filteredShipments.length === 0 && (
-                        <div className="p-8 text-center text-slate-500">
+                        <div className="p-8 text-center text-brand-text-muted/80">
                             No shipments found.
                         </div>
                     )}

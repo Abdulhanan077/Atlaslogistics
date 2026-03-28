@@ -48,16 +48,16 @@ export default function ResetPasswordPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-600/20 rounded-full blur-[100px]" />
                 <div className="absolute top-1/2 -right-1/4 w-1/2 h-1/2 bg-purple-600/20 rounded-full blur-[100px]" />
             </div>
 
-            <div className="z-10 w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-8">
+            <div className="z-10 w-full max-w-md bg-brand-surface border border-brand-border rounded-2xl shadow-2xl overflow-hidden p-8">
                 <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-white mb-2">Change Password</h1>
-                    <p className="text-slate-400">Enter the 6-digit code from your email</p>
+                    <p className="text-brand-text-muted">Enter the 6-digit code from your email</p>
                 </div>
 
                 {message ? (
@@ -81,14 +81,14 @@ export default function ResetPasswordPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300">6-Digit Code</label>
                                 <div className="relative">
-                                    <KeyRound className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
+                                    <KeyRound className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80" />
                                     <input
                                         type="text"
                                         required
                                         maxLength={6}
                                         value={token}
                                         onChange={(e) => setToken(e.target.value.replace(/\D/g, ''))}
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors tracking-[0.5em] font-mono font-bold text-center"
+                                        className="w-full bg-slate-800 border border-brand-border/50 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors tracking-[0.5em] font-mono font-bold text-center"
                                         placeholder="123456"
                                         autoComplete="one-time-code"
                                     />
@@ -98,21 +98,21 @@ export default function ResetPasswordPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300">New Password</label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                    <Lock className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80 group-focus-within:text-blue-500 transition-colors" />
                                     <input
                                         type={showPasswords ? "text" : "password"}
                                         required
                                         minLength={8}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 pl-10 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                                        className="w-full bg-slate-800 border border-brand-border/50 rounded-xl py-2.5 pl-10 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                                         placeholder="••••••••"
                                         autoComplete="new-password"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPasswords(!showPasswords)}
-                                        className="absolute right-3 top-2.5 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                                        className="absolute right-3 top-2.5 p-1 text-brand-text-muted/80 hover:text-slate-300 transition-colors"
                                     >
                                         {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
@@ -122,14 +122,14 @@ export default function ResetPasswordPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300">Confirm Password</label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                    <Lock className="absolute left-3 top-3 w-5 h-5 text-brand-text-muted/80 group-focus-within:text-blue-500 transition-colors" />
                                     <input
                                         type={showPasswords ? "text" : "password"}
                                         required
                                         minLength={8}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 pl-10 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                                        className="w-full bg-slate-800 border border-brand-border/50 rounded-xl py-2.5 pl-10 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                                         placeholder="••••••••"
                                         autoComplete="new-password"
                                     />
@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
                         </button>
 
                         <div className="text-center">
-                            <Link href="/forgot-password" className="text-sm text-slate-500 hover:text-white transition-colors">
+                            <Link href="/forgot-password" className="text-sm text-brand-text-muted/80 hover:text-white transition-colors">
                                 Didn't get a code?
                             </Link>
                         </div>

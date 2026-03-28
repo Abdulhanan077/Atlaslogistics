@@ -82,15 +82,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     <span className="font-semibold mr-2">System Wide Overview:</span> Viewing all shipments across all admins.
                 </div>
             )}
-            <h1 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h1>
+            <h1 className="text-2xl font-bold text-brand-text mb-6">Dashboard Overview</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {statCards.map((stat) => (
                     <div key={stat.label} className={`p-6 rounded-2xl border ${stat.border} ${stat.bg} backdrop-blur-sm`}>
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-400 text-sm font-medium">{stat.label}</p>
-                                <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
+                                <p className="text-brand-text-muted text-sm font-medium">{stat.label}</p>
+                                <p className="text-3xl font-bold text-brand-text mt-1">{stat.value}</p>
                             </div>
                             <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} border ${stat.border}`}>
                                 <stat.icon className="w-6 h-6" />
@@ -102,29 +102,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
                 {/* Quick Actions */}
-                <div className="lg:col-span-2 p-6 bg-slate-900/50 border border-slate-800 rounded-2xl">
-                    <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+                <div className="lg:col-span-2 p-6 bg-brand-surface/50 border border-brand-border rounded-2xl">
+                    <h2 className="text-lg font-semibold text-brand-text mb-4">Quick Actions</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <a href="/admin/shipments" className="hover:no-underline block p-4 border border-blue-500/20 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl transition-colors">
                             <h3 className="font-semibold text-blue-400 mb-1">Manage Shipments</h3>
-                            <p className="text-slate-400 text-xs text-sm">View and update all shipments</p>
+                            <p className="text-brand-text-muted text-xs text-sm">View and update all shipments</p>
                         </a>
                         <a href="/admin/settings" className="hover:no-underline block p-4 border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-colors">
                             <h3 className="font-semibold text-emerald-400 mb-1">Platform Settings</h3>
-                            <p className="text-slate-400 text-xs">Manage your brand logo and details</p>
+                            <p className="text-brand-text-muted text-xs">Manage your brand logo and details</p>
                         </a>
                         {session.user.role === 'SUPER_ADMIN' && (
                             <a href="/admin/users" className="hover:no-underline block p-4 border border-purple-500/20 bg-purple-500/10 hover:bg-purple-500/20 rounded-xl transition-colors">
                                 <h3 className="font-semibold text-purple-400 mb-1">Manage Admins</h3>
-                                <p className="text-slate-400 text-xs">Create and modify admin accounts</p>
+                                <p className="text-brand-text-muted text-xs">Create and modify admin accounts</p>
                             </a>
                         )}
                     </div>
                 </div>
 
                 {/* Recent Inquiries */}
-                <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <div className="p-6 bg-brand-surface/50 border border-brand-border rounded-2xl">
+                    <h2 className="text-lg font-semibold text-brand-text mb-4 flex items-center gap-2">
                         Recent Inquiries
                         {unreadShipments.length > 0 && (
                             <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{unreadShipments.length}</span>
@@ -132,21 +132,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     </h2>
                     <div className="space-y-3">
                         {unreadShipments.length === 0 ? (
-                            <p className="text-slate-500 text-sm">No new messages.</p>
+                            <p className="text-brand-text-muted/80 text-sm">No new messages.</p>
                         ) : (
                             unreadShipments.map(shipment => (
                                 <a
                                     key={shipment.id}
                                     href={`/admin/shipments/${shipment.id}`}
-                                    className="block p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-blue-500/50 transition-colors"
+                                    className="block p-3 rounded-xl bg-brand-surface border border-brand-border/50 hover:border-blue-500/50 transition-colors"
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <span className="font-mono text-blue-400 font-semibold">{shipment.trackingNumber}</span>
-                                        <span className="text-xs text-slate-500" suppressHydrationWarning>
+                                        <span className="text-xs text-brand-text-muted/80" suppressHydrationWarning>
                                             {shipment.messages[0] ? new Date(shipment.messages[0].createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
                                     </div>
-                                    <p className="text-slate-300 text-sm truncate">
+                                    <p className="text-brand-text-muted text-sm truncate">
                                         {shipment.messages[0]?.content || 'New message'}
                                     </p>
                                 </a>

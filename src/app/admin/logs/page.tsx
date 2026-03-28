@@ -30,15 +30,15 @@ export default async function AuditLogsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-white mb-2">Audit Logs</h1>
-                <p className="text-slate-400">View recent system actions and security events.</p>
+                <h1 className="text-3xl font-bold text-brand-text mb-2">Audit Logs</h1>
+                <p className="text-brand-text-muted">View recent system actions and security events.</p>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-800/50 border-b border-slate-700 text-slate-300">
+                            <tr className="bg-brand-bg/50 border-b border-brand-border/50 text-brand-text-muted">
                                 <th className="p-4 font-semibold">Time</th>
                                 <th className="p-4 font-semibold">Admin</th>
                                 <th className="p-4 font-semibold">Action</th>
@@ -46,20 +46,20 @@ export default async function AuditLogsPage() {
                                 <th className="p-4 font-semibold">Details</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-slate-400 text-sm">
+                        <tbody className="divide-y divide-brand-border text-brand-text-muted text-sm">
                             {logs.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-slate-500">
+                                    <td colSpan={5} className="p-8 text-center text-brand-text-muted/80">
                                         No logs found.
                                     </td>
                                 </tr>
                             ) : (
                                 logs.map((log) => (
-                                    <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                                    <tr key={log.id} className="hover:bg-brand-bg transition-colors">
                                         <td className="p-4 whitespace-nowrap">
                                             {new Date(log.createdAt).toLocaleString()}
                                         </td>
-                                        <td className="p-4 text-white">
+                                        <td className="p-4 text-brand-text">
                                             {log.admin.name || log.admin.email}
                                         </td>
                                         <td className="p-4">
@@ -71,7 +71,7 @@ export default async function AuditLogsPage() {
                                                 {log.action}
                                             </span>
                                         </td>
-                                        <td className="p-4 font-mono text-xs text-slate-500">
+                                        <td className="p-4 font-mono text-xs text-brand-text-muted/80">
                                             {log.entityId}
                                         </td>
                                         <td className="p-4 max-w-xs truncate" title={log.details || ''}>

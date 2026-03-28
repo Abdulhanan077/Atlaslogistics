@@ -58,17 +58,17 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-bold text-white">Manage Admins</h1>
-                    <div className="flex bg-slate-800 rounded-lg p-1">
+                    <h1 className="text-2xl font-bold text-brand-text">Manage Admins</h1>
+                    <div className="flex bg-brand-surface rounded-lg p-1 border border-brand-border/50">
                         <button
                             onClick={() => setViewMode('active')}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'active' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'active' ? 'bg-blue-600 text-white shadow' : 'text-brand-text-muted hover:text-brand-text'}`}
                         >
                             Active
                         </button>
                         <button
                             onClick={() => setViewMode('deleted')}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'deleted' ? 'bg-red-600/50 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'deleted' ? 'bg-red-600/50 text-white shadow' : 'text-brand-text-muted hover:text-brand-text'}`}
                         >
                             Recycle Bin
                         </button>
@@ -86,21 +86,21 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
             </div>
 
             {users.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col items-center justify-center">
+                <div className="text-center py-12 text-brand-text-muted/80 bg-brand-surface border border-brand-border rounded-2xl flex flex-col items-center justify-center">
                     <Shield className="w-12 h-12 mb-4 text-slate-700" />
                     <p>No {viewMode === 'deleted' ? 'deleted' : 'active'} admins found.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {users.map(user => (
-                        <div key={user.id} className={`bg-slate-900 border p-6 rounded-2xl flex items-start justify-between group transition-all ${viewMode === 'deleted' ? 'border-red-500/20' : 'border-slate-800 hover:border-slate-700'}`}>
+                        <div key={user.id} className={`bg-brand-surface border p-6 rounded-2xl flex items-start justify-between group transition-all ${viewMode === 'deleted' ? 'border-red-500/20' : 'border-brand-border hover:border-brand-border/50'}`}>
                             <div className="flex items-start">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${user.role === 'SUPER_ADMIN' ? 'bg-purple-500/20 text-purple-400' : viewMode === 'deleted' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                     {user.role === 'SUPER_ADMIN' ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-semibold">{user.name}</h3>
-                                    <p className="text-slate-400 text-sm">{user.email}</p>
+                                    <h3 className="text-brand-text font-semibold">{user.name}</h3>
+                                    <p className="text-brand-text-muted text-sm">{user.email}</p>
                                     <div className="flex items-center gap-2 mt-2">
                                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${user.role === 'SUPER_ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
                                             {user.role.replace('_', ' ')}
@@ -118,7 +118,7 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
                                     {viewMode === 'active' && (
                                         <Link
                                             href={`/admin?viewAs=${user.id}`}
-                                            className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center"
+                                            className="text-brand-text-muted hover:text-brand-text p-2 rounded-lg hover:bg-brand-bg transition-colors flex items-center justify-center"
                                             title="View Portal"
                                         >
                                             <ExternalLink className="w-5 h-5" />
@@ -128,7 +128,7 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
                                         <button
                                             onClick={() => handleDelete(user.id)}
                                             disabled={deletingId === user.id}
-                                            className="text-slate-600 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                                            className="text-brand-text-muted hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
                                             title="Move to Recycle Bin"
                                         >
                                             {deletingId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
@@ -137,7 +137,7 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
                                         <button
                                             onClick={() => handleRestore(user.id)}
                                             disabled={restoringId === user.id}
-                                            className="text-slate-600 hover:text-green-400 p-2 rounded-lg hover:bg-green-500/10 transition-colors"
+                                            className="text-brand-text-muted hover:text-green-400 p-2 rounded-lg hover:bg-green-500/10 transition-colors"
                                             title="Restore Admin"
                                         >
                                             {restoringId === user.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
@@ -175,26 +175,26 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-bg/80 backdrop-blur-sm">
+            <div className="w-full max-w-md bg-brand-surface border border-brand-border/50 rounded-2xl shadow-2xl p-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-white">Add New Admin</h2>
-                    <button onClick={onClose}><X className="text-slate-400 hover:text-white" /></button>
+                    <h2 className="text-xl font-bold text-brand-text">Add New Admin</h2>
+                    <button onClick={onClose}><X className="text-brand-text-muted hover:text-brand-text" /></button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="text-sm text-slate-400">Name</label>
-                        <input type="text" required className="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                        <label className="text-sm text-brand-text-muted">Name</label>
+                        <input type="text" required className="w-full bg-brand-bg border-brand-border/50 rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                             value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                     </div>
                     <div>
-                        <label className="text-sm text-slate-400">Email</label>
-                        <input type="email" required className="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                        <label className="text-sm text-brand-text-muted">Email</label>
+                        <input type="email" required className="w-full bg-brand-bg border-brand-border/50 rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                             value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                     </div>
                     <div>
-                        <label className="text-sm text-slate-400">Password</label>
-                        <input type="password" required className="w-full bg-slate-800 border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-blue-500"
+                        <label className="text-sm text-brand-text-muted">Password</label>
+                        <input type="password" required className="w-full bg-brand-bg border-brand-border/50 rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                             value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
                     </div>
                     <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl mt-4 flex justify-center">

@@ -100,5 +100,6 @@ model SiteSettings {
   supportEmail      String   @default("support@atlaslogistics.site")
   supportPhone      String   @default("")
   logoUrl           String   @default("")
+  theme             String   @default("dark") // "dark", "light"
   updatedAt         DateTime @updatedAt
 }

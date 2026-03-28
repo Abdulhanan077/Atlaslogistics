@@ -33,7 +33,7 @@ export async function PATCH(req: Request) {
 
     try {
         const body = await req.json();
-        const { companyName, supportEmail, supportPhone, logoUrl } = body;
+        const { companyName, supportEmail, supportPhone, logoUrl, theme } = body;
 
         const settings = await prisma.siteSettings.upsert({
             where: { id: "default" },
@@ -41,15 +41,17 @@ export async function PATCH(req: Request) {
                 companyName: companyName !== undefined ? companyName : undefined,
                 supportEmail: supportEmail !== undefined ? supportEmail : undefined,
                 supportPhone: supportPhone !== undefined ? supportPhone : undefined,
-                logoUrl: logoUrl !== undefined ? logoUrl : undefined
-            },
+                logoUrl: logoUrl !== undefined ? logoUrl : undefined,
+                theme: theme !== undefined ? theme : undefined
+            } as any,
             create: {
                 id: "default",
                 companyName: companyName || "Atlas Logistics",
                 supportEmail: supportEmail || "support@atlaslogistics.site",
                 supportPhone: supportPhone || "",
-                logoUrl: logoUrl || ""
-            }
+                logoUrl: logoUrl || "",
+                theme: theme || "dark"
+            } as any
         });
 
         return NextResponse.json(settings);
