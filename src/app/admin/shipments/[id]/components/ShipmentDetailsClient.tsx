@@ -22,24 +22,24 @@ const PDFDownloadLink = dynamic(
 interface ShipmentEvent {
     id: string;
     status: string;
-    location?: string;
-    description?: string;
+    location?: string | null;
+    description?: string | null;
     timestamp: string | Date;
-    latitude?: number | string;
-    longitude?: number | string;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
 }
 
 interface Shipment {
     id: string;
     trackingNumber: string;
     createdAt: string | Date;
-    estimatedDelivery?: string | Date;
+    estimatedDelivery?: string | Date | null;
     senderInfo: string;
     receiverInfo: string;
-    origin?: string;
-    destination?: string;
-    customerEmail?: string;
-    productDescription?: string;
+    origin?: string | null;
+    destination?: string | null;
+    customerEmail?: string | null;
+    productDescription?: string | null;
     imageUrls?: string[];
     status: string;
     events: ShipmentEvent[];

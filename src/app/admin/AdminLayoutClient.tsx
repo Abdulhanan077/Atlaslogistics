@@ -6,9 +6,9 @@ import AdminHeader from '@/components/admin/Header';
 import { Menu } from 'lucide-react';
 
 interface AdminUser {
-    name?: string;
+    name?: string | null;
     role: string;
-    email?: string;
+    email?: string | null;
 }
 
 export default function AdminLayoutClient({ children, user }: { children: React.ReactNode, user: AdminUser }) {

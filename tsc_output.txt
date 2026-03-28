@@ -1,0 +1,4 @@
+﻿src/app/admin/shipments/[id]/page.tsx(68,35): error TS2322: Type '{ events: { status: string; location: string; description: string | null; id: string; createdAt: Date; shipmentId: string; latitude: number | null; longitude: number | null; timestamp: Date; }[]; ... 15 more ...; deletedAt: Date | null; }' is not assignable to type 'Shipment'.
+  Types of property 'estimatedDelivery' are incompatible.
+    Type 'Date | null' is not assignable to type 'string | Date | undefined'.
+      Type 'null' is not assignable to type 'string | Date | undefined'.
