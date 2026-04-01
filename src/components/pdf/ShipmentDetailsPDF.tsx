@@ -2,126 +2,161 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { parseShipmentInfo } from '@/lib/utils';
 
+// Refined colors for a professional logistics feel
+const colors = {
+    primary: '#0f172a',    // Dark blue/slate
+    secondary: '#1e40af',  // Brand blue
+    muted: '#64748b',      // Muted slate
+    light: '#f8fafc',      // Background
+    border: '#e2e8f0',     // Light border
+    black: '#000000',
+    white: '#ffffff',
+};
+
 const styles = StyleSheet.create({
     page: {
         flexDirection: 'column',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: colors.white,
         padding: 40,
         fontFamily: 'Helvetica',
+        color: colors.primary,
     },
-    mainHeader: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#2563eb', // blue-600
-        textAlign: 'center',
-        marginBottom: 30,
-        letterSpacing: 2,
-    },
-    card: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        padding: 24,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+    // New Header Design Based on Screenshot
+    headerSection: {
         marginBottom: 20,
     },
-    trackingBlock: {
-        flexDirection: 'column',
-        gap: 4,
+    logoBox: {
+        marginBottom: 15,
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
     },
-    trackingNumber: {
-        fontSize: 24,
-        fontWeight: 'extrabold',
-        color: '#0f172a',
+    logo: {
+        width: 150,
+        height: 60,
+        objectFit: 'contain',
     },
-    dateText: {
-        fontSize: 12,
-        color: '#64748b',
-        marginTop: 4,
-    },
-    estDeliveryText: {
-        fontSize: 12,
-        color: '#2563eb',
-        marginTop: 2,
-    },
-    statusPill: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#ca8a04', // default yellow for pending
-        paddingVertical: 4,
-        paddingHorizontal: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#fef08a',
-        backgroundColor: '#fefce8',
-        textTransform: 'uppercase',
-    },
-    divider: {
-        width: '100%',
-        height: 1,
-        backgroundColor: '#e2e8f0',
-        marginVertical: 20,
-    },
-    addressRow: {
+    titleRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-    },
-    addressColumnLeft: {
-        width: '45%',
-    },
-    addressColumnRight: {
-        width: '45%',
         alignItems: 'flex-end',
-        textAlign: 'right',
-    },
-    labelSmall: {
-        fontSize: 10,
-        color: '#64748b',
-        textTransform: 'uppercase',
-        marginBottom: 4,
-    },
-    locationLarge: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#0f172a',
         marginBottom: 8,
     },
-    addressText: {
-        fontSize: 11,
-        color: '#334155',
-        marginTop: 2,
+    waybillText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 1.5,
     },
-    productHeader: {
+    trackingLabelBox: {
+        textAlign: 'right',
+    },
+    trackingLabelSmall: {
+        fontSize: 10,
+        color: colors.muted,
+        textTransform: 'uppercase',
+        marginBottom: 2,
+    },
+    trackingNumberLarge: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: colors.primary,
+    },
+    thickDivider: {
+        height: 3,
+        backgroundColor: colors.black,
+        marginBottom: 25,
+    },
+    // Body Layout
+    card: {
+        backgroundColor: colors.light,
+        borderRadius: 8,
+        padding: 20,
+        border: `1pt solid ${colors.border}`,
+        marginBottom: 20,
+    },
+    statusPill: {
+        alignSelf: 'center',
+        paddingVertical: 5,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        marginBottom: 20,
+    },
+    grid: {
+        flexDirection: 'row',
+        gap: 40,
+    },
+    column: {
+        flex: 1,
+    },
+    sectionLabel: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: colors.muted,
+        textTransform: 'uppercase',
+        marginBottom: 8,
+        letterSpacing: 0.5,
+    },
+    locationValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: colors.primary,
+        marginBottom: 5,
+    },
+    addressLine: {
+        fontSize: 11,
+        color: colors.primary,
+        lineHeight: 1.4,
+    },
+    smallDivider: {
+        height: 1,
+        backgroundColor: colors.border,
+        marginVertical: 15,
+    },
+    detailsSection: {
+        marginTop: 10,
+        marginBottom: 20,
+    },
+    sectionTitle: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#0f172a',
         marginBottom: 10,
+        color: colors.primary,
+        borderBottom: `1pt solid ${colors.border}`,
+        paddingBottom: 5,
     },
     descriptionText: {
-        fontSize: 11,
-        color: '#334155',
+        fontSize: 12,
         lineHeight: 1.5,
+        color: colors.primary,
     },
-    imagesHeader: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#0f172a',
-        marginBottom: 10,
-    },
-    imagesGrid: {
+    imageGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
+        gap: 15,
+        marginTop: 10,
     },
     imageItem: {
-        width: 150,
-        height: 150,
-        objectFit: 'cover',
-        borderRadius: 4,
+        width: 160,
+        height: 160,
+        borderRadius: 6,
+        border: `1pt solid ${colors.border}`,
+    },
+    footerContainer: {
+        position: 'absolute',
+        bottom: 40,
+        left: 40,
+        right: 40,
+        textAlign: 'center',
+        borderTop: `1pt solid ${colors.border}`,
+        paddingTop: 15,
+    },
+    footerText: {
+        fontSize: 10,
+        color: colors.muted,
+        marginBottom: 4,
     }
 });
 
@@ -144,89 +179,102 @@ const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment, setti
     }
 
     const getStatusStyle = (status: string) => {
+        const base = { color: colors.white };
         switch (status?.toUpperCase()) {
-            case 'CREATED':
-            case 'PENDING': return { color: '#ca8a04', borderColor: '#fef08a', backgroundColor: '#fefce8' };
-            case 'IN_TRANSIT': return { color: '#2563eb', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' };
-            case 'ON_HOLD': return { color: '#ea580c', borderColor: '#fed7aa', backgroundColor: '#fff7ed' };
-            case 'OUT_FOR_DELIVERY': return { color: '#9333ea', borderColor: '#e9d5ff', backgroundColor: '#faf5ff' };
-            case 'DELIVERED': return { color: '#059669', borderColor: '#a7f3d0', backgroundColor: '#ecfdf5' };
-            case 'RETURNED': return { color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' };
-            default: return { color: '#ca8a04', borderColor: '#fef08a', backgroundColor: '#fefce8' };
+            case 'CREATED': return { ...base, backgroundColor: '#f59e0b' }; // Amber
+            case 'DELIVERED': return { ...base, backgroundColor: '#10b981' }; // Emerald
+            case 'IN_TRANSIT': return { ...base, backgroundColor: '#3b82f6' }; // Blue
+            case 'ON_HOLD': return { ...base, backgroundColor: '#ef4444' }; // Red
+            default: return { ...base, backgroundColor: '#6b7280' }; // Gray
         }
     };
 
-    const statusStyle = getStatusStyle(shipment.status);
-
     return (
-        <Document>
+        <Document title={`Waybill-${shipment.trackingNumber}`}>
             <Page size="A4" style={styles.page}>
-                {settings?.logoUrl ? (
-                    <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                        <Image src={settings.logoUrl} style={{ width: 150, height: 75, objectFit: 'contain' }} />
+                {/* Custom Header Section */}
+                <View style={styles.headerSection}>
+                    <View style={styles.logoBox}>
+                        {settings?.logoUrl ? (
+                            <Image src={settings.logoUrl} style={styles.logo} />
+                        ) : (
+                            <Text style={[styles.waybillText, { color: colors.secondary }]}>{settings?.companyName || 'ATLAS LOGISTICS'}</Text>
+                        )}
                     </View>
-                ) : (
-                    <Text style={styles.mainHeader}>{settings?.companyName?.toUpperCase() || 'ATLAS LOGISTICS'}</Text>
+                    <View style={styles.titleRow}>
+                        <Text style={styles.waybillText}>SHIPMENT WAYBILL</Text>
+                        <View style={styles.trackingLabelBox}>
+                            <Text style={styles.trackingLabelSmall}>TRACKING NUMBER</Text>
+                            <Text style={styles.trackingNumberLarge}>{shipment.trackingNumber}</Text>
+                        </View>
+                    </View>
+                    <View style={styles.thickDivider} />
+                </View>
+
+                {/* Main Content Card */}
+                <View style={styles.card}>
+                    {/* Status Pill centered above main info */}
+                    <Text style={[styles.statusPill, getStatusStyle(shipment.status)]}>
+                        {shipment.status}
+                    </Text>
+
+                    <View style={styles.grid}>
+                        <View style={styles.column}>
+                            <Text style={styles.sectionLabel}>FROM</Text>
+                            <Text style={styles.locationValue}>{shipment.origin || 'N/A'}</Text>
+                            <Text style={styles.addressLine}>{sender.name}</Text>
+                            <Text style={styles.addressLine}>{sender.address}</Text>
+                            <Text style={styles.addressLine}>{sender.phone}</Text>
+                        </View>
+                        <View style={styles.column}>
+                            <Text style={styles.sectionLabel}>TO</Text>
+                            <Text style={styles.locationValue}>{shipment.destination || 'N/A'}</Text>
+                            <Text style={styles.addressLine}>{receiver.name}</Text>
+                            <Text style={styles.addressLine}>{receiver.address}</Text>
+                            <Text style={styles.addressLine}>{receiver.phone}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.smallDivider} />
+
+                    <View style={styles.grid}>
+                        <View style={styles.column}>
+                            <Text style={styles.sectionLabel}>Date of Shipment</Text>
+                            <Text style={[styles.addressLine, { fontWeight: 'bold' }]}>{new Date(shipment.createdAt).toLocaleDateString()}</Text>
+                        </View>
+                        <View style={styles.column}>
+                            <Text style={styles.sectionLabel}>Estimated Delivery</Text>
+                            <Text style={[styles.addressLine, { fontWeight: 'bold' }]}>
+                                {shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : 'Pending'}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Product Details Section */}
+                {shipment.productDescription && (
+                    <View style={styles.detailsSection}>
+                        <Text style={styles.sectionTitle}>Product Details</Text>
+                        <Text style={styles.descriptionText}>{shipment.productDescription}</Text>
+                    </View>
                 )}
 
-                <View style={styles.card}>
-                    {/* Header Row */}
-                    <View style={styles.headerRow}>
-                        <View style={styles.trackingBlock}>
-                            <Text style={styles.trackingNumber}>{shipment.trackingNumber}</Text>
-                            <Text style={styles.dateText}>Created on {new Date(shipment.createdAt).toLocaleDateString()}</Text>
-                            {shipment.estimatedDelivery && (
-                                <Text style={styles.estDeliveryText}>Est. Delivery: {new Date(shipment.estimatedDelivery).toLocaleDateString()}</Text>
-                            )}
-                        </View>
-                        <View>
-                            <Text style={[styles.statusPill, statusStyle]}>{shipment.status}</Text>
+                {/* Attached Images Section */}
+                {pdfImageUrls.length > 0 && (
+                    <View wrap={false} style={styles.detailsSection}>
+                        <Text style={styles.sectionTitle}>Attached Images</Text>
+                        <View style={styles.imageGrid}>
+                            {pdfImageUrls.map((url: string, i: number) => (
+                                <Image key={i} src={url} style={styles.imageItem} />
+                            ))}
                         </View>
                     </View>
+                )}
 
-                    <View style={styles.divider} />
-
-                    {/* Addresses Row */}
-                    <View style={styles.addressRow}>
-                        <View style={styles.addressColumnLeft}>
-                            <Text style={styles.labelSmall}>FROM</Text>
-                            <Text style={styles.locationLarge}>{shipment.origin || 'System'}</Text>
-                            {sender.name && <Text style={styles.addressText}>{sender.name}</Text>}
-                            {sender.phone && <Text style={styles.addressText}>{sender.phone}</Text>}
-                            {sender.address && <Text style={styles.addressText}>{sender.address}</Text>}
-                        </View>
-                        <View style={styles.addressColumnRight}>
-                            <Text style={styles.labelSmall}>TO</Text>
-                            <Text style={styles.locationLarge}>{shipment.destination || 'N/A'}</Text>
-                            {receiver.name && <Text style={styles.addressText}>{receiver.name}</Text>}
-                            {receiver.phone && <Text style={styles.addressText}>{receiver.phone}</Text>}
-                            {receiver.address && <Text style={styles.addressText}>{receiver.address}</Text>}
-                        </View>
-                    </View>
-
-                    {shipment.productDescription && (
-                        <>
-                            <View style={styles.divider} />
-                            
-                            <View>
-                                <Text style={styles.productHeader}>Product Details</Text>
-                                <Text style={styles.labelSmall}>DESCRIPTION</Text>
-                                <Text style={styles.descriptionText}>{shipment.productDescription}</Text>
-                            </View>
-                        </>
-                    )}
-
-                    {pdfImageUrls.length > 0 && (
-                        <View wrap={false}>
-                            <View style={styles.divider} />
-                            <Text style={styles.imagesHeader}>Attached Images</Text>
-                            <View style={styles.imagesGrid}>
-                                {pdfImageUrls.map((url: string, i: number) => (
-                                    <Image key={i} src={url} style={styles.imageItem} />
-                                ))}
-                            </View>
-                        </View>
-                    )}
+                {/* Footer */}
+                <View style={styles.footerContainer}>
+                    <Text style={styles.footerText}>Thank you for choosing {settings?.companyName || 'Atlas Logistics'}.</Text>
+                    <Text style={styles.footerText}>Support: {settings?.supportEmail || 'support@atlaslogistics.com'} | {settings?.supportPhone || '+1 (555) 000-0000'}</Text>
                 </View>
             </Page>
         </Document>
@@ -234,3 +282,4 @@ const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment, setti
 };
 
 export default ShipmentDetailsPDF;
+
