@@ -20,6 +20,14 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
     const [uploadingImage, setUploadingImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+        }
+    }, [newMessage]);
 
     // Poll for new messages every 5 seconds when open
     useEffect(() => {
@@ -85,8 +93,8 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
         }
     };
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSend = async (e?: React.SyntheticEvent) => {
+        e?.preventDefault();
         if (!newMessage.trim()) return;
 
         setSending(true);
@@ -200,12 +208,20 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                         >
                             {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
                         </button>
-                        <input
-                            type="text"
+                        <textarea
+                            ref={textareaRef}
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend(e);
+                                }
+                            }}
+                            rows={1}
                             placeholder="Type a message..."
-                            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors resize-none max-h-[120px] overflow-y-auto"
+                            style={{ minHeight: '38px' }}
                         />
                         <button
                             type="submit"

@@ -20,6 +20,14 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     const [editingContent, setEditingContent] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+        }
+    }, [newMessage]);
 
     useEffect(() => {
         fetchMessages();
@@ -94,8 +102,8 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
         }
     };
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSend = async (e?: React.SyntheticEvent) => {
+        e?.preventDefault();
         if (!newMessage.trim()) return;
 
         setSending(true);
@@ -265,12 +273,20 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                     >
                         {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5 shrink-0" />}
                     </button>
-                    <input
-                        type="text"
+                    <textarea
+                        ref={textareaRef}
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend(e);
+                            }
+                        }}
+                        rows={1}
                         placeholder="Type a message..."
-                        className="flex-1 min-w-0 bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text focus:outline-none focus:border-blue-500 transition-colors placeholder:text-brand-text-muted/50"
+                        className="flex-1 min-w-0 bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text focus:outline-none focus:border-blue-500 transition-colors placeholder:text-brand-text-muted/50 resize-none max-h-[120px] overflow-y-auto"
+                        style={{ minHeight: '44px' }}
                     />
                     <button
                         type="submit"
