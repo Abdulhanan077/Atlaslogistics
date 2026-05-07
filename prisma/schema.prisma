@@ -5,8 +5,9 @@ datasource db {
 }
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+  previewFeatures = ["driverAdapters"]
 }
 
 model User {
@@ -66,6 +67,7 @@ model Shipment {
 
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
+  showRoute Boolean   @default(true)
 }
 
 model Message {
