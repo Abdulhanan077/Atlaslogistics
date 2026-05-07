@@ -20,7 +20,10 @@ export default function SettingsDashboard() {
 
     useEffect(() => {
         fetch('/api/settings')
-            .then(res => res.json())
+            .then(async (res) => {
+                if (!res.ok) throw new Error('Failed to load settings');
+                return res.json();
+            })
             .then(data => {
                 if (data) {
                     setSettings({

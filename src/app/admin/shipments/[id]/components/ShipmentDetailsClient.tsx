@@ -3,21 +3,19 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
-import ShippingLabelPDF from '@/components/pdf/ShippingLabelPDF';
+// PDF components will be loaded dynamically to avoid ESM bundling issues
 import ShipmentChat from './ShipmentChat';
 import FormattedDate from '@/components/FormattedDate';
+import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import { parseShipmentInfo } from '@/lib/utils';
+import { geocodeAddress } from '@/lib/geocoding';
 
-const PDFDownloadLink = dynamic(
-    () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-    {
-        ssr: false,
-        loading: () => <button className="flex items-center px-4 py-2 bg-blue-600/50 text-white rounded-xl">Loading...</button>,
-    }
-);
+// PDF rendering is now handled server-side to avoid client-side bundling issues
+const ShippingLabel = null;
+const DetailsPDF = null;
 
 interface ShipmentEvent {
     id: string;
@@ -43,6 +41,7 @@ interface Shipment {
     imageUrls?: string[];
     status: string;
     events: ShipmentEvent[];
+    showRoute: boolean;
 }
 
 interface Settings {
@@ -55,13 +54,64 @@ interface Settings {
 export default function ShipmentDetailsClient({ shipment, settings }: { shipment: Shipment, settings?: Settings | null }) {
     const router = useRouter();
     const [updating, setUpdating] = useState(false);
+    const [liveVehicleType, setLiveVehicleType] = useState(parseShipmentInfo(shipment.senderInfo).vehicleType || 'TRUCK');
+    const [geocoding, setGeocoding] = useState<string | null>(null);
+
+    const handleGeocode = async (type: 'event' | 'dest') => {
+        const address = type === 'event' ? formData.location : editData.receiverAddress;
+        if (!address) {
+            toast.error("Please enter an address first");
+            return;
+        }
+
+        setGeocoding(type);
+        const result = await geocodeAddress(address);
+        setGeocoding(null);
+
+        if (result) {
+            if (type === 'event') {
+                setFormData(prev => ({ ...prev, latitude: result.lat, longitude: result.lon }));
+            } else {
+                setEditData(prev => ({ ...prev, destLat: result.lat, destLng: result.lon }));
+            }
+            toast.success("Location found!");
+        } else {
+            toast.error("Could not find location coordinates");
+        }
+    };
+    
+    const handleVehicleChange = async (newVehicle: string) => {
+        setLiveVehicleType(newVehicle);
+        const toastId = toast.loading("Updating vehicle...");
+        try {
+            const parsed = parseShipmentInfo(shipment.senderInfo);
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderInfo: JSON.stringify({ ...parsed, vehicleType: newVehicle })
+                })
+            });
+            if (res.ok) {
+                toast.success("Vehicle updated!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to update vehicle", { id: toastId });
+            }
+        } catch (e) {
+            toast.error("Error updating vehicle", { id: toastId });
+        }
+    };
+
     const [formData, setFormData] = useState({
         status: 'PENDING',
         location: '',
         description: '',
         latitude: '',
         longitude: '',
-        timestamp: ''
+        timestamp: '',
+        destLat: parseShipmentInfo(shipment.receiverInfo).destLat || '',
+        destLng: parseShipmentInfo(shipment.receiverInfo).destLng || ''
     });
 
     useEffect(() => {
@@ -209,9 +259,12 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         senderName: parsedSender.name,
         senderPhone: parsedSender.phone,
         senderAddress: parsedSender.address,
+        vehicleType: parsedSender.vehicleType || 'TRUCK',
         receiverName: parsedReceiver.name,
         receiverPhone: parsedReceiver.phone,
         receiverAddress: parsedReceiver.address,
+        destLat: parsedReceiver.destLat || '',
+        destLng: parsedReceiver.destLng || '',
     });
 
     const handleEditSubmit = async (e: React.FormEvent) => {
@@ -228,8 +281,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     productDescription: editData.productDescription,
                     imageUrls: editData.imageUrls,
                     estimatedDelivery: editData.estimatedDelivery ? new Date(editData.estimatedDelivery + ':00Z').toISOString() : null,
-                    senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress }),
-                    receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress })
+                    senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress, vehicleType: editData.vehicleType }),
+                    receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress, destLat: editData.destLat, destLng: editData.destLng })
                 })
             });
             if (res.ok) {
@@ -279,19 +332,41 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...formData,
+                    status: formData.status,
+                    location: formData.location,
+                    description: formData.description,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude,
                     timestamp: new Date(formData.timestamp + ':00Z').toISOString()
                 })
             });
+
+            // Patch shipment destination coords if changed
+            const currentReceiverInfo = parseShipmentInfo(shipment.receiverInfo);
+            if (formData.destLat !== (currentReceiverInfo.destLat || '') || formData.destLng !== (currentReceiverInfo.destLng || '')) {
+                await fetch(`/api/shipments/${shipment.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        receiverInfo: JSON.stringify({ 
+                            ...currentReceiverInfo, 
+                            destLat: formData.destLat, 
+                            destLng: formData.destLng 
+                        })
+                    })
+                });
+            }
+
             if (res.ok) {
-                setFormData({
+                setFormData(prev => ({
+                    ...prev,
                     status: 'IN_TRANSIT',
                     location: '',
                     description: '',
                     latitude: '',
                     longitude: '',
                     timestamp: new Date().toISOString().slice(0, 16)
-                });
+                }));
                 router.refresh();
                 toast.success('Status updated successfully');
             } else {
@@ -308,6 +383,28 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
 
 
+    const handleToggleRoute = async () => {
+        const toastId = toast.loading("Updating map settings...");
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ showRoute: !shipment.showRoute })
+            });
+
+            if (res.ok) {
+                toast.success("Map visibility updated!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to update map settings", { id: toastId });
+            }
+        } catch (e) {
+            toast.error("Error updating map settings", { id: toastId });
+        }
+    };
+
+    const latestLocation = shipment.events.find((e: ShipmentEvent) => e.latitude && e.longitude);
+
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto p-6">
             <div className="flex items-center justify-between print:hidden">
@@ -319,19 +416,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     Back
                 </button>
                 <div className="flex gap-3">
-                    <PDFDownloadLink
-                        document={<ShippingLabelPDF shipment={shipment} settings={settings} />}
-                        fileName={`LABEL-${shipment.trackingNumber}.pdf`}
-                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                    <a
+                        href={`/api/shipments/${shipment.id}/label`}
+                        download={`LABEL-${shipment.trackingNumber}.pdf`}
+                        className="flex items-center px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all shadow-lg shadow-brand-primary/20"
                     >
-                        {/* @ts-ignore */}
-                        {({ loading }) => (
-                            <>
-                                <FileText className="w-5 h-5 mr-2" />
-                                {loading ? 'Preparing...' : 'Download Label'}
-                            </>
-                        )}
-                    </PDFDownloadLink>
+                        <FileText className="w-5 h-5 mr-2" />
+                        Download Waybill
+                    </a>
                     <button
                         onClick={() => window.print()}
                         className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border"
@@ -352,33 +444,35 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                 {/* Middle Column: Details & Visual */}
                 <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full">
-                    {/* Print Header */}
-                    <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-6">
-                        <div className="flex justify-between items-end">
-                            <div>
+                    {/* Print Header - Matches Screenshot */}
+                    <div className="hidden print:block mb-8 pb-4">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex flex-col">
                                 {settings?.logoUrl ? (
-                                    <img src={settings.logoUrl} alt="Logo" className="w-48 h-24 object-contain object-left mb-2" />
+                                    <img src={settings.logoUrl} alt="Logo" className="w-48 h-20 object-contain object-left mb-2" />
                                 ) : (
-                                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none mb-1">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
+                                    <h1 className="text-2xl font-bold text-blue-900 leading-none mb-1">{settings?.companyName || 'ATLAS LOGISTICS'}</h1>
                                 )}
-                                <p className="text-sm text-slate-500 font-bold tracking-[0.2em] uppercase mt-1">Shipment Waybill</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-xs text-slate-400 uppercase font-medium">Tracking Number</p>
-                                <p className="text-xl font-bold text-slate-900">{shipment.trackingNumber}</p>
+                                <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">Tracking Number</p>
+                                <p className="text-2xl font-black text-slate-900">{shipment.trackingNumber}</p>
                             </div>
+                        </div>
+                        <div className="flex justify-between items-end border-b-[3px] border-black pb-2">
+                            <h2 className="text-lg font-black text-slate-800 tracking-[0.2em] uppercase">Shipment Waybill</h2>
                         </div>
                     </div>
 
                     <div className="bg-brand-surface border border-brand-border rounded-2xl p-8 shadow-xl print:shadow-none print:border-black print:bg-white print:text-black">
-                        {/* Header */}
-                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+                        {/* Header Section for Print Card */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-10">
                             <div className="w-full sm:w-auto">
-                                <h1 className="text-2xl sm:text-3xl font-bold text-brand-text print:text-black break-all">{shipment.trackingNumber}</h1>
+                                <h1 className="text-3xl sm:text-4xl font-black text-brand-text print:text-black break-all mb-1">{shipment.trackingNumber}</h1>
                                 <div className="flex flex-col gap-1 mt-1">
-                                    <p className="text-brand-text-muted text-sm print:text-gray-600">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
+                                    <p className="text-brand-text-muted text-sm print:text-slate-500 font-medium">Created on <FormattedDate date={shipment.createdAt} mode="date" /></p>
                                     {shipment.estimatedDelivery && (
-                                        <p className="text-blue-400 print:text-blue-600 font-medium text-sm">
+                                        <p className="text-blue-400 print:text-blue-600 font-bold text-sm">
                                             Est. Delivery: <FormattedDate date={shipment.estimatedDelivery} mode="date" />
                                         </p>
                                     )}
@@ -435,6 +529,20 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                     onChange={e => setEditData({ ...editData, senderAddress: e.target.value })}
                                                     placeholder="Sender Address"
                                                 />
+                                                <div className="mt-2">
+                                                    <label className="text-xs text-brand-text-muted block mb-1">Vehicle Type</label>
+                                                    <select
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.vehicleType}
+                                                        onChange={e => setEditData({ ...editData, vehicleType: e.target.value })}
+                                                    >
+                                                        <option value="TRUCK">Truck</option>
+                                                        <option value="SHIP">Ship</option>
+                                                        <option value="PLANE">Airplane</option>
+                                                        <option value="VAN">Van</option>
+                                                        <option value="TRAIN">Train</option>
+                                                    </select>
+                                                </div>
                                             </div>
 
                                             {/* Receiver Inputs */}
@@ -454,13 +562,24 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                     onChange={e => setEditData({ ...editData, receiverPhone: e.target.value })}
                                                     placeholder="Receiver Phone"
                                                 />
-                                                <textarea
-                                                    rows={2}
-                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none"
-                                                    value={editData.receiverAddress}
-                                                    onChange={e => setEditData({ ...editData, receiverAddress: e.target.value })}
-                                                    placeholder="Receiver Address"
-                                                />
+                                                <div className="relative">
+                                                    <textarea
+                                                        rows={2}
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none pr-8"
+                                                        value={editData.receiverAddress}
+                                                        onChange={e => setEditData({ ...editData, receiverAddress: e.target.value })}
+                                                        placeholder="Receiver Address"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleGeocode('dest')}
+                                                        disabled={geocoding === 'dest'}
+                                                        className="absolute right-1 top-1 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                                        title="Auto-find coordinates"
+                                                    >
+                                                        {geocoding === 'dest' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -477,13 +596,42 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             </div>
                                             <div>
                                                 <label className="text-xs text-brand-text-muted block mb-1">Destination</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
-                                                    value={editData.destination}
-                                                    onChange={e => setEditData({ ...editData, destination: e.target.value })}
-                                                    placeholder="Destination location"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text mb-2 pr-8"
+                                                        value={editData.destination}
+                                                        onChange={e => setEditData({ ...editData, destination: e.target.value })}
+                                                        placeholder="Destination location"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleGeocode('dest')}
+                                                        disabled={geocoding === 'dest'}
+                                                        className="absolute right-1 top-1 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                                        title="Auto-find coordinates"
+                                                    >
+                                                        {geocoding === 'dest' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.destLat}
+                                                        onChange={e => setEditData({ ...editData, destLat: e.target.value })}
+                                                        placeholder="Dest. Latitude"
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.destLng}
+                                                        onChange={e => setEditData({ ...editData, destLng: e.target.value })}
+                                                        placeholder="Dest. Longitude"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                         <div>
@@ -589,7 +737,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     </form>
                                 )}
                             </div>
-                            <div className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold border whitespace-nowrap self-start sm:self-auto ${getStatusStyles(shipment.status)}`}>
+                            <div className={`px-6 py-2 rounded-full text-xs sm:text-sm font-black border-2 whitespace-nowrap self-start sm:self-auto uppercase tracking-wider ${getStatusStyles(shipment.status)}`}>
                                 {shipment.status}
                             </div>
                         </div>
@@ -618,13 +766,15 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                         {/* Product Details */}
                         {(shipment.productDescription || (shipment.imageUrls && shipment.imageUrls.length > 0)) && (
-                            <div className="mb-8 pb-8 border-b border-brand-border print:border-gray-200">
-                                <h3 className="text-brand-text font-semibold mb-4 print:text-black">Product Details</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="mb-8 pb-8 border-b border-brand-border print:border-none">
+                                <h3 className="text-brand-text text-xl font-black mb-4 print:text-black uppercase tracking-tight">Product Details</h3>
+                                <div className="grid grid-cols-1 gap-6">
                                     {shipment.productDescription && (
-                                        <div>
-                                            <p className="text-brand-text-muted text-sm font-medium uppercase mb-2">Description</p>
-                                            <p className="text-brand-text print:text-black whitespace-pre-wrap">{shipment.productDescription}</p>
+                                        <div className="space-y-4">
+                                            <div className="print:block hidden">
+                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Description</p>
+                                            </div>
+                                            <p className="text-brand-text print:text-black whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
                                         </div>
                                     )}
                                     {shipment.imageUrls && shipment.imageUrls.length > 0 && (
@@ -641,6 +791,29 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Route Map (Visual) */}
+                        {latestLocation && (
+                            <div className="w-full mb-8 print:hidden">
+                                <h3 className="text-brand-text text-lg font-bold mb-4 flex items-center">
+                                    <MapPin className="w-5 h-5 mr-3 text-brand-text-muted" />
+                                    Live Location
+                                </h3>
+                                <TrackingMapWrapper
+                                    lat={Number(latestLocation.latitude) || 0}
+                                    lng={Number(latestLocation.longitude) || 0}
+                                    locationName={latestLocation.location || 'Current Location'}
+                                    events={shipment.events}
+                                    vehicleType={parsedSender.vehicleType}
+                                    destLat={parsedReceiver.destLat}
+                                    destLng={parsedReceiver.destLng}
+                                    destinationName={shipment.destination || undefined}
+                                    destinationAddress={parsedReceiver.address}
+                                    isRouteVisible={shipment.showRoute}
+                                    onToggle={handleToggleRoute}
+                                />
                             </div>
                         )}
 
@@ -783,10 +956,27 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     </div>
                 </div>
 
-                {/* Right Column: Update Form */}
-                <div className="xl:col-span-3 order-2 xl:order-3 print:hidden">
+                {/* Right Column */}
+                <div className="xl:col-span-3 order-2 xl:order-3 print:hidden space-y-6">
+                    {/* Vehicle Selection Box */}
+                    <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl">
+                        <h3 className="text-lg font-bold text-brand-text mb-4">Vehicle Type</h3>
+                        <select
+                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                            value={liveVehicleType}
+                            onChange={e => handleVehicleChange(e.target.value)}
+                        >
+                            <option value="TRUCK">🚚 Truck</option>
+                            <option value="SHIP">🚢 Ship</option>
+                            <option value="PLANE">✈️ Airplane</option>
+                            <option value="VAN">🚐 Van</option>
+                            <option value="TRAIN">🚆 Train</option>
+                        </select>
+                    </div>
+
+                    {/* Update Event Form */}
                     <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl sticky top-6">
-                        <h3 className="text-lg font-bold text-brand-text mb-4">Update Status</h3>
+                        <h3 className="text-lg font-bold text-brand-text mb-4">Add Tracking Event</h3>
                         <form onSubmit={handleUpdate} className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm text-brand-text-muted">New Status</label>
@@ -822,10 +1012,19 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         type="text"
                                         required
                                         placeholder="e.g. Distribution Center, NY"
-                                        className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-10 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
                                         value={formData.location}
                                         onChange={e => setFormData({ ...formData, location: e.target.value })}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleGeocode('event')}
+                                        disabled={geocoding === 'event'}
+                                        className="absolute right-2 top-2.5 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                        title="Auto-find coordinates"
+                                    >
+                                        {geocoding === 'event' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                                    </button>
                                 </div>
                             </div>
 
@@ -863,6 +1062,35 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                 />
+                            </div>
+
+                            <hr className="border-brand-border/50" />
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-blue-400 uppercase tracking-wider text-[10px]">Final Destination Coords (Optional)</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-brand-text-muted">Dest. Lat</label>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            placeholder="e.g. 40.7128"
+                                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                                            value={formData.destLat}
+                                            onChange={e => setFormData({ ...formData, destLat: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-brand-text-muted">Dest. Lng</label>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            placeholder="e.g. -74.0060"
+                                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                                            value={formData.destLng}
+                                            onChange={e => setFormData({ ...formData, destLng: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <button

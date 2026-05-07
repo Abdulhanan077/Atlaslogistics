@@ -15,11 +15,15 @@ export default async function AdminLayout({
         redirect("/login")
     }
 
-    const settings = await prisma.siteSettings.findFirst();
+    const settings = await prisma.siteSettings.findFirst().catch(() => null);
+    const serializedUser = session.user ? JSON.parse(JSON.stringify(session.user)) : null;
+    const serializedSettings = settings ? JSON.parse(JSON.stringify(settings)) : null;
 
     return (
-        <AdminLayoutClient user={session.user} settings={settings}>
-            {children}
-        </AdminLayoutClient>
+        <div className="min-h-screen bg-brand-bg">
+            <AdminLayoutClient user={serializedUser} settings={serializedSettings}>
+                {children}
+            </AdminLayoutClient>
+        </div>
     )
 }

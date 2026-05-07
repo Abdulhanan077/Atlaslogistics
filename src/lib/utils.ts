@@ -1,27 +1,52 @@
 export function parseShipmentInfo(infoString: string | null | undefined) {
-    if (!infoString) return { name: '', phone: '', address: '' };
+    const scrub = (val: any) => {
+        if (!val || typeof val !== 'string') return val;
+        let clean = val;
+        
+        // Remove everything up to and including "Address" if it exists
+        const addrIdx = clean.toLowerCase().lastIndexOf('address');
+        if (addrIdx !== -1) {
+            clean = clean.substring(addrIdx + 7).replace(/^[:\s]+/, '');
+        }
+
+        // Also clean up any other labeled blocks that might be left
+        return clean
+            .replace(/(?:Receiver|Sender)?\s*Full\s*name[\s\S]*?(?=Phone|Email|Address|$)/gi, '')
+            .replace(/Phone\s*or\s*email[\s\S]*?(?=Address|$)/gi, '')
+            .replace(/(?:Receiver|Sender)?\s*Full\s*name[:]?/gi, '')
+            .replace(/Phone\s*or\s*email[:]?/gi, '')
+            .replace(/Phone[:]?/gi, '')
+            .replace(/Email[:]?/gi, '')
+            .replace(/Address[:]?/gi, '')
+            .trim();
+    };
+
+    if (!infoString) return { name: '', phone: '', address: '', vehicleType: 'TRUCK' };
 
     try {
         const parsed = JSON.parse(infoString);
         return {
-            name: parsed.name || '',
-            phone: parsed.phone || '',
-            address: parsed.address || ''
+            name: scrub(parsed.name || ''),
+            phone: scrub(parsed.phone || ''),
+            address: scrub(parsed.address || ''),
+            vehicleType: parsed.vehicleType || 'TRUCK',
+            ...parsed, // Keep other fields like destLat, destLng
         };
     } catch {
-        // Fallback for legacy plain text entries "Name, Address" or just "Name"
         const parts = infoString.split(',').map(s => s.trim());
         if (parts.length > 1) {
             return {
-                name: parts[0],
+                name: scrub(parts[0]),
                 phone: '',
-                address: parts.slice(1).join(', ')
+                address: scrub(parts.slice(1).join(', ')),
+                vehicleType: 'TRUCK'
             };
         }
         return {
-            name: infoString,
+            name: scrub(infoString),
             phone: '',
-            address: ''
+            address: '',
+            vehicleType: 'TRUCK'
         };
     }
 }

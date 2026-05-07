@@ -7,6 +7,19 @@ const TrackingMap = dynamic(() => import('./TrackingMap'), {
     ssr: false
 });
 
-export default function TrackingMapWrapper(props: { lat: number; lng: number; locationName: string }) {
+export default function TrackingMapWrapper(props: { 
+    lat: number; 
+    lng: number; 
+    locationName: string; 
+    events?: any[]; 
+    vehicleType?: string;
+    destLat?: string | number;
+    destLng?: string | number;
+    destinationName?: string;
+    destinationAddress?: string;
+    showToggle?: boolean;
+    isRouteVisible?: boolean;
+    onToggle?: (visible: boolean) => void;
+}) {
     return <TrackingMap {...props} />;
 }

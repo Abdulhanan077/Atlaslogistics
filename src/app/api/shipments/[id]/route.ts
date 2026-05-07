@@ -34,6 +34,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         if (senderInfo !== undefined) updateData.senderInfo = senderInfo;
         if (receiverInfo !== undefined) updateData.receiverInfo = receiverInfo;
         if (customerEmail !== undefined) updateData.customerEmail = customerEmail;
+        if (body.showRoute !== undefined) updateData.showRoute = body.showRoute;
 
         const updatedShipment = await prisma.shipment.update({
             where: { id },

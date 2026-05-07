@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Search } from 'lucide-react';
+import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from 'react-hot-toast';
 import { parseShipmentInfo } from '@/lib/utils';
 
@@ -29,9 +30,12 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
         senderName: sender?.name || '',
         senderPhone: sender?.phone || '',
         senderAddress: sender?.address || '',
+        vehicleType: sender?.vehicleType || 'TRUCK',
         receiverName: receiver?.name || '',
         receiverPhone: receiver?.phone || '',
         receiverAddress: receiver?.address || '',
+        destLat: receiver?.destLat || '',
+        destLng: receiver?.destLng || '',
         origin: initialData?.origin || '',
         destination: initialData?.destination || '',
         customerEmail: initialData?.customerEmail || '',
@@ -41,6 +45,23 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
         createdAt: getInitialDateString()
     });
     const [loading, setLoading] = useState(false);
+    const [geocoding, setGeocoding] = useState(false);
+
+    const handleGeocode = async (address: string) => {
+        if (!address) {
+            toast.error("Please enter an address first");
+            return;
+        }
+        setGeocoding(true);
+        const result = await geocodeAddress(address);
+        setGeocoding(false);
+        if (result) {
+            setFormData(prev => ({ ...prev, destLat: result.lat, destLng: result.lon }));
+            toast.success("Coordinates found!");
+        } else {
+            toast.error("Could not find coordinates for this address");
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,12 +71,15 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
             senderInfo: JSON.stringify({
                 name: formData.senderName,
                 phone: formData.senderPhone,
-                address: formData.senderAddress
+                address: formData.senderAddress,
+                vehicleType: formData.vehicleType
             }),
             receiverInfo: JSON.stringify({
                 name: formData.receiverName,
                 phone: formData.receiverPhone,
-                address: formData.receiverAddress
+                address: formData.receiverAddress,
+                destLat: formData.destLat,
+                destLng: formData.destLng
             }),
             origin: formData.origin,
             destination: formData.destination,
@@ -109,6 +133,13 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                                 <input type="text" required placeholder="Full Name" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.senderName} onChange={e => setFormData({ ...formData, senderName: e.target.value })} />
                                 <input type="text" placeholder="Phone Number" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.senderPhone} onChange={e => setFormData({ ...formData, senderPhone: e.target.value })} />
                                 <textarea required rows={2} placeholder="Full Address" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none resize-none" value={formData.senderAddress} onChange={e => setFormData({ ...formData, senderAddress: e.target.value })} />
+                                <select className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.vehicleType} onChange={e => setFormData({ ...formData, vehicleType: e.target.value })}>
+                                    <option value="TRUCK">🚚 Truck</option>
+                                    <option value="SHIP">🚢 Ship</option>
+                                    <option value="PLANE">✈️ Airplane</option>
+                                    <option value="VAN">🚐 Van</option>
+                                    <option value="TRAIN">🚆 Train</option>
+                                </select>
                             </div>
                         </div>
 
@@ -118,7 +149,18 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                             <div className="space-y-3">
                                 <input type="text" required placeholder="Full Name" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.receiverName} onChange={e => setFormData({ ...formData, receiverName: e.target.value })} />
                                 <input type="text" placeholder="Phone Number" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.receiverPhone} onChange={e => setFormData({ ...formData, receiverPhone: e.target.value })} />
-                                <textarea required rows={2} placeholder="Full Address" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none resize-none" value={formData.receiverAddress} onChange={e => setFormData({ ...formData, receiverAddress: e.target.value })} />
+                                <div className="relative">
+                                    <textarea required rows={2} placeholder="Full Address" className="w-full bg-brand-bg border border-brand-border/50 rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none resize-none pr-10" value={formData.receiverAddress} onChange={e => setFormData({ ...formData, receiverAddress: e.target.value })} />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleGeocode(formData.receiverAddress)}
+                                        disabled={geocoding}
+                                        className="absolute right-2 top-2 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                        title="Auto-find coordinates"
+                                    >
+                                        {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -133,7 +175,22 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Destination</label>
-                            <input type="text" required className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.destination} onChange={e => setFormData({ ...formData, destination: e.target.value })} />
+                            <div className="relative">
+                                <input type="text" required className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none mb-2 pr-10" value={formData.destination} onChange={e => setFormData({ ...formData, destination: e.target.value })} />
+                                <button
+                                    type="button"
+                                    onClick={() => handleGeocode(formData.destination)}
+                                    disabled={geocoding}
+                                    className="absolute right-2 top-2 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                    title="Auto-find coordinates"
+                                >
+                                    {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input type="number" step="any" placeholder="Dest. Latitude" className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none text-sm" value={formData.destLat} onChange={e => setFormData({ ...formData, destLat: e.target.value })} />
+                                <input type="number" step="any" placeholder="Dest. Longitude" className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none text-sm" value={formData.destLng} onChange={e => setFormData({ ...formData, destLng: e.target.value })} />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Customer Email (Optional)</label>

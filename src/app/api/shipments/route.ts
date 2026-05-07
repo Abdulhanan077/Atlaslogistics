@@ -59,9 +59,15 @@ export async function POST(req: Request) {
 
             let pdfBuffer;
             try {
-                pdfBuffer = await renderToBuffer(React.createElement(ShipmentDetailsPDF, { shipment, settings }) as any);
+                // Add a timeout to prevent hanging
+                const pdfPromise = renderToBuffer(React.createElement(ShipmentDetailsPDF, { shipment, settings }) as any);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("PDF Generation Timeout")), 10000)
+                );
+                
+                pdfBuffer = await Promise.race([pdfPromise, timeoutPromise]) as Buffer;
             } catch (err) {
-                console.error("Failed to generate PDF label", err);
+                console.error("Failed to generate PDF label (Creation):", err);
             }
 
             // Must await in serverless/Vercel to avoid early termination
@@ -78,7 +84,7 @@ export async function POST(req: Request) {
                 estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toLocaleDateString() : undefined,
                 productDescription: body.productDescription,
                 attachment: pdfBuffer ? {
-                    filename: `Label-${trackingNumber}.pdf`,
+                    filename: `WAYBILL-${trackingNumber}.pdf`,
                     content: pdfBuffer
                 } : undefined
             });

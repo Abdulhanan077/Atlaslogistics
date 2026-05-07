@@ -19,7 +19,7 @@ export async function GET(req: Request) {
         return NextResponse.json(settings);
     } catch (error) {
         console.error("[SETTINGS_GET]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Internal Error" }, { status: 500 });
     }
 }
 
@@ -57,6 +57,6 @@ export async function PATCH(req: Request) {
         return NextResponse.json(settings);
     } catch (error) {
         console.error("[SETTINGS_PATCH]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Internal Error" }, { status: 500 });
     }
 }

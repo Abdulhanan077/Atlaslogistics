@@ -62,8 +62,10 @@ async function getShipment(trackingNumber: string) {
         return createdB - createdA;
     });
 
+    const plainShipment = JSON.parse(JSON.stringify(shipment));
+
     return {
-        ...shipment,
+        ...plainShipment,
         events: sortedEvents,
         imageUrls: parsedImageUrls,
         parsedSender: parseShipmentInfo(shipment.senderInfo),
@@ -278,6 +280,14 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     lat={latestLocation.latitude ?? 0}
                                     lng={latestLocation.longitude ?? 0}
                                     locationName={latestLocation.location || 'Current Location'}
+                                    events={shipment.events}
+                                    vehicleType={shipment.parsedSender.vehicleType}
+                                    destLat={shipment.parsedReceiver.destLat}
+                                    destLng={shipment.parsedReceiver.destLng}
+                                    destinationName={shipment.destination}
+                                    destinationAddress={shipment.parsedReceiver.address}
+                                    showToggle={false}
+                                    isRouteVisible={shipment.showRoute}
                                 />
                             </div>
                         )}

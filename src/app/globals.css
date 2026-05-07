@@ -35,9 +35,9 @@
 @theme inline {
   --color-background: var(--bg-main);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
   
+  --color-brand-primary: #3b82f6;
+  --color-brand-primary-hover: #2563eb;
   --color-brand-bg: var(--bg-main);
   --color-brand-surface: var(--bg-surface);
   --color-brand-border: var(--border-color);
@@ -93,5 +93,21 @@ body {
   .goog-te-menu2-item:active div {
     font-size: 14px !important;
     padding: 8px !important;
+  }
+}
+
+/* Hide browser-added headers and footers (URL, Date, etc.) during print */
+@media print {
+  @page {
+    margin: 0;
+  }
+  body {
+    padding: 1.5cm;
+    background: white !important;
+  }
+  /* Ensure background colors and images print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

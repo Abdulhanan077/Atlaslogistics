@@ -22,10 +22,12 @@ export default function AdminLayoutClient({
     settings 
 }: { 
     children: React.ReactNode, 
-    user: AdminUser,
+    user: AdminUser | null,
     settings: SiteSettings | null
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    if (!user) return null; // Safe fallback
 
     return (
         <div className="flex h-screen bg-brand-surface text-brand-text overflow-hidden print:h-auto print:overflow-visible">

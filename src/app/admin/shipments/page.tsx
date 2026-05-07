@@ -27,13 +27,30 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
     const shipments = await prisma.shipment.findMany({
         where: whereClause,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+            id: true,
+            trackingNumber: true,
+            status: true,
+            origin: true,
+            destination: true,
+            receiverInfo: true,
+            senderInfo: true,
+            customerEmail: true,
+            estimatedDelivery: true,
+            productDescription: true,
+            imageUrls: true,
+            createdAt: true,
             events: {
                 orderBy: [
                     { timestamp: 'desc' },
                     { createdAt: 'desc' }
                 ],
-                take: 1
+                take: 1,
+                select: {
+                    description: true,
+                    status: true,
+                    timestamp: true
+                }
             }
         }
     })
@@ -45,6 +62,8 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
         exceptions: shipments.filter(s => ['ON_HOLD', 'RETURNED'].includes(s.status)).length
     };
 
+    const serializedShipments = JSON.parse(JSON.stringify(shipments));
+
     return (
         <div>
 
@@ -54,7 +73,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
                 </div>
             )}
             <DashboardStats stats={stats} />
-            <ShipmentsClient initialShipments={shipments} />
+            <ShipmentsClient initialShipments={serializedShipments} />
         </div>
     )
 }

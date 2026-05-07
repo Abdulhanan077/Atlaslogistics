@@ -45,8 +45,11 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
         parsedImageUrls = [];
     }
 
+    // Cleanly serialize for RSC
+    const plainShipment = JSON.parse(JSON.stringify(shipment));
+    
     // Sort events: latest by timestamp/createdAt first, but "CREATED" always last
-    const sortedEvents = [...shipment.events].sort((a, b) => {
+    const sortedEvents = [...plainShipment.events].sort((a, b) => {
         if (a.status === 'CREATED' && b.status !== 'CREATED') return 1;
         if (a.status !== 'CREATED' && b.status === 'CREATED') return -1;
         
@@ -60,10 +63,12 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
     });
 
     const parsedShipment = {
-        ...shipment,
+        ...plainShipment,
         events: sortedEvents,
         imageUrls: parsedImageUrls
     };
 
-    return <ShipmentDetailsClient shipment={parsedShipment} settings={settings} />
+    const serializedSettings = settings ? JSON.parse(JSON.stringify(settings)) : null;
+
+    return <ShipmentDetailsClient shipment={parsedShipment} settings={serializedSettings} />
 }
