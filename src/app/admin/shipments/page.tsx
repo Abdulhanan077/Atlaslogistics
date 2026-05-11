@@ -24,7 +24,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
         whereClause.adminId = targetUserId;
     }
 
-    const shipments = await prisma.shipment.findMany({
+    const shipments = (await prisma.shipment.findMany({
         where: whereClause,
         orderBy: { createdAt: 'desc' },
         select: {
@@ -54,7 +54,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
                 }
             }
         } as any
-    })
+    })) as any[];
 
     const stats = {
         total: shipments.length,
