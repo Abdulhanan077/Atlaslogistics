@@ -251,7 +251,9 @@ export default function MediaManager() {
                                                 {item.trackingNumber}
                                             </div>
                                             {!deletable && (
-                                                <ShieldAlert className="w-4 h-4 text-orange-500" title="Protected: < 1 month old" />
+                                                <span title="Protected: < 1 month old">
+                                                    <ShieldAlert className="w-4 h-4 text-orange-500" />
+                                                </span>
                                             )}
                                         </div>
                                         <div className="flex items-center text-xs text-brand-text-muted">
