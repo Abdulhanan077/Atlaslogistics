@@ -45,7 +45,7 @@ export async function POST(req: Request) {
                         timestamp: body.createdAt ? new Date(body.createdAt) : undefined
                     }
                 }
-            }
+            } as any
         });
 
         // Log action
@@ -138,8 +138,8 @@ export async function GET(req: Request) {
             let parsedImageUrls = [];
             let parsedVideoUrls = [];
             try {
-                parsedImageUrls = s.imageUrls ? JSON.parse(s.imageUrls) : [];
-                parsedVideoUrls = s.videoUrls ? JSON.parse(s.videoUrls) : [];
+                parsedImageUrls = (s as any).imageUrls ? JSON.parse((s as any).imageUrls) : [];
+                parsedVideoUrls = (s as any).videoUrls ? JSON.parse((s as any).videoUrls) : [];
             } catch (e) {
                 console.error("Failed to parse urls for shipment", s.id, e);
             }

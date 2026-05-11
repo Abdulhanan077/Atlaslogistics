@@ -53,7 +53,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
                     timestamp: true
                 }
             }
-        }
+        } as any
     })
 
     const stats = {

@@ -46,8 +46,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
         const parsedShipment = {
             ...updatedShipment,
-            imageUrls: updatedShipment.imageUrls ? JSON.parse(updatedShipment.imageUrls) : [],
-            videoUrls: updatedShipment.videoUrls ? JSON.parse(updatedShipment.videoUrls) : []
+            imageUrls: (updatedShipment as any).imageUrls ? JSON.parse((updatedShipment as any).imageUrls) : [],
+            videoUrls: (updatedShipment as any).videoUrls ? JSON.parse((updatedShipment as any).videoUrls) : []
         };
 
         return NextResponse.json(parsedShipment);
