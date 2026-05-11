@@ -54,6 +54,7 @@ model Shipment {
 
   productDescription String?
   imageUrls          String  @default("[]") // JSON string for SQLite compatibility
+  videoUrls          String  @default("[]") // JSON string for compatibility
 
   adminId String
   admin   User   @relation(fields: [adminId], references: [id])
