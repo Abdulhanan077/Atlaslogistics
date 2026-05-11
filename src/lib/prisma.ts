@@ -10,7 +10,7 @@ if (typeof globalThis.WebSocket !== 'undefined') {
 }
 
 // Enable HTTP connection for better stability in serverless/Next.js dev environments
-neonConfig.useFetchConnection = true
+(neonConfig as any).useFetchConnection = true
 
 const prismaClientSingleton = () => {
     const connectionString = process.env.DATABASE_URL

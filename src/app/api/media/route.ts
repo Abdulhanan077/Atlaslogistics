@@ -14,7 +14,7 @@ export async function GET() {
         const { blobs } = await list();
         const totalSize = blobs.reduce((acc, blob) => acc + blob.size, 0);
 
-        const shipments = await prisma.shipment.findMany({
+        const shipments = (await prisma.shipment.findMany({
             where: { isDeleted: false },
             select: {
                 id: true,
@@ -22,8 +22,8 @@ export async function GET() {
                 imageUrls: true,
                 videoUrls: true,
                 createdAt: true,
-            }
-        });
+            } as any
+        })) as any[];
 
         const allMedia: any[] = [];
         shipments.forEach(s => {
@@ -113,11 +113,11 @@ export async function DELETE(request: Request) {
                 data: { imageUrls: JSON.stringify(updatedImages) }
             });
         } else if (type === 'video') {
-            const currentVideos = JSON.parse(shipment.videoUrls);
+            const currentVideos = JSON.parse((shipment as any).videoUrls || "[]");
             const updatedVideos = currentVideos.filter((u: string) => u !== url);
             await prisma.shipment.update({
                 where: { id: shipmentId },
-                data: { videoUrls: JSON.stringify(updatedVideos) }
+                data: { videoUrls: JSON.stringify(updatedVideos) } as any
             });
         }
 
