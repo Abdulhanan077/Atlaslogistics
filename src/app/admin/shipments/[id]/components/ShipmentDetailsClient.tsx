@@ -12,6 +12,7 @@ import FormattedDate from '@/components/FormattedDate';
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import { parseShipmentInfo } from '@/lib/utils';
 import { geocodeAddress } from '@/lib/geocoding';
+import { upload } from '@vercel/blob/client';
 
 // PDF rendering is now handled server-side to avoid client-side bundling issues
 const ShippingLabel = null;
@@ -39,9 +40,17 @@ interface Shipment {
     customerEmail?: string | null;
     productDescription?: string | null;
     imageUrls?: string[];
+    videoUrls?: string[];
     status: string;
     events: ShipmentEvent[];
     showRoute: boolean;
+}
+
+interface ActiveUpload {
+    id: string;
+    fileName: string;
+    progress: number;
+    controller: AbortController;
 }
 
 interface Settings {
@@ -56,6 +65,16 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     const [updating, setUpdating] = useState(false);
     const [liveVehicleType, setLiveVehicleType] = useState(parseShipmentInfo(shipment.senderInfo).vehicleType || 'TRUCK');
     const [geocoding, setGeocoding] = useState<string | null>(null);
+    const [activeUploads, setActiveUploads] = useState<ActiveUpload[]>([]);
+
+    const cancelUpload = (id: string) => {
+        const upload = activeUploads.find(u => u.id === id);
+        if (upload) {
+            upload.controller.abort();
+            setActiveUploads(prev => prev.filter(u => u.id !== id));
+            toast.error(`Upload of ${upload.fileName} cancelled`);
+        }
+    };
 
     const handleGeocode = async (type: 'event' | 'dest') => {
         const address = type === 'event' ? formData.location : editData.receiverAddress;
@@ -255,6 +274,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         customerEmail: shipment.customerEmail || '',
         productDescription: shipment.productDescription || '',
         imageUrls: shipment.imageUrls || [],
+        videoUrls: shipment.videoUrls || [],
         estimatedDelivery: shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toISOString().slice(0, 16) : '',
         senderName: parsedSender.name,
         senderPhone: parsedSender.phone,
@@ -280,6 +300,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     customerEmail: editData.customerEmail,
                     productDescription: editData.productDescription,
                     imageUrls: editData.imageUrls,
+                    videoUrls: editData.videoUrls,
                     estimatedDelivery: editData.estimatedDelivery ? new Date(editData.estimatedDelivery + ':00Z').toISOString() : null,
                     senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress, vehicleType: editData.vehicleType }),
                     receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress, destLat: editData.destLat, destLng: editData.destLng })
@@ -654,81 +675,194 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 placeholder="Describe the shipment contents..."
                                             />
                                         </div>
-                                        <div>
-                                            <label className="text-xs text-brand-text-muted block mb-1">Upload Images</label>
-                                            <div className="space-y-3">
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    accept="image/*"
-                                                    onChange={async (e) => {
-                                                        if (!e.target.files?.length) {
-                                                            return;
-                                                        }
-                                                        const files = Array.from(e.target.files);
-                                                        const toastId = toast.loading(`Uploading ${files.length} images...`);
-
-                                                        try {
-                                                            const uploadPromises = files.map(async (file) => {
-                                                                try {
-                                                                    const response = await fetch(
-                                                                        `/api/upload?filename=${encodeURIComponent(file.name)}`,
-                                                                        {
-                                                                            method: 'POST',
-                                                                            body: file,
-                                                                        },
-                                                                    );
-                                                                    if (!response.ok) {
-                                                                        const errorText = await response.text();
-                                                                        throw new Error(errorText || response.statusText);
-                                                                    }
-                                                                    const newBlob = await response.json();
-                                                                    return newBlob.url;
-                                                                } catch (err) {
-                                                                    console.error(`Failed to upload ${file.name}`, err);
-                                                                    return null;
-                                                                }
-                                                            });
-
-                                                            const results = await Promise.all(uploadPromises);
-                                                            const successUrls = results.filter((url): url is string => url !== null);
-
-                                                            if (successUrls.length > 0) {
-                                                                setEditData(prev => ({
-                                                                    ...prev,
-                                                                    imageUrls: [...prev.imageUrls, ...successUrls]
-                                                                }));
-                                                                toast.success(`Successfully uploaded ${successUrls.length} images`, { id: toastId });
-                                                            } else {
-                                                                toast.error('Upload failed. Check console for details.', { id: toastId });
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-xs text-brand-text-muted block mb-1">Upload Images</label>
+                                                <div className="space-y-3">
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        accept="image/*"
+                                                        onChange={async (e) => {
+                                                            if (!e.target.files?.length) {
+                                                                return;
                                                             }
-                                                        } catch (err: unknown) {
-                                                            console.error(err instanceof Error ? err.message : err);
-                                                            toast.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`, { id: toastId });
-                                                        } finally {
-                                                            e.target.value = ''; // Reset input at the end
-                                                        }
-                                                    }}
-                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
-                                                />
-                                                {/* Preview / Remove List */}
-                                                {editData.imageUrls.length > 0 && (
-                                                    <div className="grid grid-cols-3 gap-2">
-                                                        {editData.imageUrls.map((url: string, i: number) => (
-                                                            <div key={i} className="relative group aspect-square bg-brand-bg rounded-md overflow-hidden border border-brand-border">
-                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                <img src={url} alt="preview" className="w-full h-full object-cover" />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setEditData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_: string, idx: number) => idx !== i) }))}
-                                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                >
-                                                                    <div className="w-3 h-3 flex items-center justify-center">×</div>
-                                                                </button>
+                                                             const files = Array.from(e.target.files);
+                                                             
+                                                             try {
+                                                                 const uploadPromises = files.map(async (file) => {
+                                                                     const uploadId = Math.random().toString(36).substring(7);
+                                                                     const controller = new AbortController();
+                                                                     
+                                                                     const newActiveUpload = {
+                                                                         id: uploadId,
+                                                                         fileName: file.name,
+                                                                         progress: 0,
+                                                                         controller
+                                                                     };
+                                                                     
+                                                                     setActiveUploads(prev => [...prev, newActiveUpload]);
+
+                                                                     try {
+                                                                        const newBlob = await upload(file.name, file, {
+                                                                            access: 'public',
+                                                                            handleUploadUrl: '/api/upload/token',
+                                                                            abortSignal: controller.signal,
+                                                                             onUploadProgress: (progressEvent) => {
+                                                                                 setActiveUploads(prev => prev.map(u => 
+                                                                                     u.id === uploadId ? { ...u, progress: progressEvent.percentage } : u
+                                                                                 ));
+                                                                             }
+                                                                         });
+                                                                         setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
+                                                                         return newBlob.url;
+                                                                     } catch (err: any) {
+                                                                         if (err.name === 'AbortError') {
+                                                                             console.log('Upload aborted');
+                                                                         } else {
+                                                                             console.error(`Failed to upload ${file.name}`, err);
+                                                                         }
+                                                                         setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
+                                                                         return null;
+                                                                     }
+                                                                 });
+
+                                                                 const results = await Promise.all(uploadPromises);
+                                                                 const successUrls = results.filter((url): url is string => url !== null);
+
+                                                                 if (successUrls.length > 0) {
+                                                                     setEditData(prev => ({
+                                                                         ...prev,
+                                                                         imageUrls: [...prev.imageUrls, ...successUrls]
+                                                                     }));
+                                                                     toast.success(`Successfully uploaded ${successUrls.length} images`);
+                                                                 }
+                                                             } catch (err: unknown) {
+                                                                 console.error(err instanceof Error ? err.message : err);
+                                                             } finally {
+                                                                 e.target.value = ''; 
+                                                             }
+                                                        }}
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
+                                                    />
+                                                    {/* Active Uploads Progress */}
+                                                    {activeUploads.map(upload => (
+                                                        <div key={upload.id} className="space-y-1">
+                                                            <div className="flex justify-between text-[10px] text-brand-text-muted">
+                                                                <span>{upload.fileName}</span>
+                                                                <button type="button" onClick={() => upload.controller.abort()} className="text-red-500 hover:underline">Cancel</button>
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                            <div className="w-full bg-brand-surface h-1.5 rounded-full overflow-hidden">
+                                                                <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${upload.progress}%` }} />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {/* Preview / Remove List */}
+                                                    {editData.imageUrls.length > 0 && (
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            {editData.imageUrls.map((url: string, i: number) => (
+                                                                <div key={i} className="relative group aspect-square bg-brand-bg rounded-md overflow-hidden border border-brand-border">
+                                                                    {/* eslint-disable-next-line @next/next-line @next/next-line @next/next/no-img-element */}
+                                                                    <img src={url} alt="preview" className="w-full h-full object-cover" />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setEditData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_: string, idx: number) => idx !== i) }))}
+                                                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    >
+                                                                        <div className="w-3 h-3 flex items-center justify-center">×</div>
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs text-brand-text-muted block mb-1">Upload Video Proof</label>
+                                                <div className="space-y-3">
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        accept="video/*"
+                                                        onChange={async (e) => {
+                                                            if (!e.target.files?.length) return;
+                                                            const files = Array.from(e.target.files);
+                                                            e.target.value = ''; 
+
+                                                            try {
+                                                                const uploadPromises = files.map(async (file) => {
+                                                                    const uploadId = Math.random().toString(36).substring(7);
+                                                                    const controller = new AbortController();
+                                                                    
+                                                                    const newActiveUpload = {
+                                                                        id: uploadId,
+                                                                        fileName: file.name,
+                                                                        progress: 0,
+                                                                        controller
+                                                                    };
+                                                                    
+                                                                    setActiveUploads(prev => [...prev, newActiveUpload]);
+
+                                                                    try {
+                                                                        const newBlob = await upload(file.name, file, {
+                                                                            access: 'public',
+                                                                            handleUploadUrl: '/api/upload/token',
+                                                                            abortSignal: controller.signal,
+                                                                            onUploadProgress: (progressEvent) => {
+                                                                                setActiveUploads(prev => prev.map(u => 
+                                                                                    u.id === uploadId ? { ...u, progress: progressEvent.percentage } : u
+                                                                                ));
+                                                                            }
+                                                                        });
+                                                                        setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
+                                                                        return newBlob.url;
+                                                                    } catch (err: any) {
+                                                                        if (err.name === 'AbortError') {
+                                                                            console.log('Upload aborted');
+                                                                        } else {
+                                                                            console.error(`Failed to upload ${file.name}`, err);
+                                                                        }
+                                                                        setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
+                                                                        return null;
+                                                                    }
+                                                                });
+
+                                                                const results = await Promise.all(uploadPromises);
+                                                                const successUrls = results.filter((url): url is string => url !== null);
+
+                                                                if (successUrls.length > 0) {
+                                                                    setEditData(prev => ({
+                                                                        ...prev,
+                                                                        videoUrls: [...prev.videoUrls, ...successUrls]
+                                                                    }));
+                                                                    toast.success(`Successfully uploaded ${successUrls.length} videos`);
+                                                                }
+                                                            } catch (err: unknown) {
+                                                                console.error(err instanceof Error ? err.message : err);
+                                                            } finally {
+                                                                e.target.value = ''; 
+                                                            }
+                                                        }}
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20"
+                                                    />
+                                                    {editData.videoUrls && editData.videoUrls.length > 0 && (
+                                                        <div className="grid grid-cols-1 gap-4">
+                                                            {editData.videoUrls.map((url: string, i: number) => (
+                                                                <div key={i} className="relative group w-full aspect-video bg-brand-bg rounded-xl overflow-hidden border border-brand-border shadow-lg">
+                                                                    <video src={url} className="w-full h-full object-contain bg-black" />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setEditData(prev => ({ ...prev, videoUrls: prev.videoUrls.filter((_: string, idx: number) => idx !== i) }))}
+                                                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all shadow-lg scale-90 group-hover:scale-100 z-20"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
@@ -765,7 +899,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         </div>
 
                         {/* Product Details */}
-                        {(shipment.productDescription || (shipment.imageUrls && shipment.imageUrls.length > 0)) && (
+                        {(shipment.productDescription || (shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
                             <div className="mb-8 pb-8 border-b border-brand-border print:border-none">
                                 <h3 className="text-brand-text text-xl font-black mb-4 print:text-black uppercase tracking-tight">Product Details</h3>
                                 <div className="grid grid-cols-1 gap-6">
@@ -777,17 +911,33 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             <p className="text-brand-text print:text-black whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
                                         </div>
                                     )}
-                                    {shipment.imageUrls && shipment.imageUrls.length > 0 && (
-                                        <div>
-                                            <p className="text-brand-text-muted text-sm font-medium uppercase mb-2">Attached Images</p>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {shipment.imageUrls.map((url: string, i: number) => (
-                                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-square bg-brand-surface rounded-lg overflow-hidden border border-brand-border hover:border-blue-500 transition-colors relative group">
-                                                        {/* eslint-disable-next-line @next/next-line @next/next/no-img-element */}
-                                                        <img src={url} alt={`Product ${i + 1}`} className="w-full h-full object-cover" />
-                                                    </a>
-                                                ))}
-                                            </div>
+                                    {((shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
+                                        <div className="space-y-8">
+                                            {shipment.imageUrls && shipment.imageUrls.length > 0 && (
+                                                <div>
+                                                    <p className="text-brand-text-muted text-sm font-medium uppercase mb-3">Attached Images</p>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                                        {shipment.imageUrls.map((url: string, i: number) => (
+                                                            <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-square bg-brand-surface rounded-xl overflow-hidden border border-brand-border hover:border-blue-500 transition-all hover:scale-[1.02] relative group shadow-sm">
+                                                                {/* eslint-disable-next-line @next/next-line @next/next-line @next/next/no-img-element */}
+                                                                <img src={url} alt={`Product ${i + 1}`} className="w-full h-full object-cover" />
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {shipment.videoUrls && shipment.videoUrls.length > 0 && (
+                                                <div>
+                                                    <p className="text-brand-text-muted text-sm font-medium uppercase mb-3">Attached Video Proof</p>
+                                                    <div className="grid grid-cols-1 gap-6">
+                                                        {shipment.videoUrls.map((url: string, i: number) => (
+                                                            <div key={i} className="w-full aspect-video bg-brand-surface rounded-2xl overflow-hidden border border-brand-border relative group shadow-2xl">
+                                                                <video src={url} controls className="w-full h-full object-contain bg-black" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

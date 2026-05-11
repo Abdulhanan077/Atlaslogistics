@@ -12,14 +12,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     // However, the ID (UUID) is hard to guess.
 
     try {
+        if (!id) {
+            return new NextResponse("Missing Shipment ID", { status: 400 });
+        }
+
         const messages = await prisma.message.findMany({
             where: { shipmentId: id },
             orderBy: { createdAt: 'asc' }
         });
         return NextResponse.json(messages);
-    } catch (e) {
-        console.error("GET MESSAGES ERROR:", e);
-        return new NextResponse("Error fetching messages", { status: 500 });
+    } catch (e: any) {
+        console.error(`[API_MESSAGES_GET] Error for shipment ${id}:`, e.message);
+        return new NextResponse(`Error fetching messages: ${e.message}`, { status: 500 });
     }
 }
 
@@ -92,8 +96,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         }
 
         return NextResponse.json(message);
-    } catch (e) {
-        console.error(e);
-        return new NextResponse("Error sending message", { status: 500 });
+    } catch (e: any) {
+        console.error(`[API_MESSAGES_POST] Error:`, e.message);
+        return new NextResponse(`Error sending message: ${e.message}`, { status: 500 });
     }
 }

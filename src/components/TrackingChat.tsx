@@ -24,8 +24,9 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
 
     useEffect(() => {
         if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+            textareaRef.current.style.height = '38px';
+            const scrollHeight = textareaRef.current.scrollHeight;
+            textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`;
         }
     }, [newMessage]);
 
@@ -191,45 +192,43 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                     </div>
 
                     {/* Input Area */}
-                    <form onSubmit={handleSend} className="p-3 bg-slate-800 border-t border-slate-700 flex gap-2">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            ref={fileInputRef}
-                            onChange={handleImageUpload}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={sending || uploadingImage}
-                            className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-700 hover:border-slate-600 rounded-xl transition-colors disabled:opacity-50"
-                            title="Attach Picture"
-                        >
-                            {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
-                        </button>
-                        <textarea
-                            ref={textareaRef}
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyDown={e => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSend(e);
-                                }
-                            }}
-                            rows={1}
-                            placeholder="Type a message..."
-                            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors resize-none max-h-[120px] overflow-y-auto"
-                            style={{ minHeight: '38px' }}
-                        />
-                        <button
-                            type="submit"
-                            disabled={sending || uploadingImage || !newMessage.trim()}
-                            className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                        </button>
+                    <form onSubmit={handleSend} className="p-4 bg-slate-900 border-t border-slate-800">
+                        <div className="flex items-end gap-3 bg-slate-950/50 border border-slate-700 rounded-[1.5rem] p-2 pr-2 focus-within:border-blue-500/50 transition-all shadow-inner">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={sending || uploadingImage}
+                                className="p-2.5 text-slate-500 hover:text-blue-400 hover:bg-white/5 rounded-full transition-all disabled:opacity-50 shrink-0"
+                                title="Attach Picture"
+                            >
+                                {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                            </button>
+                            
+                            <textarea
+                                ref={textareaRef}
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                rows={1}
+                                placeholder="Type a message..."
+                                className="flex-1 bg-transparent border-none text-white text-sm focus:ring-0 outline-none resize-none py-2.5 max-h-[180px] scrollbar-hide"
+                                style={{ minHeight: '40px' }}
+                            />
+                            
+                            <button
+                                type="submit"
+                                disabled={sending || uploadingImage || !newMessage.trim()}
+                                className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full disabled:opacity-50 disabled:grayscale transition-all shadow-lg active:scale-95 shrink-0"
+                            >
+                                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                            </button>
+                        </div>
                     </form>
                 </div>
             )}

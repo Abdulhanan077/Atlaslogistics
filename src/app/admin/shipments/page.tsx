@@ -39,6 +39,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
             estimatedDelivery: true,
             productDescription: true,
             imageUrls: true,
+            videoUrls: true,
             createdAt: true,
             events: {
                 orderBy: [

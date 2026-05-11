@@ -32,6 +32,7 @@ export async function POST(req: Request) {
                 customerEmail,
                 estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
                 imageUrls: JSON.stringify(body.imageUrls || []), // SQLite fix
+                videoUrls: JSON.stringify(body.videoUrls || []),
                 createdAt: body.createdAt ? new Date(body.createdAt) : undefined,
                 productDescription: body.productDescription,
                 status: "CREATED",
@@ -135,14 +136,17 @@ export async function GET(req: Request) {
 
         const parsedShipments = shipments.map(s => {
             let parsedImageUrls = [];
+            let parsedVideoUrls = [];
             try {
                 parsedImageUrls = s.imageUrls ? JSON.parse(s.imageUrls) : [];
+                parsedVideoUrls = s.videoUrls ? JSON.parse(s.videoUrls) : [];
             } catch (e) {
-                console.error("Failed to parse imageUrls for shipment", s.id, e);
+                console.error("Failed to parse urls for shipment", s.id, e);
             }
             return {
                 ...s,
-                imageUrls: parsedImageUrls
+                imageUrls: parsedImageUrls,
+                videoUrls: parsedVideoUrls
             };
         });
 

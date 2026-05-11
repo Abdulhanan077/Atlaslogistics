@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check, Paperclip } from 'lucide-react';
+import { upload } from '@vercel/blob/client';
 
 interface Message {
     id: string;
@@ -24,8 +25,9 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
 
     useEffect(() => {
         if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+            textareaRef.current.style.height = '44px';
+            const scrollHeight = textareaRef.current.scrollHeight;
+            textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`;
         }
     }, [newMessage]);
 
@@ -72,28 +74,21 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
 
         setUploadingImage(true);
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const uploadRes = await fetch(`/api/upload/public?filename=${encodeURIComponent(file.name)}`, {
-                method: 'POST',
-                body: file,
+            const newBlob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/upload/token',
             });
 
-            if (uploadRes.ok) {
-                const blob = await uploadRes.json();
-
-                await fetch(`/api/shipments/${shipmentId}/messages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        content: '',
-                        imageUrl: blob.url,
-                        sender: 'ADMIN'
-                    })
-                });
-                fetchMessages();
-            }
+            await fetch(`/api/shipments/${shipmentId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content: '',
+                    imageUrl: newBlob.url,
+                    sender: 'ADMIN'
+                })
+            });
+            fetchMessages();
         } catch (error) {
             console.error('Image upload failed', error);
         } finally {
@@ -256,7 +251,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             </div>
 
             <form onSubmit={handleSend} className="p-4 border-t border-brand-border bg-brand-surface shrink-0">
-                <div className="flex gap-2 items-center w-full min-w-0">
+                <div className="flex items-end gap-3 bg-brand-bg/50 border border-brand-border rounded-[1.5rem] p-2 pr-2 focus-within:border-blue-500/50 transition-all shadow-inner">
                     <input
                         type="file"
                         accept="image/*"
@@ -268,32 +263,28 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={sending || uploadingImage}
-                        className="p-2.5 text-brand-text-muted hover:text-brand-text bg-brand-bg border border-brand-border hover:border-brand-border/50 rounded-xl transition-colors disabled:opacity-50"
+                        className="p-2.5 text-brand-text-muted hover:text-blue-400 hover:bg-brand-surface/50 rounded-full transition-all disabled:opacity-50 shrink-0"
                         title="Attach Picture"
                     >
-                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5 shrink-0" />}
+                        {uploadingImage ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                     </button>
+                    
                     <textarea
                         ref={textareaRef}
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSend(e);
-                            }
-                        }}
                         rows={1}
                         placeholder="Type a message..."
-                        className="flex-1 min-w-0 bg-brand-bg border border-brand-border rounded-xl px-4 py-2.5 text-brand-text focus:outline-none focus:border-blue-500 transition-colors placeholder:text-brand-text-muted/50 resize-none max-h-[120px] overflow-y-auto"
-                        style={{ minHeight: '44px' }}
+                        className="flex-1 bg-transparent border-none text-brand-text text-sm focus:ring-0 outline-none resize-none py-2.5 max-h-[180px] scrollbar-hide"
+                        style={{ minHeight: '40px' }}
                     />
+                    
                     <button
                         type="submit"
                         disabled={sending || uploadingImage || !newMessage.trim()}
-                        className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl disabled:opacity-50 transition-colors shrink-0"
+                        className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full disabled:opacity-50 disabled:grayscale transition-all shadow-lg active:scale-95 shrink-0"
                     >
-                        <Send className="w-5 h-5" />
+                        {sending ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     </button>
                 </div>
             </form>

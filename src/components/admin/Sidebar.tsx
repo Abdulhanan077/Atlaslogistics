@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { LayoutDashboard, Package, Users, Settings, LogOut, ScrollText, Trash2, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Settings, LogOut, ScrollText, Trash2, BarChart3, Image as ImageIcon } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 interface SiteSettings {
@@ -24,6 +24,7 @@ export default function AdminSidebar({ role, onClose, settings }: {
         { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
         ...(role === 'SUPER_ADMIN' ? [
             { href: '/admin/users', label: 'Manage Admins', icon: Users },
+            { href: '/admin/media', label: 'Media Manager', icon: ImageIcon },
             { href: '/admin/logs', label: 'Audit Logs', icon: ScrollText }
         ] : []),
         { href: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },

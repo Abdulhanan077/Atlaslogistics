@@ -5,6 +5,14 @@ import { X, Loader2, Search } from 'lucide-react';
 import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from 'react-hot-toast';
 import { parseShipmentInfo } from '@/lib/utils';
+import { upload } from '@vercel/blob/client';
+
+interface ActiveUpload {
+    id: string;
+    fileName: string;
+    progress: number;
+    controller: AbortController;
+}
 
 export default function CreateShipmentModal({ onClose, initialData }: { onClose: () => void, initialData?: any }) {
     const sender = initialData ? parseShipmentInfo(initialData.senderInfo) : null;
@@ -26,6 +34,16 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
         }
     };
 
+    const getInitialVideoUrls = () => {
+        if (!initialData?.videoUrls) return [];
+        if (Array.isArray(initialData.videoUrls)) return initialData.videoUrls;
+        try {
+            return JSON.parse(initialData.videoUrls);
+        } catch {
+            return [];
+        }
+    };
+
     const [formData, setFormData] = useState({
         senderName: sender?.name || '',
         senderPhone: sender?.phone || '',
@@ -42,10 +60,21 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
         estimatedDelivery: initialData?.estimatedDelivery ? new Date(initialData.estimatedDelivery).toISOString().split('T')[0] : '',
         productDescription: initialData?.productDescription || '',
         imageUrls: getInitialImageUrls(),
+        videoUrls: getInitialVideoUrls(),
         createdAt: getInitialDateString()
     });
     const [loading, setLoading] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
+    const [activeUploads, setActiveUploads] = useState<ActiveUpload[]>([]);
+
+    const cancelUpload = (id: string) => {
+        const upload = activeUploads.find(u => u.id === id);
+        if (upload) {
+            upload.controller.abort();
+            setActiveUploads(prev => prev.filter(u => u.id !== id));
+            toast.error(`Upload of ${upload.fileName} cancelled`);
+        }
+    };
 
     const handleGeocode = async (address: string) => {
         if (!address) {
@@ -87,6 +116,7 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
             estimatedDelivery: formData.estimatedDelivery,
             productDescription: formData.productDescription,
             imageUrls: formData.imageUrls,
+            videoUrls: formData.videoUrls,
             createdAt: formData.createdAt
         };
 
@@ -214,7 +244,6 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                             <label className="text-sm font-medium text-brand-text-muted">Product Description</label>
                             <textarea rows={3} className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none resize-none" placeholder="Describe the shipment contents..." value={formData.productDescription} onChange={e => setFormData({ ...formData, productDescription: e.target.value })} />
                         </div>
-                        
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-brand-text-muted">Upload Images</label>
                             <input
@@ -224,20 +253,42 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                                 onChange={async (e) => {
                                     if (!e.target.files?.length) return;
                                     const files = Array.from(e.target.files);
-                                    e.target.value = ''; // Reset input
-                                    const toastId = toast.loading(`Uploading ${files.length} images...`);
+                                    e.target.value = '';
 
                                     try {
                                         const uploadPromises = files.map(async (file) => {
+                                            const uploadId = Math.random().toString(36).substring(7);
+                                            const controller = new AbortController();
+                                            
+                                            const newActiveUpload = {
+                                                id: uploadId,
+                                                fileName: file.name,
+                                                progress: 0,
+                                                controller
+                                            };
+                                            
+                                            setActiveUploads(prev => [...prev, newActiveUpload]);
+
                                             try {
-                                                const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, { method: 'POST', body: file });
-                                                if (!response.ok) {
-                                                    throw new Error(await response.text() || response.statusText);
-                                                }
-                                                const newBlob = await response.json();
+                                                const newBlob = await upload(file.name, file, {
+                                                    access: 'public',
+                                                    handleUploadUrl: '/api/upload/token',
+                                                    abortSignal: controller.signal,
+                                                    onUploadProgress: (progressEvent: any) => {
+                                                        setActiveUploads(prev => prev.map(u => 
+                                                            u.id === uploadId ? { ...u, progress: progressEvent.percentage } : u
+                                                        ));
+                                                    }
+                                                });
+                                                setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
                                                 return newBlob.url;
-                                            } catch (err) {
-                                                console.error(`Failed to upload ${file.name}`, err);
+                                            } catch (err: any) {
+                                                if (err.name === 'AbortError') {
+                                                    console.log('Upload aborted');
+                                                } else {
+                                                    console.error(`Failed to upload ${file.name}`, err);
+                                                }
+                                                setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
                                                 return null;
                                             }
                                         });
@@ -247,16 +298,30 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
 
                                         if (successUrls.length > 0) {
                                             setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ...successUrls] }));
-                                            toast.success(`Successfully uploaded ${successUrls.length} images`, { id: toastId });
-                                        } else {
-                                            toast.error('Upload failed. Check console for details.', { id: toastId });
+                                            toast.success(`Successfully uploaded ${successUrls.length} images`);
                                         }
                                     } catch (err: any) {
-                                        toast.error(`Error: ${err.message}`, { id: toastId });
+                                        console.error(err);
                                     }
                                 }}
                                 className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text-muted file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500"
                             />
+                            {/* Active Uploads Progress */}
+                            {activeUploads.length > 0 && (
+                                <div className="space-y-2 mt-2">
+                                    {activeUploads.map((upload) => (
+                                        <div key={upload.id} className="bg-brand-bg p-2 rounded-lg border border-brand-border">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span>{upload.fileName}</span>
+                                                <button onClick={() => cancelUpload(upload.id)} className="text-red-400 hover:text-red-300">Cancel</button>
+                                            </div>
+                                            <div className="w-full bg-brand-surface h-2 rounded-full overflow-hidden">
+                                                <div className="bg-blue-600 h-full transition-all duration-300" style={{ width: `${upload.progress}%` }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             {/* Image Previews */}
                             {formData.imageUrls.length > 0 && (
                                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
@@ -270,6 +335,87 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
                                                 <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-brand-text-muted">Upload Video Proof</label>
+                            <input
+                                type="file"
+                                multiple
+                                accept="video/*"
+                                onChange={async (e) => {
+                                    if (!e.target.files?.length) return;
+                                    const files = Array.from(e.target.files);
+                                    e.target.value = '';
+
+                                    try {
+                                        const uploadPromises = files.map(async (file) => {
+                                            const uploadId = Math.random().toString(36).substring(7);
+                                            const controller = new AbortController();
+                                            
+                                            const newActiveUpload = {
+                                                id: uploadId,
+                                                fileName: file.name,
+                                                progress: 0,
+                                                controller
+                                            };
+                                            
+                                            setActiveUploads(prev => [...prev, newActiveUpload]);
+
+                                            try {
+                                                const newBlob = await upload(file.name, file, {
+                                                    access: 'public',
+                                                    handleUploadUrl: '/api/upload/token',
+                                                    abortSignal: controller.signal,
+                                                    onUploadProgress: (progressEvent: any) => {
+                                                        setActiveUploads(prev => prev.map(u => 
+                                                            u.id === uploadId ? { ...u, progress: progressEvent.percentage } : u
+                                                        ));
+                                                    }
+                                                });
+                                                setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
+                                                return newBlob.url;
+                                            } catch (err: any) {
+                                                if (err.name === 'AbortError') {
+                                                    console.log('Upload aborted');
+                                                } else {
+                                                    console.error(`Failed to upload ${file.name}`, err);
+                                                }
+                                                setActiveUploads(prev => prev.filter(u => u.id !== uploadId));
+                                                return null;
+                                            }
+                                        });
+
+                                        const results = await Promise.all(uploadPromises);
+                                        const successUrls = results.filter((url): url is string => url !== null);
+
+                                        if (successUrls.length > 0) {
+                                            setFormData(prev => ({ ...prev, videoUrls: [...prev.videoUrls, ...successUrls] }));
+                                            toast.success(`Successfully uploaded ${successUrls.length} videos`);
+                                        }
+                                    } catch (err: any) {
+                                        console.error(err);
+                                    }
+                                }}
+                                className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text-muted file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500"
+                            />
+                            {/* Video Previews */}
+                            {formData.videoUrls.length > 0 && (
+                                <div className="grid grid-cols-1 gap-4 mt-2">
+                                    {formData.videoUrls.map((url: string, i: number) => (
+                                        <div key={i} className="relative group w-full aspect-video bg-brand-bg rounded-xl overflow-hidden border border-brand-border shadow-xl">
+                                            <video src={url} controls className="w-full h-full object-contain bg-black" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, videoUrls: prev.videoUrls.filter((_: any, idx: number) => idx !== i) }))}
+                                                className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-all z-10 shadow-lg scale-90 group-hover:scale-100"
+                                            >
+                                                <X className="w-5 h-5" />
                                             </button>
                                         </div>
                                     ))}

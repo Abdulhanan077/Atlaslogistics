@@ -11,9 +11,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session) return new NextResponse("Unauthorized", { status: 401 });
-
+    // Authentication check removed to allow public users to download their waybill
     try {
         const shipment = await prisma.shipment.findUnique({
             where: { id }

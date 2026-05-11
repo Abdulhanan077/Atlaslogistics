@@ -17,7 +17,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     try {
-        const blob = await put(filename, request.body, {
+        const body = await request.arrayBuffer();
+        const blob = await put(filename, Buffer.from(body), {
             access: 'public',
             addRandomSuffix: true,
         });

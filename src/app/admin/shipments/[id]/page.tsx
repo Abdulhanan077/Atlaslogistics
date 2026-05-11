@@ -45,6 +45,17 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
         parsedImageUrls = [];
     }
 
+    // Parse videoUrls for client
+    let parsedVideoUrls = [];
+    try {
+        const rawUrl = (shipment as any).videoUrls;
+        parsedVideoUrls = rawUrl ? JSON.parse(rawUrl) : [];
+        if (!Array.isArray(parsedVideoUrls)) parsedVideoUrls = [];
+    } catch (e) {
+        console.error("Failed to parse videoUrls", e);
+        parsedVideoUrls = [];
+    }
+
     // Cleanly serialize for RSC
     const plainShipment = JSON.parse(JSON.stringify(shipment));
     
@@ -65,7 +76,8 @@ export default async function ShipmentDetailsPage({ params }: { params: Promise<
     const parsedShipment = {
         ...plainShipment,
         events: sortedEvents,
-        imageUrls: parsedImageUrls
+        imageUrls: parsedImageUrls,
+        videoUrls: parsedVideoUrls
     };
 
     const serializedSettings = settings ? JSON.parse(JSON.stringify(settings)) : null;

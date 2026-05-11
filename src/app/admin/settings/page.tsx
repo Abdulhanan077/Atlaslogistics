@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Building2, Mail, Phone, Upload, Loader2, Save, Moon, Sun, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/components/ThemeProvider';
+import { upload } from '@vercel/blob/client';
 
 export default function SettingsDashboard() {
     const { theme, setTheme } = useTheme();
@@ -74,14 +75,11 @@ export default function SettingsDashboard() {
 
         const toastId = toast.loading('Uploading logo...');
         try {
-            const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-                method: 'POST',
-                body: file,
+            const newBlob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/upload/token',
             });
             
-            if (!response.ok) throw new Error('Upload failed');
-            
-            const newBlob = await response.json();
             setSettings(prev => ({ ...prev, logoUrl: newBlob.url }));
             toast.success('Logo uploaded successfully', { id: toastId });
         } catch (error) {
