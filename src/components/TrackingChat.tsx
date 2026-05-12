@@ -135,21 +135,21 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
 
             {/* Chat Window */}
             {isOpen && (
-                <div className="fixed bottom-6 right-6 w-80 md:w-96 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[600px]">
+                <div className="fixed bottom-6 right-6 w-80 md:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[600px]">
                     {/* Header */}
-                    <div className="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
+                    <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                <Phone className="w-5 h-5 text-blue-400" />
+                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100">
+                                <Phone className="w-5 h-5 text-blue-500" />
                             </div>
                             <div>
-                                <h3 className="text-white font-bold text-sm">Support Chat</h3>
-                                <p className="text-xs text-slate-400">Ask us anything about your shipment</p>
+                                <h3 className="text-slate-900 font-bold text-sm">Support Chat</h3>
+                                <p className="text-xs text-slate-500">Ask us anything about your shipment</p>
                             </div>
                         </div>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="text-slate-400 hover:text-white transition-colors"
+                            className="text-slate-400 hover:text-slate-900 transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -158,7 +158,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                     {/* Messages Area */}
                     <div
                         ref={scrollRef}
-                        className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-950/50 min-h-[300px]"
+                        className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50 min-h-[300px]"
                     >
                         {messages.length === 0 ? (
                             <div className="text-center text-slate-500 text-sm mt-10">
@@ -172,17 +172,17 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                     className={`flex ${msg.sender === 'CLIENT' ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div
-                                        className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.sender === 'CLIENT'
+                                        className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.sender === 'CLIENT'
                                             ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
+                                            : 'bg-white text-slate-700 rounded-tl-none border border-slate-200'
                                             }`}
                                     >
                                         {msg.imageUrl && (
                                             // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={msg.imageUrl} alt="Attached" className="max-w-full rounded-xl mb-2 border border-slate-700/50" />
+                                            <img src={msg.imageUrl} alt="Attached" className="max-w-full rounded-xl mb-2 border border-slate-200" />
                                         )}
                                         {msg.content && <p>{msg.content}</p>}
-                                        <p className={`text-[10px] mt-1 ${msg.sender === 'CLIENT' ? 'text-blue-200' : 'text-slate-500'}`}>
+                                        <p className={`text-[10px] mt-1 ${msg.sender === 'CLIENT' ? 'text-blue-200' : 'text-slate-400'}`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
                                     </div>
@@ -192,8 +192,8 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                     </div>
 
                     {/* Input Area */}
-                    <form onSubmit={handleSend} className="p-4 bg-slate-900 border-t border-slate-800">
-                        <div className="flex items-end gap-3 bg-slate-950/50 border border-slate-700 rounded-[1.5rem] p-2 pr-2 focus-within:border-blue-500/50 transition-all shadow-inner">
+                    <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-200">
+                        <div className="flex items-end gap-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] p-2 pr-2 focus-within:border-blue-300 transition-all shadow-inner">
                             <input
                                 type="file"
                                 accept="image/*"
@@ -205,7 +205,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={sending || uploadingImage}
-                                className="p-2.5 text-slate-500 hover:text-blue-400 hover:bg-white/5 rounded-full transition-all disabled:opacity-50 shrink-0"
+                                className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-white rounded-full transition-all disabled:opacity-50 shrink-0"
                                 title="Attach Picture"
                             >
                                 {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
@@ -217,14 +217,14 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 rows={1}
                                 placeholder="Type a message..."
-                                className="flex-1 bg-transparent border-none text-white text-sm focus:ring-0 outline-none resize-none py-2.5 max-h-[180px] scrollbar-hide"
+                                className="flex-1 bg-transparent border-none text-slate-900 text-sm focus:ring-0 outline-none resize-none py-2.5 max-h-[180px] scrollbar-hide"
                                 style={{ minHeight: '40px' }}
                             />
                             
                             <button
                                 type="submit"
                                 disabled={sending || uploadingImage || !newMessage.trim()}
-                                className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full disabled:opacity-50 disabled:grayscale transition-all shadow-lg active:scale-95 shrink-0"
+                                className="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-full disabled:opacity-50 disabled:grayscale transition-all shadow-md active:scale-95 shrink-0"
                             >
                                 {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             </button>

@@ -130,16 +130,16 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
     if (!shipment) {
         return (
-            <div className="min-h-screen bg-[#030712] relative overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-screen bg-slate-50 relative overflow-hidden flex flex-col items-center justify-center p-6 text-center">
                 {/* Background effects */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
                 
-                <div className="relative z-10 bg-white/[0.02] border border-white/5 backdrop-blur-3xl p-12 rounded-3xl shadow-2xl max-w-md w-full">
-                    <div className="w-20 h-20 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-white/5">
+                <div className="relative z-10 bg-white border border-slate-200 backdrop-blur-3xl p-12 rounded-3xl shadow-xl max-w-md w-full">
+                    <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-100">
                         <Package className="w-10 h-10 text-slate-400" />
                     </div>
-                    <h1 className="text-3xl font-black text-white mb-3 tracking-tight">Not Found</h1>
-                    <p className="text-slate-400 mb-8 leading-relaxed">We couldn't locate a shipment with tracking ID: <br/><span className="text-white font-mono bg-white/5 px-2 py-1 rounded mt-2 inline-block tracking-widest">{number}</span></p>
+                    <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Not Found</h1>
+                    <p className="text-slate-500 mb-8 leading-relaxed">We couldn't locate a shipment with tracking ID: <br/><span className="text-slate-900 font-mono bg-slate-100 border border-slate-200 px-2 py-1 rounded mt-2 inline-block tracking-widest">{number}</span></p>
                     <Link href="/" className="inline-flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]">
                         Track Another Shipment
                     </Link>
@@ -154,18 +154,18 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
     const latestLocation = shipment.events.find((e: any) => e.latitude && e.longitude);
 
     return (
-        <div className="min-h-screen bg-[#030712] text-slate-300 relative overflow-x-hidden selection:bg-blue-500/30 font-sans">
+        <div className="min-h-screen bg-slate-50 text-slate-600 relative overflow-x-hidden selection:bg-blue-500/30 font-sans">
             {/* Ultra-modern ambient background */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/20 blur-[150px] mix-blend-screen animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-900/20 blur-[150px] mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] mix-blend-multiply animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[150px] mix-blend-multiply animate-pulse" style={{ animationDelay: '2s' }} />
             </div>
 
             {/* Navigation Header */}
-            <nav className="relative z-20 w-full border-b border-white/5 bg-black/40 backdrop-blur-xl">
+            <nav className="relative z-20 w-full border-b border-slate-200 bg-white/80 backdrop-blur-xl shadow-sm">
                 <div className="max-w-[1400px] mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
-                    <Link href="/" className="group flex items-center text-slate-400 hover:text-white transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
+                    <Link href="/" className="group flex items-center text-slate-500 hover:text-blue-600 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mr-3 group-hover:bg-slate-100 transition-colors border border-slate-200">
                             <ArrowLeft className="w-5 h-5" />
                         </div>
                         <span className="font-medium tracking-wide">Back to Search</span>
@@ -175,7 +175,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                             <Building2 className="w-5 h-5 text-white" />
                         </div>
                         <div className="hidden sm:block">
-                            <p className="text-white font-bold text-sm tracking-wide">{settings?.companyName || 'Atlas Logistics'}</p>
+                            <p className="text-slate-900 font-bold text-sm tracking-wide">{settings?.companyName || 'Atlas Logistics'}</p>
                             <p className="text-slate-500 text-xs">Official Tracking Portal</p>
                         </div>
                     </div>
@@ -185,41 +185,41 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
             <main className="relative z-10 max-w-[1400px] mx-auto px-4 lg:px-8 py-8 lg:py-12 space-y-8">
                 
                 {/* Hero Tracking Card */}
-                <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 lg:p-12 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+                <div className="bg-white backdrop-blur-2xl border border-slate-200 rounded-[2rem] p-6 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none" />
 
                     <div className="flex flex-col xl:flex-row justify-between gap-10">
                         {/* Left: Tracking Number & Status */}
                         <div className="flex-1 space-y-8">
                             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                                 <div>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">
-                                        <Navigation className="w-3.5 h-3.5 text-blue-400" />
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-widest mb-4">
+                                        <Navigation className="w-3.5 h-3.5 text-blue-500" />
                                         Tracking ID
                                     </div>
-                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter break-all">
+                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter break-all">
                                         {shipment.trackingNumber}
                                     </h1>
                                 </div>
                                 
                                 <div className="flex sm:flex-col gap-3 shrink-0 lg:min-w-[200px]">
                                     {/* CSS Simulated Barcode */}
-                                    <div className="flex h-12 bg-white/5 rounded items-center justify-center px-4 overflow-hidden border border-white/10" title="Digital Scan Code">
-                                        <div className="w-1 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-2 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-1 shrink-0 h-full bg-white mx-[2px] opacity-90"></div>
-                                        <div className="w-3 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-1 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-2 shrink-0 h-full bg-white mx-[2px] opacity-90"></div>
-                                        <div className="w-1 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-4 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-1 shrink-0 h-full bg-white mx-[2px] opacity-90"></div>
-                                        <div className="w-2 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
-                                        <div className="w-1 shrink-0 h-full bg-white mx-[1px] opacity-90"></div>
+                                    <div className="flex h-12 bg-slate-50 rounded items-center justify-center px-4 overflow-hidden border border-slate-200" title="Digital Scan Code">
+                                        <div className="w-1 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-2 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-1 shrink-0 h-full bg-slate-800 mx-[2px] opacity-90"></div>
+                                        <div className="w-3 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-1 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-2 shrink-0 h-full bg-slate-800 mx-[2px] opacity-90"></div>
+                                        <div className="w-1 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-4 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-1 shrink-0 h-full bg-slate-800 mx-[2px] opacity-90"></div>
+                                        <div className="w-2 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
+                                        <div className="w-1 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
                                     </div>
                                     
-                                    <a href={`/api/shipments/${shipment.id}/label`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                                    <a href={`/api/shipments/${shipment.id}/label`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 font-bold transition-all hover:scale-105 shadow-sm">
                                         <Download className="w-4 h-4" />
                                         Download Waybill
                                     </a>
@@ -228,17 +228,17 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className={`p-5 rounded-2xl border backdrop-blur-md ${getStatusBg(shipment.status)}`}>
-                                    <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-1">Current Status</p>
-                                    <p className={`text-2xl font-black tracking-tight ${getStatusColor(shipment.status)}`}>
+                                    <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-1 text-slate-600">Current Status</p>
+                                    <p className={`text-2xl font-black tracking-tight ${getStatusColor(shipment.status).replace('400', '600')}`}>
                                         {shipment.status.replace(/_/g, ' ')}
                                     </p>
                                 </div>
                                 
                                 {shipment.estimatedDelivery && (
-                                    <div className="p-5 rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-md">
+                                    <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 backdrop-blur-md">
                                         <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Est. Delivery</p>
-                                        <p className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-                                            <Calendar className="w-5 h-5 text-blue-400" />
+                                        <p className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                            <Calendar className="w-5 h-5 text-blue-500" />
                                             <FormattedDate date={shipment.estimatedDelivery} mode="date" />
                                         </p>
                                     </div>
@@ -251,9 +251,9 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     <span>Created</span>
                                     <span>Delivered</span>
                                 </div>
-                                <div className="relative h-3 bg-white/5 rounded-full overflow-hidden shadow-inner border border-white/5">
+                                <div className="relative h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-200">
                                     <div
-                                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all duration-1000 ease-out"
+                                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 rounded-full shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all duration-1000 ease-out"
                                         style={{ 
                                             width: `${progress}%`,
                                             backgroundSize: '200% 100%',
@@ -273,27 +273,27 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                         {/* Right: Origin / Dest Connectors */}
                         <div className="xl:w-1/3 flex flex-col justify-center gap-6 relative">
                             {/* Vertical connecting line */}
-                            <div className="absolute left-[2.25rem] top-[4rem] bottom-[4rem] w-[2px] bg-gradient-to-b from-blue-500/50 via-slate-700 to-emerald-500/50 hidden md:block" />
+                            <div className="absolute left-[2.25rem] top-[4rem] bottom-[4rem] w-[2px] bg-gradient-to-b from-blue-300 via-slate-300 to-emerald-300 hidden md:block" />
 
                             <div className="relative flex items-center gap-6 group cursor-default">
-                                <div className="w-[4.5rem] h-[4.5rem] rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 shadow-[0_0_30px_rgba(59,130,246,0.1)] group-hover:scale-110 group-hover:bg-blue-500/20 transition-all duration-300">
-                                    <Package className="w-8 h-8 text-blue-400" />
+                                <div className="w-[4.5rem] h-[4.5rem] rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:bg-blue-100 transition-all duration-300">
+                                    <Package className="w-8 h-8 text-blue-500" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-blue-400 font-bold uppercase tracking-widest mb-1">Origin</p>
-                                    <p className="text-xl font-bold text-white group-hover:text-blue-200 transition-colors">{shipment.origin}</p>
-                                    {shipment.parsedSender.name && <p className="text-sm text-slate-400 mt-1">{shipment.parsedSender.name}</p>}
+                                    <p className="text-xs text-blue-600 font-bold uppercase tracking-widest mb-1">Origin</p>
+                                    <p className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{shipment.origin}</p>
+                                    {shipment.parsedSender.name && <p className="text-sm text-slate-500 mt-1">{shipment.parsedSender.name}</p>}
                                 </div>
                             </div>
 
                             <div className="relative flex items-center gap-6 group cursor-default">
-                                <div className="w-[4.5rem] h-[4.5rem] rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 shadow-[0_0_30px_rgba(16,185,129,0.1)] group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-300">
-                                    <MapPin className="w-8 h-8 text-emerald-400" />
+                                <div className="w-[4.5rem] h-[4.5rem] rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 group-hover:bg-emerald-100 transition-all duration-300">
+                                    <MapPin className="w-8 h-8 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-emerald-400 font-bold uppercase tracking-widest mb-1">Destination</p>
-                                    <p className="text-xl font-bold text-white group-hover:text-emerald-200 transition-colors">{shipment.destination}</p>
-                                    {shipment.parsedReceiver.name && <p className="text-sm text-slate-400 mt-1">{shipment.parsedReceiver.name}</p>}
+                                    <p className="text-xs text-emerald-600 font-bold uppercase tracking-widest mb-1">Destination</p>
+                                    <p className="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">{shipment.destination}</p>
+                                    {shipment.parsedReceiver.name && <p className="text-sm text-slate-500 mt-1">{shipment.parsedReceiver.name}</p>}
                                 </div>
                             </div>
                         </div>
@@ -306,10 +306,10 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                     {/* Left: Map & Media */}
                     <div className="xl:col-span-7 space-y-8">
                         {latestLocation && (
-                            <div className="bg-white/[0.02] backdrop-blur-xl border border-white/5 rounded-[2rem] p-2 shadow-2xl relative overflow-hidden h-[500px]">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
+                            <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-2 shadow-xl relative overflow-hidden h-[500px]">
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent z-10 pointer-events-none" />
                                 <div className="absolute bottom-6 left-6 z-20">
-                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white font-medium shadow-lg">
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 text-slate-900 font-bold shadow-lg">
                                         <span className="relative flex h-3 w-3">
                                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                                           <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
@@ -337,15 +337,15 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                         {/* Product / Media Gallery */}
                         {((shipment.productDescription) || (shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
-                            <div className="bg-white/[0.02] backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 lg:p-10 shadow-2xl">
-                                <h3 className="text-xl font-bold text-white flex items-center mb-6">
-                                    <ShieldCheck className="w-6 h-6 mr-3 text-blue-400" />
+                            <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                                <h3 className="text-xl font-bold text-slate-900 flex items-center mb-6">
+                                    <ShieldCheck className="w-6 h-6 mr-3 text-blue-500" />
                                     Official Parcel Verification
                                 </h3>
                                 
                                 {shipment.productDescription && (
-                                    <div className="mb-8 p-6 bg-white/[0.02] rounded-2xl border border-white/5">
-                                        <p className="text-slate-300 leading-relaxed text-lg">{shipment.productDescription}</p>
+                                    <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <p className="text-slate-600 leading-relaxed text-lg">{shipment.productDescription}</p>
                                     </div>
                                 )}
 
@@ -359,11 +359,11 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                     href={url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="w-full relative rounded-2xl overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all group aspect-video"
+                                                    className="w-full relative rounded-2xl overflow-hidden border border-slate-200 hover:border-blue-300 transition-all group aspect-video shadow-sm"
                                                 >
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     <img src={url} alt={`Proof ${index}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                                                         <span className="text-white text-sm font-medium tracking-wide">Secure Asset Viewer — Parcel Item #{index + 1}</span>
                                                     </div>
                                                 </a>
@@ -377,7 +377,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Live Inspection Media</p>
                                         <div className="grid grid-cols-1 gap-6">
                                             {shipment.videoUrls.map((url: string, index: number) => (
-                                                <div key={index} className="w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
+                                                <div key={index} className="w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 shadow-md relative">
                                                     <video src={url} controls controlsList="nodownload" className="w-full h-full object-contain" />
                                                 </div>
                                             ))}
@@ -390,13 +390,13 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                     {/* Right: Activity Log */}
                     <div className="xl:col-span-5">
-                        <div className="bg-white/[0.02] backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 lg:p-10 shadow-2xl sticky top-8">
-                            <h3 className="text-xl font-bold text-white flex items-center mb-8">
-                                <Clock className="w-6 h-6 mr-3 text-blue-400" />
+                        <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sticky top-8">
+                            <h3 className="text-xl font-bold text-slate-900 flex items-center mb-8">
+                                <Clock className="w-6 h-6 mr-3 text-blue-500" />
                                 Activity Timeline
                             </h3>
                             
-                            <div className="relative pl-6 space-y-8 before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-blue-500/50 before:via-white/10 before:to-transparent">
+                            <div className="relative pl-6 space-y-8 before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-blue-400 before:via-slate-200 before:to-transparent">
                                 {shipment.events.map((event: any, index: number) => {
                                     const isLatest = index === 0;
                                     return (
@@ -404,21 +404,21 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         {/* Dot */}
                                         <div className={`absolute -left-[2.1rem] top-1.5 w-4 h-4 rounded-full border-2 z-10 transition-transform duration-300 group-hover:scale-125 ${getTimelineDotColor(event.status)}`} />
 
-                                        <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${isLatest ? 'bg-white/[0.05] border-white/10 shadow-xl' : 'bg-transparent border-transparent hover:bg-white/[0.02] hover:border-white/5'}`}>
+                                        <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${isLatest ? 'bg-slate-50 border-slate-200 shadow-md' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200'}`}>
                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                                                <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status)}`}>
+                                                <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status).replace('400', '600')}`}>
                                                     {event.status.replace(/_/g, ' ')}
                                                 </p>
-                                                <span className="text-xs font-mono text-slate-400 bg-black/50 px-3 py-1.5 rounded-lg border border-white/5 whitespace-nowrap">
+                                                <span className="text-xs font-mono text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
                                                     <FormattedDate date={event.timestamp} />
                                                 </span>
                                             </div>
-                                            <p className="text-white font-medium mb-2 flex items-center gap-2">
-                                                <MapPin className="w-4 h-4 text-slate-500" />
+                                            <p className="text-slate-900 font-medium mb-2 flex items-center gap-2">
+                                                <MapPin className="w-4 h-4 text-slate-400" />
                                                 {event.location || 'Location Pending'}
                                             </p>
                                             {event.description && (
-                                                <p className="text-slate-400 text-sm leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 mt-3">
+                                                <p className="text-slate-600 text-sm leading-relaxed bg-slate-100 p-3 rounded-xl border border-slate-200 mt-3">
                                                     {event.description}
                                                 </p>
                                             )}

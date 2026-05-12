@@ -182,10 +182,10 @@ export default function TrackingMap({
                 <div className="flex justify-end">
                     <button
                         onClick={handleToggleRoute}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors text-sm shadow-sm border ${
                             showRoute 
-                                ? 'bg-blue-600 text-white hover:bg-blue-500' 
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                ? 'bg-blue-600 text-white hover:bg-blue-500 border-blue-600' 
+                                : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
                         }`}
                     >
                         {showRoute ? <MapIcon className="w-4 h-4" /> : <Route className="w-4 h-4" />}
@@ -194,7 +194,7 @@ export default function TrackingMap({
                 </div>
             )}
             
-            <div className="h-[400px] w-full rounded-xl overflow-hidden shadow-lg border border-slate-700 relative z-0">
+            <div className="h-[400px] w-full rounded-xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-200 relative z-0">
                 <MapContainer
                     center={center}
                     zoom={routePoints.length > 1 ? 4 : 13}
