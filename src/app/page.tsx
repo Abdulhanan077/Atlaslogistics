@@ -65,10 +65,10 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="relative z-10 w-full flex flex-col pt-32">
+      <main className="relative z-10 w-full flex flex-col pt-24">
         
         {/* CINEMATIC HERO SECTION */}
-        <section className="relative min-h-[90vh] flex items-center px-4 lg:px-8 max-w-[1400px] mx-auto py-12">
+        <section className="relative min-h-[80vh] flex items-center px-4 lg:px-8 max-w-[1400px] mx-auto pb-12 pt-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full">
             
             {/* Left Column: Typography */}

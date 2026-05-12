@@ -13,7 +13,7 @@ export async function PATCH(
 
     try {
         const body = await req.json();
-        const { status, location, description, timestamp, latitude, longitude } = body;
+        const { status, location, description, timestamp, latitude, longitude, isDeleted } = body;
 
         // Verify ownership/admin rights
         const shipment = await prisma.shipment.findUnique({
@@ -37,15 +37,17 @@ export async function PATCH(
                 status,
                 location,
                 description,
-                latitude: latitude ? parseFloat(latitude) : null,
-                longitude: longitude ? parseFloat(longitude) : null,
-                timestamp: timestamp ? new Date(timestamp) : undefined
+                latitude: latitude !== undefined ? (latitude ? parseFloat(latitude) : null) : undefined,
+                longitude: longitude !== undefined ? (longitude ? parseFloat(longitude) : null) : undefined,
+                timestamp: timestamp ? new Date(timestamp) : undefined,
+                isDeleted: isDeleted !== undefined ? isDeleted : undefined,
+                deletedAt: isDeleted ? new Date() : (isDeleted === false ? null : undefined)
             }
         });
 
         // Check if we need to sync the main shipment status
         let latestEvent = await prisma.shipmentEvent.findFirst({
-            where: { shipmentId: id, status: { not: 'CREATED' } },
+            where: { shipmentId: id, isDeleted: false, status: { not: 'CREATED' } },
             orderBy: [
                 { timestamp: 'desc' },
                 { createdAt: 'desc' }
@@ -55,7 +57,7 @@ export async function PATCH(
         // Fallback to ANY latest event (like CREATED) if no other events exist
         if (!latestEvent) {
             latestEvent = await prisma.shipmentEvent.findFirst({
-                where: { shipmentId: id },
+                where: { shipmentId: id, isDeleted: false },
                 orderBy: [
                     { timestamp: 'desc' },
                     { createdAt: 'desc' }
@@ -114,14 +116,25 @@ export async function DELETE(
             return new NextResponse("Event does not belong to this shipment", { status: 400 });
         }
 
-        // Delete the event
-        await prisma.shipmentEvent.delete({
-            where: { id: eventId }
-        });
+        const url = new URL(req.url);
+        const isPermanent = url.searchParams.get('permanent') === 'true';
+
+        if (isPermanent) {
+            // Hard delete the event
+            await prisma.shipmentEvent.delete({
+                where: { id: eventId }
+            });
+        } else {
+            // Soft delete the event
+            await prisma.shipmentEvent.update({
+                where: { id: eventId },
+                data: { isDeleted: true, deletedAt: new Date() }
+            });
+        }
 
         // Sync the main shipment status with the NEW latest event
         let latestEvent = await prisma.shipmentEvent.findFirst({
-            where: { shipmentId: id, status: { not: 'CREATED' } },
+            where: { shipmentId: id, isDeleted: false, status: { not: 'CREATED' } },
             orderBy: [
                 { timestamp: 'desc' },
                 { createdAt: 'desc' }
@@ -131,7 +144,7 @@ export async function DELETE(
         // Fallback to ANY latest event (like CREATED) if no other updates exist
         if (!latestEvent) {
             latestEvent = await prisma.shipmentEvent.findFirst({
-                where: { shipmentId: id },
+                where: { shipmentId: id, isDeleted: false },
                 orderBy: [
                     { timestamp: 'desc' },
                     { createdAt: 'desc' }

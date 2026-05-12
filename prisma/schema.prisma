@@ -95,6 +95,8 @@ model ShipmentEvent {
   description String?
   timestamp   DateTime @default(now())
   createdAt   DateTime @default(now())
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
 }
 
 model SiteSettings {

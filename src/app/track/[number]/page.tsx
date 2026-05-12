@@ -22,6 +22,7 @@ async function getShipment(trackingNumber: string) {
         include: {
             admin: { select: { name: true, email: true } },
             events: {
+                where: { isDeleted: false },
                 orderBy: [
                     { timestamp: 'desc' },
                     { createdAt: 'desc' }
@@ -86,40 +87,53 @@ function getStatusProgress(status: string) {
 
 function getStatusColor(status: string) {
     switch (status) {
-        case 'CREATED': return 'text-amber-400';
-        case 'PENDING': return 'text-indigo-400';
-        case 'IN_TRANSIT': return 'text-blue-400';
-        case 'ON_HOLD': return 'text-orange-400';
-        case 'OUT_FOR_DELIVERY': return 'text-fuchsia-400';
-        case 'DELIVERED': return 'text-emerald-400';
-        case 'RETURNED': return 'text-rose-400';
-        default: return 'text-slate-400';
+        case 'CREATED': return 'text-amber-600';
+        case 'PENDING': return 'text-indigo-600';
+        case 'IN_TRANSIT': return 'text-blue-600';
+        case 'ON_HOLD': return 'text-orange-600';
+        case 'OUT_FOR_DELIVERY': return 'text-fuchsia-600';
+        case 'DELIVERED': return 'text-emerald-600';
+        case 'RETURNED': return 'text-rose-600';
+        default: return 'text-slate-600';
     }
 }
 
 function getStatusBg(status: string) {
     switch (status) {
-        case 'CREATED': return 'bg-amber-400/10 border-amber-400/20';
-        case 'PENDING': return 'bg-indigo-400/10 border-indigo-400/20';
-        case 'IN_TRANSIT': return 'bg-blue-400/10 border-blue-400/20';
-        case 'ON_HOLD': return 'bg-orange-400/10 border-orange-400/20';
-        case 'OUT_FOR_DELIVERY': return 'bg-fuchsia-400/10 border-fuchsia-400/20';
-        case 'DELIVERED': return 'bg-emerald-400/10 border-emerald-400/20';
-        case 'RETURNED': return 'bg-rose-400/10 border-rose-400/20';
-        default: return 'bg-slate-400/10 border-slate-400/20';
+        case 'CREATED': return 'bg-amber-50 border-amber-100';
+        case 'PENDING': return 'bg-indigo-50 border-indigo-100';
+        case 'IN_TRANSIT': return 'bg-blue-50 border-blue-100';
+        case 'ON_HOLD': return 'bg-orange-50 border-orange-100';
+        case 'OUT_FOR_DELIVERY': return 'bg-fuchsia-50 border-fuchsia-100';
+        case 'DELIVERED': return 'bg-emerald-50 border-emerald-100';
+        case 'RETURNED': return 'bg-rose-50 border-rose-100';
+        default: return 'bg-slate-50 border-slate-100';
     }
 }
 
 function getTimelineDotColor(status: string) {
     switch (status) {
-        case 'CREATED': return 'bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.6)] border-amber-200';
-        case 'PENDING': return 'bg-indigo-400 shadow-[0_0_15px_rgba(129,140,248,0.6)] border-indigo-200';
-        case 'IN_TRANSIT': return 'bg-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.6)] border-blue-200';
-        case 'ON_HOLD': return 'bg-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.6)] border-orange-200';
-        case 'OUT_FOR_DELIVERY': return 'bg-fuchsia-400 shadow-[0_0_15px_rgba(232,121,249,0.6)] border-fuchsia-200';
-        case 'DELIVERED': return 'bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.6)] border-emerald-200';
-        case 'RETURNED': return 'bg-rose-400 shadow-[0_0_15px_rgba(251,113,133,0.6)] border-rose-200';
-        default: return 'bg-slate-400 shadow-[0_0_15px_rgba(148,163,184,0.6)] border-slate-200';
+        case 'CREATED': return 'bg-amber-500 border-amber-200 ring-4 ring-amber-50';
+        case 'PENDING': return 'bg-indigo-500 border-indigo-200 ring-4 ring-indigo-50';
+        case 'IN_TRANSIT': return 'bg-blue-500 border-blue-200 ring-4 ring-blue-50';
+        case 'ON_HOLD': return 'bg-orange-500 border-orange-200 ring-4 ring-orange-50';
+        case 'OUT_FOR_DELIVERY': return 'bg-fuchsia-500 border-fuchsia-200 ring-4 ring-fuchsia-50';
+        case 'DELIVERED': return 'bg-emerald-500 border-emerald-200 ring-4 ring-emerald-50';
+        case 'RETURNED': return 'bg-rose-500 border-rose-200 ring-4 ring-rose-50';
+        default: return 'bg-slate-500 border-slate-200 ring-4 ring-slate-50';
+    }
+}
+
+function getPingColor(status: string) {
+    switch (status) {
+        case 'CREATED': return 'bg-amber-400';
+        case 'PENDING': return 'bg-indigo-400';
+        case 'IN_TRANSIT': return 'bg-blue-400';
+        case 'ON_HOLD': return 'bg-orange-400';
+        case 'OUT_FOR_DELIVERY': return 'bg-fuchsia-400';
+        case 'DELIVERED': return 'bg-emerald-400';
+        case 'RETURNED': return 'bg-rose-400';
+        default: return 'bg-slate-400';
     }
 }
 
@@ -229,7 +243,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className={`p-5 rounded-2xl border backdrop-blur-md ${getStatusBg(shipment.status)}`}>
                                     <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-1 text-slate-600">Current Status</p>
-                                    <p className={`text-2xl font-black tracking-tight ${getStatusColor(shipment.status).replace('400', '600')}`}>
+                                    <p className={`text-2xl font-black tracking-tight ${getStatusColor(shipment.status)}`}>
                                         {shipment.status.replace(/_/g, ' ')}
                                     </p>
                                 </div>
@@ -352,7 +366,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                 {shipment.imageUrls && shipment.imageUrls.length > 0 && (
                                     <div className="mb-8">
                                         <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Registered Parcel Assets</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-2 gap-3 sm:gap-6">
                                             {shipment.imageUrls.map((url: string, index: number) => (
                                                 <a
                                                     key={index}
@@ -402,19 +416,24 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     return (
                                     <div key={event.id} className="relative group">
                                         {/* Dot */}
-                                        <div className={`absolute -left-[2.1rem] top-1.5 w-4 h-4 rounded-full border-2 z-10 transition-transform duration-300 group-hover:scale-125 ${getTimelineDotColor(event.status)}`} />
+                                        <div className="absolute -left-[2.1rem] top-6 w-4 h-4 z-10">
+                                            {isLatest && (
+                                                <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${getPingColor(event.status)}`} />
+                                            )}
+                                            <div className={`relative w-full h-full rounded-full border-2 transition-transform duration-300 group-hover:scale-125 ${getTimelineDotColor(event.status)}`} />
+                                        </div>
 
                                         <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${isLatest ? 'bg-slate-50 border-slate-200 shadow-md' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200'}`}>
-                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                                                <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status).replace('400', '600')}`}>
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 mb-2">
+                                                <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status)}`}>
                                                     {event.status.replace(/_/g, ' ')}
                                                 </p>
-                                                <span className="text-xs font-mono text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm whitespace-nowrap">
+                                                <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
                                                     <FormattedDate date={event.timestamp} />
                                                 </span>
                                             </div>
                                             <p className="text-slate-900 font-medium mb-2 flex items-center gap-2">
-                                                <MapPin className="w-4 h-4 text-slate-400" />
+                                                <MapPin className={`w-4 h-4 animate-bounce ${getStatusColor(event.status)}`} />
                                                 {event.location || 'Location Pending'}
                                             </p>
                                             {event.description && (

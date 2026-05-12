@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 // PDF components will be loaded dynamically to avoid ESM bundling issues
@@ -26,6 +26,7 @@ interface ShipmentEvent {
     timestamp: string | Date;
     latitude?: number | string | null;
     longitude?: number | string | null;
+    isDeleted?: boolean;
 }
 
 interface Shipment {
@@ -159,12 +160,32 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             setSendingEmailId(null);
         }
     };
-    const actuallyDeleteEvent = async (eventId: string) => {
+    const handleRestoreEvent = async (eventId: string) => {
         try {
-            const res = await fetch(`/api/shipments/${shipment.id}/event/${eventId}`, { method: 'DELETE' });
+            const res = await fetch(`/api/shipments/${shipment.id}/event/${eventId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isDeleted: false })
+            });
+            if (res.ok) {
+                toast.success('Event restored');
+                router.refresh();
+            } else {
+                toast.error('Failed to restore event');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Error restoring event');
+        }
+    };
+
+    const actuallyDeleteEvent = async (eventId: string, isPermanent = false) => {
+        try {
+            const url = `/api/shipments/${shipment.id}/event/${eventId}${isPermanent ? '?permanent=true' : ''}`;
+            const res = await fetch(url, { method: 'DELETE' });
             if (res.ok) {
                 toast.dismiss(); // Clear all toasts
-                toast.success('Event deleted', { duration: 3000 });
+                toast.success(isPermanent ? 'Event permanently deleted' : 'Event deleted', { duration: 3000 });
                 router.refresh();
             } else {
                 toast.dismiss(); 
@@ -177,11 +198,11 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         }
     };
 
-    const handleDeleteEvent = (eventId: string) => {
+    const handleDeleteEvent = (eventId: string, isPermanent = false) => {
         toast.dismiss(); // Prevent stacking multiple dialogs
         toast((t) => (
             <div className="flex flex-col gap-3 p-1">
-                <p className="font-semibold text-sm">Delete this tracking event?</p>
+                <p className="font-semibold text-sm">{isPermanent ? 'Permanently delete this tracking event? This cannot be undone.' : 'Delete this tracking event?'}</p>
                 <div className="flex gap-2 justify-end">
                     <button 
                         onClick={() => toast.dismiss(t.id)}
@@ -192,11 +213,11 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     <button 
                         onClick={() => {
                             toast.dismiss(t.id);
-                            actuallyDeleteEvent(eventId);
+                            actuallyDeleteEvent(eventId, isPermanent);
                         }}
                         className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white hover:bg-red-500 rounded-lg transition-colors shadow-sm"
                     >
-                        Confirm Delete
+                        {isPermanent ? 'Permanent Delete' : 'Confirm Delete'}
                     </button>
                 </div>
             </div>
@@ -1059,11 +1080,12 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="space-y-1 relative">
+                                            <div className={`space-y-1 relative ${event.isDeleted ? 'opacity-50 grayscale' : ''}`}>
                                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                                                     <div className="flex-1 min-w-0">
-                                                        <p className={`font-semibold text-sm sm:text-base break-words ${getStatusStyles(event.status).replace('bg-', 'data-').split(' ')[1]}`}>
+                                                        <p className={`font-semibold text-sm sm:text-base break-words ${event.isDeleted ? 'line-through text-slate-500' : getStatusStyles(event.status).replace('bg-', 'data-').split(' ')[1]}`}>
                                                             {event.status} - {event.location || 'No Location'}
+                                                            {event.isDeleted && <span className="ml-2 text-xs font-bold text-red-500 uppercase">Deleted</span>}
                                                         </p>
                                                     </div>
                                                     <div className="flex items-center gap-1 sm:opacity-40 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity print:hidden shrink-0 bg-brand-bg/50 rounded-lg p-0.5 sm:bg-transparent">
@@ -1086,13 +1108,32 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         >
                                                             <Pencil className="w-4 h-4" />
                                                         </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}
-                                                            className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-500 transition-colors"
-                                                            title="Delete Event"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        {event.isDeleted ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleRestoreEvent(event.id); }}
+                                                                    className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-green-500 transition-colors"
+                                                                    title="Restore Event"
+                                                                >
+                                                                    <RotateCcw className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id, true); }}
+                                                                    className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-700 transition-colors"
+                                                                    title="Permanently Delete"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}
+                                                                className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-500 transition-colors"
+                                                                title="Delete Event"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <p className="text-brand-text-muted text-sm print:text-gray-500">{event.description}</p>
