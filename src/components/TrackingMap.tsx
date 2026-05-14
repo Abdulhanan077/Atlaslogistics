@@ -58,6 +58,16 @@ const getDotIcon = (isStart = false) => {
     });
 };
 
+const getOriginIcon = () => {
+    return L.divIcon({
+        className: 'custom-origin-icon',
+        html: `<div style="background: #22c55e; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); border: 2px solid white; font-size: 16px;">📦</div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15]
+    });
+};
+
 const getDestinationIcon = () => {
     return L.divIcon({
         className: 'custom-destination-icon',
@@ -74,6 +84,8 @@ export default function TrackingMap({
     locationName,
     events = [],
     vehicleType = 'TRUCK',
+    originLat,
+    originLng,
     destLat,
     destLng,
     destinationName,
@@ -87,6 +99,8 @@ export default function TrackingMap({
     locationName: string;
     events?: any[];
     vehicleType?: string;
+    originLat?: string | number;
+    originLng?: string | number;
     destLat?: string | number;
     destLng?: string | number;
     destinationName?: string;
@@ -130,6 +144,23 @@ export default function TrackingMap({
                 location: e.location,
                 status: e.status
             })));
+        }
+
+        // Add origin at the very beginning if it doesn't already match first event
+        if (originLat && originLng) {
+            const oLat = parseFloat(String(originLat));
+            const oLng = parseFloat(String(originLng));
+            if (!isNaN(oLat) && !isNaN(oLng)) {
+                const firstPoint = points[0];
+                if (!firstPoint || firstPoint.lat !== oLat || firstPoint.lng !== oLng) {
+                    points.unshift({
+                        lat: oLat,
+                        lng: oLng,
+                        location: 'Origin',
+                        status: 'ORIGIN'
+                    });
+                }
+            }
         }
 
         // If we have destination coords, add them as the final point
@@ -272,11 +303,6 @@ export default function TrackingMap({
                                 </Popup>
                             </Marker>
 
-                            {(() => {
-                                const dLat = parseFloat(String(destLat));
-                                const dLng = parseFloat(String(destLng));
-                                if (isNaN(dLat) || isNaN(dLng)) return null;
-                                
                                 return (
                                     <Marker 
                                         position={[dLat, dLng]} 
@@ -287,6 +313,26 @@ export default function TrackingMap({
                                                 <div className="font-bold text-sm mb-1">{destinationName || 'Destination'}</div>
                                                 {destinationAddress && <div className="text-xs text-slate-600 mb-1">{destinationAddress}</div>}
                                                 <div className="text-xs text-slate-400">Target Destination</div>
+                                            </div>
+                                        </Popup>
+                                    </Marker>
+                                );
+                            })()}
+
+                            {(() => {
+                                const oLat = parseFloat(String(originLat));
+                                const oLng = parseFloat(String(originLng));
+                                if (isNaN(oLat) || isNaN(oLng)) return null;
+                                
+                                return (
+                                    <Marker 
+                                        position={[oLat, oLng]} 
+                                        icon={getOriginIcon()}
+                                    >
+                                        <Popup>
+                                            <div className="text-slate-800">
+                                                <div className="font-bold text-sm mb-1">Origin</div>
+                                                <div className="text-xs text-slate-400">Starting Point</div>
                                             </div>
                                         </Popup>
                                     </Marker>

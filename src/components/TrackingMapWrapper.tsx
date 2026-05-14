@@ -13,6 +13,8 @@ export default function TrackingMapWrapper(props: {
     locationName: string; 
     events?: any[]; 
     vehicleType?: string;
+    originLat?: string | number;
+    originLng?: string | number;
     destLat?: string | number;
     destLng?: string | number;
     destinationName?: string;

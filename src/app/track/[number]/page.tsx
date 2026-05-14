@@ -339,6 +339,8 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         locationName={latestLocation.location || 'Current Location'}
                                         events={shipment.events}
                                         vehicleType={shipment.parsedSender.vehicleType}
+                                        originLat={shipment.parsedSender.originLat}
+                                        originLng={shipment.parsedSender.originLng}
                                         destLat={shipment.parsedReceiver.destLat}
                                         destLng={shipment.parsedReceiver.destLng}
                                         destinationName={shipment.destination}

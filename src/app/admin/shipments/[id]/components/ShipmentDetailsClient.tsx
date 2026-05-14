@@ -77,8 +77,10 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         }
     };
 
-    const handleGeocode = async (type: 'event' | 'dest') => {
-        const address = type === 'event' ? formData.location : editData.receiverAddress;
+    const handleGeocode = async (type: 'event' | 'dest' | 'origin') => {
+        const address = type === 'event' ? formData.location : 
+                        type === 'origin' ? editData.senderAddress : 
+                        editData.receiverAddress;
         if (!address) {
             toast.error("Please enter an address first");
             return;
@@ -91,6 +93,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         if (result) {
             if (type === 'event') {
                 setFormData(prev => ({ ...prev, latitude: result.lat, longitude: result.lon }));
+            } else if (type === 'origin') {
+                setEditData(prev => ({ ...prev, originLat: result.lat, originLng: result.lon }));
             } else {
                 setEditData(prev => ({ ...prev, destLat: result.lat, destLng: result.lon }));
             }
@@ -306,6 +310,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         receiverAddress: parsedReceiver.address,
         destLat: parsedReceiver.destLat || '',
         destLng: parsedReceiver.destLng || '',
+        originLat: parsedSender.originLat || '',
+        originLng: parsedSender.originLng || '',
     });
 
     const handleEditSubmit = async (e: React.FormEvent) => {
@@ -323,7 +329,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     imageUrls: editData.imageUrls,
                     videoUrls: editData.videoUrls,
                     estimatedDelivery: editData.estimatedDelivery ? new Date(editData.estimatedDelivery + ':00Z').toISOString() : null,
-                    senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress, vehicleType: editData.vehicleType }),
+                    senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress, vehicleType: editData.vehicleType, originLat: editData.originLat, originLng: editData.originLng }),
                     receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress, destLat: editData.destLat, destLng: editData.destLng })
                 })
             });
@@ -564,13 +570,42 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                     onChange={e => setEditData({ ...editData, senderPhone: e.target.value })}
                                                     placeholder="Sender Phone"
                                                 />
-                                                <textarea
-                                                    rows={2}
-                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none"
-                                                    value={editData.senderAddress}
-                                                    onChange={e => setEditData({ ...editData, senderAddress: e.target.value })}
-                                                    placeholder="Sender Address"
-                                                />
+                                                <div className="relative">
+                                                    <textarea
+                                                        rows={2}
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none pr-8"
+                                                        value={editData.senderAddress}
+                                                        onChange={e => setEditData({ ...editData, senderAddress: e.target.value })}
+                                                        placeholder="Sender Address"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleGeocode('origin')}
+                                                        disabled={geocoding === 'origin'}
+                                                        className="absolute right-1 top-1 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                                        title="Auto-find coordinates"
+                                                    >
+                                                        {geocoding === 'origin' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.originLat}
+                                                        onChange={e => setEditData({ ...editData, originLat: e.target.value })}
+                                                        placeholder="Orig. Latitude"
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.originLng}
+                                                        onChange={e => setEditData({ ...editData, originLng: e.target.value })}
+                                                        placeholder="Orig. Longitude"
+                                                    />
+                                                </div>
                                                 <div className="mt-2">
                                                     <label className="text-xs text-brand-text-muted block mb-1">Vehicle Type</label>
                                                     <select
@@ -978,6 +1013,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     locationName={latestLocation.location || 'Current Location'}
                                     events={shipment.events}
                                     vehicleType={parsedSender.vehicleType}
+                                    originLat={parsedSender.originLat}
+                                    originLng={parsedSender.originLng}
                                     destLat={parsedReceiver.destLat}
                                     destLng={parsedReceiver.destLng}
                                     destinationName={shipment.destination || undefined}
