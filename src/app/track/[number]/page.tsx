@@ -50,11 +50,11 @@ async function getShipment(trackingNumber: string) {
     const sortedEvents = [...shipment.events].sort((a, b) => {
         if (a.status === 'CREATED' && b.status !== 'CREATED') return 1;
         if (a.status !== 'CREATED' && b.status === 'CREATED') return -1;
-        
+
         const timeA = new Date(a.timestamp).getTime();
         const timeB = new Date(b.timestamp).getTime();
         if (timeB !== timeA) return timeB - timeA;
-        
+
         const createdA = new Date(a.createdAt).getTime();
         const createdB = new Date(b.createdAt).getTime();
         return createdB - createdA;
@@ -147,13 +147,13 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
             <div className="min-h-screen bg-slate-50 relative overflow-hidden flex flex-col items-center justify-center p-6 text-center">
                 {/* Background effects */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
-                
+
                 <div className="relative z-10 bg-white border border-slate-200 backdrop-blur-3xl p-12 rounded-3xl shadow-xl max-w-md w-full">
                     <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-100">
                         <Package className="w-10 h-10 text-slate-400" />
                     </div>
                     <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Not Found</h1>
-                    <p className="text-slate-500 mb-8 leading-relaxed">We couldn't locate a shipment with tracking ID: <br/><span className="text-slate-900 font-mono bg-slate-100 border border-slate-200 px-2 py-1 rounded mt-2 inline-block tracking-widest">{number}</span></p>
+                    <p className="text-slate-500 mb-8 leading-relaxed">We couldn't locate a shipment with tracking ID: <br /><span className="text-slate-900 font-mono bg-slate-100 border border-slate-200 px-2 py-1 rounded mt-2 inline-block tracking-widest">{number}</span></p>
                     <Link href="/" className="inline-flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]">
                         Track Another Shipment
                     </Link>
@@ -197,7 +197,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
             </nav>
 
             <main className="relative z-10 max-w-[1400px] mx-auto px-4 lg:px-8 py-8 lg:py-12 space-y-8">
-                
+
                 {/* Hero Tracking Card */}
                 <div className="bg-white backdrop-blur-2xl border border-slate-200 rounded-[2rem] p-6 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
                     <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -216,7 +216,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         {shipment.trackingNumber}
                                     </h1>
                                 </div>
-                                
+
                                 <div className="flex sm:flex-col gap-3 shrink-0 lg:min-w-[200px]">
                                     {/* CSS Simulated Barcode */}
                                     <div className="flex h-12 bg-slate-50 rounded items-center justify-center px-4 overflow-hidden border border-slate-200" title="Digital Scan Code">
@@ -232,7 +232,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         <div className="w-2 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
                                         <div className="w-1 shrink-0 h-full bg-slate-800 mx-[1px] opacity-90"></div>
                                     </div>
-                                    
+
                                     <a href={`/api/shipments/${shipment.id}/label`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 font-bold transition-all hover:scale-105 shadow-sm">
                                         <Download className="w-4 h-4" />
                                         Download Waybill
@@ -247,7 +247,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         {shipment.status.replace(/_/g, ' ')}
                                     </p>
                                 </div>
-                                
+
                                 {shipment.estimatedDelivery && (
                                     <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 backdrop-blur-md">
                                         <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Est. Delivery</p>
@@ -268,14 +268,15 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                 <div className="relative h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-200">
                                     <div
                                         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 rounded-full shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all duration-1000 ease-out"
-                                        style={{ 
+                                        style={{
                                             width: `${progress}%`,
                                             backgroundSize: '200% 100%',
                                             animation: 'gradientMove 3s linear infinite'
                                         }}
                                     />
                                 </div>
-                                <style dangerouslySetInnerHTML={{__html: `
+                                <style dangerouslySetInnerHTML={{
+                                    __html: `
                                     @keyframes gradientMove {
                                         0% { background-position: 100% 0; }
                                         100% { background-position: -100% 0; }
@@ -316,7 +317,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                 {/* Map & Timeline Grid */}
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                    
+
                     {/* Left: Map & Media */}
                     <div className="xl:col-span-7 space-y-8">
                         {latestLocation && (
@@ -325,8 +326,8 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                 <div className="absolute bottom-6 left-6 z-20">
                                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 text-slate-900 font-bold shadow-lg">
                                         <span className="relative flex h-3 w-3">
-                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                          <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
                                         </span>
                                         Live GPS Tracking
                                     </div>
@@ -352,20 +353,20 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                         {/* Product / Media Gallery */}
                         {((shipment.productDescription) || (shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
                             <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                                <h3 className="text-xl font-bold text-slate-900 flex items-center mb-6">
+                                <h3 className="text-xl font-black text-slate-900 flex items-center mb-6 uppercase tracking-tight">
                                     <ShieldCheck className="w-6 h-6 mr-3 text-blue-500" />
-                                    Official Parcel Verification
+                                    Product Details
                                 </h3>
-                                
+
                                 {shipment.productDescription && (
                                     <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <p className="text-slate-600 leading-relaxed text-lg">{shipment.productDescription}</p>
+                                        <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">{shipment.productDescription}</p>
                                     </div>
                                 )}
 
                                 {shipment.imageUrls && shipment.imageUrls.length > 0 && (
                                     <div className="mb-8">
-                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Registered Parcel Assets</p>
+                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Attached Images</p>
                                         <div className="grid grid-cols-2 gap-3 sm:gap-6">
                                             {shipment.imageUrls.map((url: string, index: number) => (
                                                 <a
@@ -388,7 +389,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                                 {shipment.videoUrls && shipment.videoUrls.length > 0 && (
                                     <div>
-                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Live Inspection Media</p>
+                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Attached Videos</p>
                                         <div className="grid grid-cols-1 gap-6">
                                             {shipment.videoUrls.map((url: string, index: number) => (
                                                 <div key={index} className="w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 shadow-md relative">
@@ -409,48 +410,49 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                 <Clock className="w-6 h-6 mr-3 text-blue-500" />
                                 Activity Timeline
                             </h3>
-                            
+
                             <div className="relative pl-6 space-y-8 before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-blue-400 before:via-slate-200 before:to-transparent">
                                 {shipment.events.map((event: any, index: number) => {
                                     const isLatest = index === 0;
                                     return (
-                                    <div key={event.id} className="relative group">
-                                        {/* Dot */}
-                                        <div className="absolute -left-[2.1rem] top-6 w-4 h-4 z-10">
-                                            {isLatest && (
-                                                <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${getPingColor(event.status)}`} />
-                                            )}
-                                            <div className={`relative w-full h-full rounded-full border-2 transition-transform duration-300 group-hover:scale-125 ${getTimelineDotColor(event.status)}`} />
-                                        </div>
-
-                                        <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${isLatest ? 'bg-slate-50 border-slate-200 shadow-md' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200'}`}>
-                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 mb-2">
-                                                <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status)}`}>
-                                                    {event.status.replace(/_/g, ' ')}
-                                                </p>
-                                                <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
-                                                    <FormattedDate date={event.timestamp} />
-                                                </span>
+                                        <div key={event.id} className="relative group">
+                                            {/* Dot */}
+                                            <div className="absolute -left-[2.1rem] top-6 w-4 h-4 z-10">
+                                                {isLatest && (
+                                                    <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${getPingColor(event.status)}`} />
+                                                )}
+                                                <div className={`relative w-full h-full rounded-full border-2 transition-transform duration-300 group-hover:scale-125 ${getTimelineDotColor(event.status)}`} />
                                             </div>
-                                            <p className="text-slate-900 font-medium mb-2 flex items-center gap-2">
-                                                <MapPin className={`w-4 h-4 animate-bounce ${getStatusColor(event.status)}`} />
-                                                {event.location || 'Location Pending'}
-                                            </p>
-                                            {event.description && (
-                                                <p className="text-slate-600 text-sm leading-relaxed bg-slate-100 p-3 rounded-xl border border-slate-200 mt-3">
-                                                    {event.description}
+
+                                            <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${isLatest ? 'bg-slate-50 border-slate-200 shadow-md' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200'}`}>
+                                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 mb-2">
+                                                    <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status)}`}>
+                                                        {event.status.replace(/_/g, ' ')}
+                                                    </p>
+                                                    <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
+                                                        <FormattedDate date={event.timestamp} />
+                                                    </span>
+                                                </div>
+                                                <p className="text-slate-900 font-medium mb-2 flex items-center gap-2">
+                                                    <MapPin className={`w-4 h-4 animate-bounce ${getStatusColor(event.status)}`} />
+                                                    {event.location || 'Location Pending'}
                                                 </p>
-                                            )}
+                                                {event.description && (
+                                                    <p className="text-slate-600 text-sm leading-relaxed bg-slate-100 p-3 rounded-xl border border-slate-200 mt-3">
+                                                        {event.description}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )})}
+                                    )
+                                })}
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center text-slate-600 text-sm py-10">
-                    <Link href="/login" className="hover:text-slate-400 transition-colors cursor-default" title="System Management">&copy;</Link> {new Date().getFullYear()} {settings?.companyName || 'Atlas Logistics'}. All rights reserved. <br/>
+                    <Link href="/login" className="hover:text-slate-400 transition-colors cursor-default" title="System Management">&copy;</Link> {new Date().getFullYear()} {settings?.companyName || 'Atlas Logistics'}. All rights reserved. <br />
                     Powered by advanced logistics tracking.
                 </div>
             </main>
@@ -458,7 +460,8 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
             {/* Chat Widget overlay */}
             <TrackingChat shipmentId={shipment.id} />
 
-            <style dangerouslySetInnerHTML={{__html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .hide-scrollbar::-webkit-scrollbar {
                     display: none;
                 }
