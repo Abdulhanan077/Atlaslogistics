@@ -50,3 +50,24 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
 
     return null;
 }
+
+export async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+            {
+                headers: {
+                    'User-Agent': 'AtlasLogistics-Platform/1.0'
+                }
+            }
+        );
+
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        return data.display_name || null;
+    } catch (error) {
+        console.error('Reverse geocoding failed:', error);
+        return null;
+    }
+}

@@ -11,7 +11,7 @@ import ShipmentChat from './ShipmentChat';
 import FormattedDate from '@/components/FormattedDate';
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import { parseShipmentInfo } from '@/lib/utils';
-import { geocodeAddress } from '@/lib/geocoding';
+import { geocodeAddress, reverseGeocode } from '@/lib/geocoding';
 import { upload } from '@vercel/blob/client';
 
 // PDF rendering is now handled server-side to avoid client-side bundling issues
@@ -79,8 +79,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
     const handleGeocode = async (type: 'event' | 'dest' | 'origin') => {
         const address = type === 'event' ? formData.location : 
-                        type === 'origin' ? editData.senderAddress : 
-                        editData.receiverAddress;
+                        type === 'origin' ? (editData.origin || editData.senderAddress) : 
+                        (editData.destination || editData.receiverAddress);
         if (!address) {
             toast.error("Please enter an address first");
             return;
@@ -91,12 +91,23 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         setGeocoding(null);
 
         if (result) {
+            const country = result.display_name.split(',').pop()?.trim() || '';
             if (type === 'event') {
                 setFormData(prev => ({ ...prev, latitude: result.lat, longitude: result.lon }));
             } else if (type === 'origin') {
-                setEditData(prev => ({ ...prev, originLat: result.lat, originLng: result.lon }));
+                setEditData(prev => ({ 
+                    ...prev, 
+                    originLat: result.lat, 
+                    originLng: result.lon,
+                    origin: country || prev.origin 
+                }));
             } else {
-                setEditData(prev => ({ ...prev, destLat: result.lat, destLng: result.lon }));
+                setEditData(prev => ({ 
+                    ...prev, 
+                    destLat: result.lat, 
+                    destLng: result.lon,
+                    destination: country || prev.destination
+                }));
             }
             toast.success("Location found!");
         } else {
@@ -450,8 +461,43 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             toast.error("Error updating map settings", { id: toastId });
         }
     };
+    
+    const handleMapDrag = async (lat: number, lng: number) => {
+        setFormData(prev => ({
+            ...prev,
+            latitude: lat.toFixed(7),
+            longitude: lng.toFixed(7)
+        }));
+
+        // Automatically find address from new coordinates
+        const address = await reverseGeocode(lat, lng);
+        if (address) {
+            setFormData(prev => ({
+                ...prev,
+                location: address
+            }));
+            toast.success("Location updated from map", { duration: 2000, icon: '📍' });
+        } else {
+            toast.success("Coordinates updated from map", { duration: 2000, icon: '📍' });
+        }
+    };
 
     const latestLocation = shipment.events.find((e: ShipmentEvent) => e.latitude && e.longitude);
+    
+    // Preview for currently being added event
+    const previewEvent = formData.latitude && formData.longitude ? {
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        location: formData.location || 'New Event Location',
+        status: formData.status,
+        timestamp: formData.timestamp
+    } : null;
+
+    // Determine map center and visibility based on available data
+    const mapLat = Number(previewEvent?.latitude) || Number(latestLocation?.latitude) || Number(editData.originLat) || Number(parsedSender.originLat) || 0;
+    const mapLng = Number(previewEvent?.longitude) || Number(latestLocation?.longitude) || Number(editData.originLng) || Number(parsedSender.originLng) || 0;
+    const mapLocName = previewEvent?.location || latestLocation?.location || (isEditing ? editData.origin : shipment.origin) || 'Origin';
+    const hasCoordinates = !!(previewEvent || latestLocation || editData.originLat || editData.destLat || parsedSender.originLat || parsedReceiver.destLat);
 
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto p-6">
@@ -573,7 +619,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 <div className="relative">
                                                     <textarea
                                                         rows={2}
-                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none pr-8"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none pr-10"
                                                         value={editData.senderAddress}
                                                         onChange={e => setEditData({ ...editData, senderAddress: e.target.value })}
                                                         placeholder="Sender Address"
@@ -582,30 +628,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         type="button"
                                                         onClick={() => handleGeocode('origin')}
                                                         disabled={geocoding === 'origin'}
-                                                        className="absolute right-1 top-1 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                                        className="absolute right-2 top-2 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 z-10"
                                                         title="Auto-find coordinates"
                                                     >
                                                         {geocoding === 'origin' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
                                                     </button>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-2 mt-2">
-                                                    <input
-                                                        type="number"
-                                                        step="any"
-                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
-                                                        value={editData.originLat}
-                                                        onChange={e => setEditData({ ...editData, originLat: e.target.value })}
-                                                        placeholder="Orig. Latitude"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        step="any"
-                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
-                                                        value={editData.originLng}
-                                                        onChange={e => setEditData({ ...editData, originLng: e.target.value })}
-                                                        placeholder="Orig. Longitude"
-                                                    />
-                                                </div>
+
                                                 <div className="mt-2">
                                                     <label className="text-xs text-brand-text-muted block mb-1">Vehicle Type</label>
                                                     <select
@@ -642,7 +671,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 <div className="relative">
                                                     <textarea
                                                         rows={2}
-                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none pr-8"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text resize-none pr-10"
                                                         value={editData.receiverAddress}
                                                         onChange={e => setEditData({ ...editData, receiverAddress: e.target.value })}
                                                         placeholder="Receiver Address"
@@ -651,7 +680,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         type="button"
                                                         onClick={() => handleGeocode('dest')}
                                                         disabled={geocoding === 'dest'}
-                                                        className="absolute right-1 top-1 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                                        className="absolute right-2 top-2 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 z-10"
                                                         title="Auto-find coordinates"
                                                     >
                                                         {geocoding === 'dest' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
@@ -663,13 +692,42 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-xs text-brand-text-muted block mb-1">Origin</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
-                                                    value={editData.origin}
-                                                    onChange={e => setEditData({ ...editData, origin: e.target.value })}
-                                                    placeholder="Origin location"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text mb-2 pr-8"
+                                                        value={editData.origin}
+                                                        onChange={e => setEditData({ ...editData, origin: e.target.value })}
+                                                        placeholder="Origin location"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleGeocode('origin')}
+                                                        disabled={geocoding === 'origin'}
+                                                        className="absolute right-2 top-2 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 z-10"
+                                                        title="Auto-find coordinates"
+                                                    >
+                                                        {geocoding === 'origin' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.originLat}
+                                                        onChange={e => setEditData({ ...editData, originLat: e.target.value })}
+                                                        placeholder="Orig. Latitude"
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                        value={editData.originLng}
+                                                        onChange={e => setEditData({ ...editData, originLng: e.target.value })}
+                                                        placeholder="Orig. Longitude"
+                                                    />
+                                                </div>
                                             </div>
                                             <div>
                                                 <label className="text-xs text-brand-text-muted block mb-1">Destination</label>
@@ -685,7 +743,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         type="button"
                                                         onClick={() => handleGeocode('dest')}
                                                         disabled={geocoding === 'dest'}
-                                                        className="absolute right-1 top-1 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                                        className="absolute right-2 top-2 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 z-10"
                                                         title="Auto-find coordinates"
                                                     >
                                                         {geocoding === 'dest' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
@@ -1001,26 +1059,27 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         )}
 
                         {/* Route Map (Visual) */}
-                        {latestLocation && (
+                        {hasCoordinates && (
                             <div className="w-full mb-8 print:hidden">
                                 <h3 className="text-brand-text text-lg font-bold mb-4 flex items-center">
                                     <MapPin className="w-5 h-5 mr-3 text-brand-text-muted" />
-                                    Live Location
+                                    {latestLocation ? 'Live Location' : 'Route Visualization'}
                                 </h3>
                                 <TrackingMapWrapper
-                                    lat={Number(latestLocation.latitude) || 0}
-                                    lng={Number(latestLocation.longitude) || 0}
-                                    locationName={latestLocation.location || 'Current Location'}
-                                    events={shipment.events}
-                                    vehicleType={parsedSender.vehicleType}
-                                    originLat={parsedSender.originLat}
-                                    originLng={parsedSender.originLng}
-                                    destLat={parsedReceiver.destLat}
-                                    destLng={parsedReceiver.destLng}
-                                    destinationName={shipment.destination || undefined}
-                                    destinationAddress={parsedReceiver.address}
+                                    lat={mapLat}
+                                    lng={mapLng}
+                                    locationName={mapLocName}
+                                    events={[...(previewEvent ? [previewEvent] : []), ...shipment.events]}
+                                    vehicleType={isEditing ? editData.vehicleType : (liveVehicleType || parsedSender.vehicleType)}
+                                    originLat={isEditing ? editData.originLat : parsedSender.originLat}
+                                    originLng={isEditing ? editData.originLng : parsedSender.originLng}
+                                    destLat={formData.destLat || (isEditing ? editData.destLat : parsedReceiver.destLat)}
+                                    destLng={formData.destLng || (isEditing ? editData.destLng : parsedReceiver.destLng)}
+                                    destinationName={isEditing ? editData.destination : (shipment.destination || undefined)}
+                                    destinationAddress={isEditing ? editData.receiverAddress : parsedReceiver.address}
                                     isRouteVisible={shipment.showRoute}
                                     onToggle={handleToggleRoute}
+                                    onDragEnd={handleMapDrag}
                                 />
                             </div>
                         )}

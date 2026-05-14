@@ -166,6 +166,10 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
     const currentStatusProgress = getStatusProgress(shipment.status);
     const progress = Math.max(...allProgress, currentStatusProgress, 0);
     const latestLocation = shipment.events.find((e: any) => e.latitude && e.longitude);
+    const mapLat = Number(latestLocation?.latitude) || Number(shipment.parsedSender.originLat) || 0;
+    const mapLng = Number(latestLocation?.longitude) || Number(shipment.parsedSender.originLng) || 0;
+    const mapLocName = latestLocation?.location || shipment.origin || 'Origin';
+    const hasCoordinates = !!(latestLocation || shipment.parsedSender.originLat || shipment.parsedReceiver.destLat);
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-600 relative overflow-x-hidden selection:bg-blue-500/30 font-sans">
@@ -320,7 +324,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                     {/* Left: Map & Media */}
                     <div className="xl:col-span-7 space-y-8">
-                        {latestLocation && (
+                        {hasCoordinates && (
                             <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-2 shadow-xl relative overflow-hidden h-[500px]">
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent z-10 pointer-events-none" />
                                 <div className="absolute bottom-6 left-6 z-20">
@@ -329,14 +333,14 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
                                         </span>
-                                        Live GPS Tracking
+                                        {latestLocation ? 'Live GPS Tracking' : 'Route Visualization'}
                                     </div>
                                 </div>
                                 <div className="w-full h-full rounded-[1.5rem] overflow-hidden">
                                     <TrackingMapWrapper
-                                        lat={latestLocation.latitude ?? 0}
-                                        lng={latestLocation.longitude ?? 0}
-                                        locationName={latestLocation.location || 'Current Location'}
+                                        lat={mapLat}
+                                        lng={mapLng}
+                                        locationName={mapLocName}
                                         events={shipment.events}
                                         vehicleType={shipment.parsedSender.vehicleType}
                                         originLat={shipment.parsedSender.originLat}

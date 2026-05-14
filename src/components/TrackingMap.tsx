@@ -78,6 +78,34 @@ const getDestinationIcon = () => {
     });
 };
 
+const getAirportIcon = () => {
+    return L.divIcon({
+        className: 'custom-airport-icon',
+        html: `<div style="background: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1.5px solid #3b82f6; font-size: 14px;">✈️</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
+    });
+};
+
+const POPULAR_AIRPORTS = [
+    { name: 'London Heathrow (LHR)', lat: 51.4700, lng: -0.4543 },
+    { name: 'John F. Kennedy Intl (JFK)', lat: 40.6413, lng: -73.7781 },
+    { name: 'Dubai Intl (DXB)', lat: 25.2532, lng: 55.3657 },
+    { name: 'Hong Kong Intl (HKG)', lat: 22.3080, lng: 113.9185 },
+    { name: 'Singapore Changi (SIN)', lat: 1.3644, lng: 103.9915 },
+    { name: 'Hartsfield-Jackson Atlanta (ATL)', lat: 33.6407, lng: -84.4277 },
+    { name: 'Paris Charles de Gaulle (CDG)', lat: 49.0097, lng: 2.5479 },
+    { name: 'Kotoka Intl (ACC)', lat: 5.6051, lng: -0.1667 },
+    { name: 'Lagos Murtala Muhammed (LOS)', lat: 6.5774, lng: 3.3210 },
+    { name: 'Johannesburg OR Tambo (JNB)', lat: -26.1367, lng: 28.2411 },
+    { name: 'Toronto Pearson (YYZ)', lat: 43.6777, lng: -79.6248 },
+    { name: 'Los Angeles Intl (LAX)', lat: 33.9416, lng: -118.4085 },
+    { name: 'Istanbul Airport (IST)', lat: 41.2753, lng: 28.7519 },
+    { name: 'Cairo Intl (CAI)', lat: 30.1219, lng: 31.4056 },
+    { name: 'Amsterdam Schiphol (AMS)', lat: 52.3105, lng: 4.7683 }
+];
+
 export default function TrackingMap({ 
     lat, 
     lng, 
@@ -92,7 +120,8 @@ export default function TrackingMap({
     destinationAddress,
     showToggle = true,
     isRouteVisible,
-    onToggle
+    onToggle,
+    onDragEnd
 }: { 
     lat: number; 
     lng: number; 
@@ -108,6 +137,7 @@ export default function TrackingMap({
     showToggle?: boolean;
     isRouteVisible?: boolean;
     onToggle?: (visible: boolean) => void;
+    onDragEnd?: (lat: number, lng: number) => void;
 }) {
     const [localShowRoute, setLocalShowRoute] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -241,6 +271,21 @@ export default function TrackingMap({
                         maxZoom={20}
                         noWrap={true}
                     />
+
+                    {/* Popular Airports Layer */}
+                    {POPULAR_AIRPORTS.map((airport, idx) => (
+                        <Marker 
+                            key={`airport-${idx}`} 
+                            position={[airport.lat, airport.lng]} 
+                            icon={getAirportIcon()}
+                        >
+                            <Popup>
+                                <div className="text-slate-800 text-xs font-bold">
+                                    {airport.name}
+                                </div>
+                            </Popup>
+                        </Marker>
+                    ))}
                     
                     {showRoute && (
                         <>
@@ -294,6 +339,14 @@ export default function TrackingMap({
                             <Marker 
                                 position={center} 
                                 icon={getVehicleIcon(vehicleType, bearing)}
+                                draggable={!!onDragEnd}
+                                eventHandlers={{
+                                    dragend: (e) => {
+                                        const marker = e.target;
+                                        const position = marker.getLatLng();
+                                        onDragEnd?.(position.lat, position.lng);
+                                    },
+                                }}
                             >
                                 <Popup>
                                     <div className="text-slate-800">
@@ -303,6 +356,11 @@ export default function TrackingMap({
                                 </Popup>
                             </Marker>
 
+                            {(() => {
+                                const dLat = parseFloat(String(destLat));
+                                const dLng = parseFloat(String(destLng));
+                                if (isNaN(dLat) || isNaN(dLng)) return null;
+                                
                                 return (
                                     <Marker 
                                         position={[dLat, dLng]} 

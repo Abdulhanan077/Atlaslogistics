@@ -22,6 +22,7 @@ export default function TrackingMapWrapper(props: {
     showToggle?: boolean;
     isRouteVisible?: boolean;
     onToggle?: (visible: boolean) => void;
+    onDragEnd?: (lat: number, lng: number) => void;
 }) {
     return <TrackingMap {...props} />;
 }
