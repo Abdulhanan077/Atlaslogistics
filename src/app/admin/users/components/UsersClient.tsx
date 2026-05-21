@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Shield, User, X, Loader2, ExternalLink, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Shield, User, X, Loader2, ExternalLink, RotateCcw, Key } from 'lucide-react';
 import Link from 'next/link';
 
 export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
@@ -12,6 +12,7 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
     const [restoringId, setRestoringId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
     const [users, setUsers] = useState(initialUsers);
+    const [selectedResetUser, setSelectedResetUser] = useState<any | null>(null);
 
     useEffect(() => {
         if (viewMode === 'active') {
@@ -124,6 +125,15 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
                                             <ExternalLink className="w-5 h-5" />
                                         </Link>
                                     )}
+                                    {viewMode === 'active' && (
+                                        <button
+                                            onClick={() => setSelectedResetUser(user)}
+                                            className="text-brand-text-muted hover:text-yellow-400 p-2 rounded-lg hover:bg-yellow-500/10 transition-colors flex items-center justify-center"
+                                            title="Reset Password"
+                                        >
+                                            <Key className="w-5 h-5" />
+                                        </button>
+                                    )}
                                     {viewMode === 'active' ? (
                                         <button
                                             onClick={() => handleDelete(user.id)}
@@ -151,6 +161,70 @@ export default function UsersClient({ initialUsers }: { initialUsers: any[] }) {
             )}
 
             {isModalOpen && <AddUserModal onClose={() => { setIsModalOpen(false); router.refresh(); }} />}
+            {selectedResetUser && <ResetPasswordModal user={selectedResetUser} onClose={() => setSelectedResetUser(null)} />}
+        </div>
+    );
+}
+
+function ResetPasswordModal({ user, onClose }: { user: any; onClose: () => void }) {
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/users/${user.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            if (res.ok) {
+                alert('Password reset successfully!');
+                onClose();
+            } else {
+                const text = await res.text();
+                alert(text || 'Failed to reset password');
+            }
+        } catch (e) {
+            alert('Error resetting password');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-bg/80 backdrop-blur-sm">
+            <div className="w-full max-w-md bg-brand-surface border border-brand-border/50 rounded-2xl shadow-2xl p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-brand-text">Reset Password</h2>
+                    <button onClick={onClose}><X className="text-brand-text-muted hover:text-brand-text" /></button>
+                </div>
+                <p className="text-sm text-brand-text-muted mb-4">
+                    Resetting password for admin: <strong className="text-brand-text">{user.name}</strong> ({user.email})
+                </p>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="text-sm text-brand-text-muted">New Password</label>
+                        <input
+                            type="password"
+                            required
+                            minLength={6}
+                            placeholder="Enter at least 6 characters"
+                            className="w-full bg-brand-bg border-brand-border/50 rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl mt-4 flex justify-center"
+                    >
+                        {loading ? <Loader2 className="animate-spin" /> : 'Reset Password'}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
