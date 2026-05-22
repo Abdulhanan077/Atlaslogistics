@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw, ExternalLink } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 // PDF components will be loaded dynamically to avoid ESM bundling issues
@@ -658,6 +658,15 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     Back
                 </button>
                 <div className="flex gap-3">
+                    <a
+                        href={`/track/${shipment.trackingNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border"
+                    >
+                        <ExternalLink className="w-5 h-5 mr-2" />
+                        View Customer Page
+                    </a>
                     <a
                         href={`/api/shipments/${shipment.id}/label`}
                         download={`LABEL-${shipment.trackingNumber}.pdf`}
