@@ -58,12 +58,9 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
         const emailHeaderName = `${companyName} <${process.env.SCALEWAY_SENDER_EMAIL || 'noreply@yourdomain.com'}>`;
         
         const trackingUrl = `${process.env.NEXTAUTH_URL}/track/${trackingNumber}`;
-        const isCreated = status.toUpperCase() === 'CREATED';
-        
-        // Formatted subject based on status
-        const subject = isCreated 
-            ? `Your Shipment Has Been Created: ${trackingNumber}`
-            : `Shipment Update: ${trackingNumber} is ${status.replace(/_/g, ' ')}`;
+        const upperStatus = status.toUpperCase();
+        let subject = `Shipment Update: ${trackingNumber} is ${status.replace(/_/g, ' ')}`;
+        let bodyText = `Your shipment status has changed to: ${status.replace(/_/g, ' ')}`;
 
         const getStatusStyles = (s: string) => {
             switch (s.toUpperCase()) {
@@ -78,10 +75,36 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
             }
         };
 
-        // Formatted body text based on status
-        const statusText = isCreated
-            ? `A new shipment has been created and is now being processed.`
-            : `Your shipment status has changed to: <span style="display: inline-block; padding: 4px 12px; margin-left: 4px; border-radius: 9999px; font-weight: 700; font-size: 14px; text-transform: uppercase; ${getStatusStyles(status)}">${status.replace(/_/g, ' ')}</span>`;
+        switch (upperStatus) {
+            case 'CREATED':
+                subject = `Shipment Confirmed: Tracking Number ${trackingNumber}`;
+                bodyText = `We are pleased to confirm that we have received the billing and route details for your shipment. Your package is currently being processed at our origin facility and is being prepped for secure dispatch. You will receive another notification once the shipment is picked up and in transit.`;
+                break;
+            case 'PENDING':
+                subject = `Awaiting Pickup: Shipment ${trackingNumber} - Status Update`;
+                bodyText = `Your shipment status is now updated to Pending. This indicates that your package is scheduled for pickup by our courier team or is awaiting arrival at our local processing center. No action is required on your part at this time. Once the package has been scanned into our system, transit tracking will begin immediately.`;
+                break;
+            case 'IN_TRANSIT':
+                subject = `In Transit: Tracking Update for Shipment ${trackingNumber}`;
+                bodyText = `Your package is on its journey. It has departed from our regional logistics facility and is actively moving towards the destination. Our logistics network is tracking the shipment at every milestone to ensure secure transit. You can see the full route details and current location by clicking the tracking button below.`;
+                break;
+            case 'ON_HOLD':
+                subject = `Important Update: Shipment ${trackingNumber} Placed on Hold`;
+                bodyText = `Your shipment has been temporarily placed on hold. A hold state is typically applied when additional details (such as address verification or customs documentation) are required, or when storage fee reviews are pending. Please review the hold details and notice box below for instructions. If you need assistance resolving this hold, please click the tracking button and use the support chat to contact us.`;
+                break;
+            case 'OUT_FOR_DELIVERY':
+                subject = `Out for Delivery: Expect your shipment today (${trackingNumber})`;
+                bodyText = `Great news! Your package has been sorted, loaded onto a local delivery vehicle, and is out for delivery today. Our driver is scheduled to arrive at your destination address before end of day. If a signature is required, please ensure an authorized recipient is present to sign for the package.`;
+                break;
+            case 'DELIVERED':
+                subject = `Delivered: Shipment ${trackingNumber} has arrived`;
+                bodyText = `Your package has been successfully delivered! Our courier has confirmed drop-off at your specified address. If you cannot find the package, please check around your building entrance, mailroom, or neighbors, or contact our support team immediately via our chat box by clicking the link below.`;
+                break;
+            case 'RETURNED':
+                subject = `Returned Notice: Shipment ${trackingNumber} returning to sender`;
+                bodyText = `We were unable to complete the delivery of your shipment, and it is now being returned to the sender. Common reasons for return include invalid delivery address details, multiple failed delivery attempts, or package rejection at the destination. Please contact the sender or reach out to our logistics support team for details on re-routing or re-shipping.`;
+                break;
+        }
 
         const html = `
             <!DOCTYPE html>
@@ -110,25 +133,35 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                 <!-- Content Area -->
                                 <tr>
                                     <td style="padding: 40px 30px;">
-                                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px;">
-                                            Hi ${receiverName || 'there'},<br><br>
-                                            ${isCreated ? 'Shipment Confirmed' : 'Shipment Update'}
+                                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 700;">
+                                            Hi ${receiverName || 'there'},
                                         </h2>
                                         
-                                        <!-- Tracking Card -->
+                                        <!-- Tracking & Status Card -->
                                         <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 16px 20px; border-radius: 4px; margin-bottom: 24px;">
-                                            <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Tracking Number</p>
-                                            <p style="margin: 6px 0 0 0; font-size: 24px; font-weight: 700; color: #0f172a; letter-spacing: 1px;">${trackingNumber}</p>
+                                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                <tr>
+                                                    <td>
+                                                        <p style="margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Tracking Number</p>
+                                                        <p style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: 1px;">${trackingNumber}</p>
+                                                    </td>
+                                                    <td align="right" style="vertical-align: middle;">
+                                                        <span style="display: inline-block; padding: 6px 16px; border-radius: 9999px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; ${getStatusStyles(status)}">
+                                                            ${status.replace(/_/g, ' ')}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </table>
                                         </div>
 
                                         ${location ? `
                                             <div style="margin-bottom: 24px;">
-                                                <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a;">Location: ${location}</h3>
+                                                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">Location: ${location}</h3>
                                             </div>
                                         ` : ''}
                                         
-                                        <p style="font-size: 16px; line-height: 1.5; color: #334155; margin: 0 0 24px 0;">
-                                            ${statusText}
+                                        <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
+                                            ${bodyText}
                                         </p>
 
                                         ${(status.toUpperCase() === 'ON_HOLD' || (holdFee !== undefined && holdFee !== null && holdFee > 0)) ? `
@@ -146,7 +179,7 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         </div>
                                         ` : ''}
 
-                                        ${isCreated ? `
+                                        ${(senderName || receiverAddress || origin || destination || estimatedDelivery) ? `
                                         <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
                                             <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Shipment Details</h3>
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 14px; line-height: 1.6;">
@@ -158,8 +191,6 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                             </table>
                                         </div>
                                         ` : ''}
-
-
                                         
                                         ${description ? `
                                             <div style="margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; background-color: #f8fafc;">
@@ -187,8 +218,8 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         <p style="margin: 0; font-size: 13px; color: #64748b;">
                                             Thank you for choosing <strong style="color: #0f172a;">${companyName}</strong>.
                                         </p>
-                                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">
-                                            This is an automated message. Please do not reply to this email.
+                                        <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8; line-height: 1.4;">
+                                            This is an automated status update for your active shipment (${trackingNumber}). Please do not reply directly to this email. For any queries, please visit our tracking portal or contact support.
                                         </p>
                                     </td>
                                 </tr>
