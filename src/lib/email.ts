@@ -427,3 +427,168 @@ export async function sendChatNotification(to: string, trackingNumber: string, s
         console.error('Failed to dispatch chat notification email:', error);
     }
 }
+
+export interface PaymentEmailParams {
+    to: string;
+    trackingNumber: string;
+    receiverName: string;
+    holdBaseCharge: number;
+    dailyFee: number;
+    daysElapsed: number;
+    totalStorageAccrued: number;
+    totalDue: number;
+    amountPaid: number;
+    remainingBalance: number;
+    holdReason?: string | null;
+}
+
+export async function sendPaymentNotificationEmail({
+    to,
+    trackingNumber,
+    receiverName,
+    holdBaseCharge,
+    dailyFee,
+    daysElapsed,
+    totalStorageAccrued,
+    totalDue,
+    amountPaid,
+    remainingBalance,
+    holdReason
+}: PaymentEmailParams) {
+    if (!process.env.SCALEWAY_SMTP_USER || !process.env.SCALEWAY_SMTP_PASSWORD) {
+        console.warn('SCALEWAY_SMTP_USER or SCALEWAY_SMTP_PASSWORD is/are not set. Skipping email.');
+        return;
+    }
+
+    try {
+        const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } });
+        const companyName = settings?.companyName || 'Atlas Logistics';
+        const emailHeaderName = `${companyName} <${process.env.SCALEWAY_SENDER_EMAIL || 'noreply@yourdomain.com'}>`;
+        
+        const trackingUrl = `${process.env.NEXTAUTH_URL}/track/${trackingNumber}`;
+
+        const html = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Payment Received & Balance Statement</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 40px 0;">
+                    <tr>
+                        <td align="center">
+                            <table width="100%" max-width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                                <!-- Header -->
+                                <tr>
+                                    <td align="center" style="background-color: #0f172a; padding: 40px 20px; border-bottom: 4px solid #ea580c;">
+                                        ${settings?.logoUrl 
+                                            ? `<img src="${settings.logoUrl}" alt="${companyName}" style="height: 60px; max-width: 250px; object-fit: contain; display: block;" />`
+                                            : `<div style="color: #ffffff; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin: 0;">${companyName}</div>`
+                                        }
+                                        <div style="color: #fdba74; margin-top: 10px; font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Freight & Logistics Service</div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Content Area -->
+                                <tr>
+                                    <td style="padding: 40px 30px;">
+                                        <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 700;">
+                                            Hi ${receiverName || 'there'},
+                                        </h2>
+                                        
+                                        <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
+                                            We are writing to confirm that an installment payment of <strong>$${amountPaid.toFixed(2)}</strong> has been credited to your shipment hold account. Below is the detailed statement showing your storage fees and remaining balance.
+                                        </p>
+
+                                        <!-- Statement Breakdown Table -->
+                                        <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                                            <h3 style="margin: 0 0 16px 0; font-size: 15px; color: #c2410c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed #fed7aa; padding-bottom: 8px;">
+                                                Statement Account Details (Shipment ${trackingNumber})
+                                            </h3>
+                                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 14px; line-height: 1.6; color: #4a0404;">
+                                                <tr>
+                                                    <td style="padding: 6px 0; color: #7c2d12;">Base Hold / Clearance Charge:</td>
+                                                    <td align="right" style="padding: 6px 0; font-weight: 600; color: #1e293b;">$${holdBaseCharge.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 6px 0; color: #7c2d12;">Daily Storage Rate:</td>
+                                                    <td align="right" style="padding: 6px 0; font-weight: 600; color: #1e293b;">$${dailyFee.toFixed(2)} / day</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 6px 0; color: #7c2d12;">Days Elapsed on Hold:</td>
+                                                    <td align="right" style="padding: 6px 0; font-weight: 600; color: #1e293b;">${daysElapsed} ${daysElapsed === 1 ? 'day' : 'days'}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 6px 0; color: #7c2d12; border-bottom: 1px solid #fed7aa; padding-bottom: 10px;">Accrued Storage Fees:</td>
+                                                    <td align="right" style="padding: 6px 0; font-weight: 600; color: #1e293b; border-bottom: 1px solid #fed7aa; padding-bottom: 10px;">$${totalStorageAccrued.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 10px 0 6px 0; color: #7c2d12; font-weight: 600;">Total Amount Due:</td>
+                                                    <td align="right" style="padding: 10px 0 6px 0; font-weight: 700; color: #0f172a;">$${totalDue.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 6px 0; color: #047857; font-weight: 600; border-bottom: 2px solid #fed7aa; padding-bottom: 10px;">Total Paid to Date:</td>
+                                                    <td align="right" style="padding: 6px 0; font-weight: 700; color: #047857; border-bottom: 2px solid #fed7aa; padding-bottom: 10px;">-$${amountPaid.toFixed(2)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px 0 0 0; color: #c2410c; font-size: 16px; font-weight: 800;">Remaining Balance Due:</td>
+                                                    <td align="right" style="padding: 12px 0 0 0; font-size: 18px; font-weight: 900; color: #ea580c;">$${remainingBalance.toFixed(2)}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
+                                        ${holdReason ? `
+                                        <div style="margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; background-color: #f8fafc;">
+                                            <strong style="display: block; color: #1e293b; font-size: 14px; margin-bottom: 6px;">Hold Notice Details</strong>
+                                            <p style="color: #475569; font-size: 14px; line-height: 1.5; margin: 0;">${holdReason}</p>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        <!-- CTA Button -->
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 30px;">
+                                            <tr>
+                                                <td align="center">
+                                                    <a href="${trackingUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center; border: 1px solid #1d4ed8;">
+                                                        Track Your Shipment
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Footer -->
+                                <tr>
+                                    <td align="center" style="background-color: #f8fafc; padding: 24px 30px; border-top: 1px solid #e2e8f0;">
+                                        <p style="margin: 0; font-size: 13px; color: #64748b;">
+                                            Thank you for choosing <strong style="color: #0f172a;">${companyName}</strong>.
+                                        </p>
+                                        <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8; line-height: 1.4;">
+                                            You are receiving this automated email because you have an active installment agreement for shipment tracking ${trackingNumber}. Please do not reply directly to this email. For any queries, please visit our tracking portal or contact support.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
+
+        const mailOptions: MailOptions = {
+            from: emailHeaderName,
+            to: to,
+            subject: `Payment Receipt & Balance Statement: Shipment ${trackingNumber}`,
+            html: html,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Payment statement email sent to ${to} for shipment ${trackingNumber}`, info.messageId);
+        return info;
+    } catch (error) {
+        console.error('Failed to send payment statement email:', error);
+    }
+}

@@ -50,6 +50,8 @@ interface Shipment {
     holdFee?: number | null;
     holdReason?: string | null;
     holdHidden?: boolean;
+    holdBaseCharge?: number | null;
+    holdPaid?: number | null;
 }
 
 interface ActiveUpload {
@@ -154,14 +156,19 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     const [holdPanelFee, setHoldPanelFee] = useState('0');
     const [holdPanelReason, setHoldPanelReason] = useState('');
     const [holdPanelHidden, setHoldPanelHidden] = useState(false);
+    const [holdPanelBaseCharge, setHoldPanelBaseCharge] = useState('0');
+    const [holdPanelPaid, setHoldPanelPaid] = useState('0');
+    const [sendingPaymentEmail, setSendingPaymentEmail] = useState(false);
 
     useEffect(() => {
         if (activeHoldEvent) {
             setHoldPanelFee(activeHoldEvent.holdFee !== undefined && activeHoldEvent.holdFee !== null ? activeHoldEvent.holdFee.toString() : (shipment.holdFee?.toString() || '0'));
             setHoldPanelReason(activeHoldEvent.holdReason || shipment.holdReason || '');
             setHoldPanelHidden(shipment.holdHidden || false);
+            setHoldPanelBaseCharge(shipment.holdBaseCharge !== undefined && shipment.holdBaseCharge !== null ? shipment.holdBaseCharge.toString() : '0');
+            setHoldPanelPaid(shipment.holdPaid !== undefined && shipment.holdPaid !== null ? shipment.holdPaid.toString() : '0');
         }
-    }, [shipment.holdFee, shipment.holdReason, shipment.holdHidden, activeHoldEvent]);
+    }, [shipment.holdFee, shipment.holdReason, shipment.holdHidden, shipment.holdBaseCharge, shipment.holdPaid, activeHoldEvent]);
 
     const [showReleaseForm, setShowReleaseForm] = useState(false);
     const [releaseStatus, setReleaseStatus] = useState('IN_TRANSIT');
@@ -187,14 +194,16 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                 })
             });
 
-            // 2. Update the shipment (including visibility)
+            // 2. Update the shipment (including visibility, base charge and amount paid)
             const shipmentRes = await fetch(`/api/shipments/${shipment.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     holdFee: parseFloat(holdPanelFee) || 0,
                     holdReason: holdPanelReason,
-                    holdHidden: holdPanelHidden
+                    holdHidden: holdPanelHidden,
+                    holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0,
+                    holdPaid: parseFloat(holdPanelPaid) || 0
                 })
             });
 
@@ -209,6 +218,39 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             toast.error("Error saving hold settings", { id: toastId });
         } finally {
             setUpdating(false);
+        }
+    };
+
+    const handleSendPaymentEmail = async () => {
+        if (!shipment.customerEmail) {
+            toast.error("Customer email is not set for this shipment!");
+            return;
+        }
+        setSendingPaymentEmail(true);
+        const toastId = toast.loading("Sending payment statement email...");
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}/notify-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    holdFee: parseFloat(holdPanelFee) || 0,
+                    holdReason: holdPanelReason,
+                    holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0,
+                    holdPaid: parseFloat(holdPanelPaid) || 0
+                })
+            });
+            if (res.ok) {
+                toast.success("Payment & balance statement email sent!", { id: toastId });
+                router.refresh();
+            } else {
+                const text = await res.text();
+                toast.error(`Failed to send email: ${text}`, { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error sending notification email", { id: toastId });
+        } finally {
+            setSendingPaymentEmail(false);
         }
     };
 
@@ -737,6 +779,36 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                                     <div>
                                         <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                                            Base Hold Charge ($)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={holdPanelBaseCharge}
+                                            onChange={(e) => setHoldPanelBaseCharge(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full bg-white border border-amber-200 text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                                            Total Paid to Date ($)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={holdPanelPaid}
+                                            onChange={(e) => setHoldPanelPaid(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full bg-white border border-amber-200 text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
                                             Warning / Hold Reason
                                         </label>
                                         <textarea
@@ -776,10 +848,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         const diffTime = Math.max(0, now.getTime() - holdStart.getTime());
                                         const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
                                         const feePerDay = parseFloat(holdPanelFee) || 0;
-                                        const total = diffDays * feePerDay;
+                                        const storageAccrued = diffDays * feePerDay;
+                                        const baseCharge = parseFloat(holdPanelBaseCharge) || 0;
+                                        const totalDue = baseCharge + storageAccrued;
+                                        const amountPaid = parseFloat(holdPanelPaid) || 0;
+                                        const remainingBalance = totalDue - amountPaid;
 
                                         return (
-                                            <div className="bg-amber-100/50 rounded-xl p-3 text-xs text-amber-900 space-y-1.5">
+                                            <div className="bg-amber-100/50 rounded-xl p-3 text-xs text-amber-900 space-y-1.5 border border-amber-200/50">
                                                 <div className="flex justify-between">
                                                     <span className="text-amber-800">Hold Date:</span>
                                                     <span className="font-semibold">
@@ -790,23 +866,56 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                     <span className="text-amber-800">Days Elapsed:</span>
                                                     <span className="font-semibold">{diffDays} {diffDays === 1 ? 'day' : 'days'}</span>
                                                 </div>
-                                                <div className="flex justify-between pt-1.5 border-t border-amber-200/50 text-sm font-bold">
-                                                    <span>Total Storage Accrued:</span>
-                                                    <span className="text-amber-700">${total.toFixed(2)}</span>
+                                                <div className="pt-1.5 border-t border-dashed border-amber-200 flex justify-between">
+                                                    <span className="text-amber-800">Base Charge:</span>
+                                                    <span className="font-semibold">${baseCharge.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-amber-800">Storage Accrued:</span>
+                                                    <span className="font-semibold">${storageAccrued.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between font-bold text-amber-950">
+                                                    <span>Total Amount Due:</span>
+                                                    <span>${totalDue.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-emerald-800">
+                                                    <span>Amount Paid:</span>
+                                                    <span className="font-semibold">-${amountPaid.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between pt-1.5 border-t border-amber-200/80 text-sm font-black text-amber-950">
+                                                    <span>Remaining Balance:</span>
+                                                    <span className="text-amber-700">${remainingBalance.toFixed(2)}</span>
                                                 </div>
                                             </div>
                                         );
                                     })()}
 
-                                    {/* Save Button */}
-                                    <button
-                                        type="button"
-                                        onClick={handleSaveHoldSettings}
-                                        disabled={updating}
-                                        className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-600/10"
-                                    >
-                                        {updating ? 'Saving...' : 'Save Hold Settings'}
-                                    </button>
+                                    {/* Action Buttons */}
+                                    <div className="space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveHoldSettings}
+                                            disabled={updating}
+                                            className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-600/10"
+                                        >
+                                            {updating ? 'Saving...' : 'Save Hold Settings'}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleSendPaymentEmail}
+                                            disabled={sendingPaymentEmail || !shipment.customerEmail}
+                                            className="w-full py-2 bg-amber-100 hover:bg-amber-200 disabled:opacity-50 text-amber-800 text-xs font-bold rounded-xl transition-all border border-amber-200 flex items-center justify-center gap-1.5"
+                                            title={shipment.customerEmail ? "Send payment receipt & balance email to customer" : "Customer email not set"}
+                                        >
+                                            {sendingPaymentEmail ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                <Mail className="w-3.5 h-3.5" />
+                                            )}
+                                            Notify Customer (Payment/Balance)
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Clear Hold Transition Section */}

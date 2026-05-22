@@ -39,6 +39,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         if (holdFee !== undefined) updateData.holdFee = holdFee !== null ? parseFloat(holdFee) : 0;
         if (holdReason !== undefined) updateData.holdReason = holdReason;
         if (holdHidden !== undefined) updateData.holdHidden = holdHidden;
+        if (body.holdBaseCharge !== undefined) updateData.holdBaseCharge = body.holdBaseCharge !== null ? parseFloat(body.holdBaseCharge) : 0;
+        if (body.holdPaid !== undefined) updateData.holdPaid = body.holdPaid !== null ? parseFloat(body.holdPaid) : 0;
 
         const updatedShipment = await prisma.shipment.update({
             where: { id },

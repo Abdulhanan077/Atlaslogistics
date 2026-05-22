@@ -72,6 +72,8 @@ model Shipment {
   holdFee           Float?    @default(0)
   holdReason        String?
   holdHidden        Boolean   @default(false)
+  holdBaseCharge    Float?    @default(0)
+  holdPaid          Float?    @default(0)
 }
 
 model Message {
