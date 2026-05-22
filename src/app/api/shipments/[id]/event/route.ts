@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     try {
         const body = await req.json();
-        const { status, location, description, timestamp, latitude, longitude, holdFee, holdReason } = body;
+        const { status, location, description, timestamp, latitude, longitude, holdFee, holdReason, holdBaseCharge } = body;
 
         // Verify ownership first
         const shipment = await prisma.shipment.findUnique({ where: { id } });
@@ -32,7 +32,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 longitude: longitude ? parseFloat(longitude) : null,
                 timestamp: timestamp ? new Date(timestamp) : undefined,
                 holdFee: status === 'ON_HOLD' ? (holdFee !== undefined && holdFee !== null && holdFee !== '' ? parseFloat(holdFee.toString()) : 0) : 0,
-                holdReason: status === 'ON_HOLD' ? holdReason || null : null
+                holdReason: status === 'ON_HOLD' ? holdReason || null : null,
+                holdBaseCharge: status === 'ON_HOLD' ? (holdBaseCharge !== undefined && holdBaseCharge !== null && holdBaseCharge !== '' ? parseFloat(holdBaseCharge.toString()) : 0) : 0
             }
         });
 
@@ -57,12 +58,38 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         }
 
         if (latestEvent) {
+            let holdPaid = 0;
+            if (latestEvent.status === 'ON_HOLD') {
+                const activeHoldEvent = await prisma.shipmentEvent.findFirst({
+                    where: { shipmentId: id, status: 'ON_HOLD', isDeleted: false },
+                    orderBy: [
+                        { timestamp: 'desc' },
+                        { createdAt: 'desc' }
+                    ]
+                });
+                if (activeHoldEvent) {
+                    let list: any[] = [];
+                    try {
+                        list = JSON.parse(shipment.holdInstallments || "[]");
+                        if (!Array.isArray(list)) list = [];
+                    } catch (e) {
+                        list = [];
+                    }
+                    const holdStart = new Date(activeHoldEvent.timestamp);
+                    holdPaid = list
+                        .filter(item => !item.isDeleted && new Date(item.timestamp) >= holdStart)
+                        .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+                }
+            }
+
             await prisma.shipment.update({
                 where: { id },
                 data: {
                     status: latestEvent.status,
                     holdFee: latestEvent.status === 'ON_HOLD' ? latestEvent.holdFee : 0,
-                    holdReason: latestEvent.status === 'ON_HOLD' ? latestEvent.holdReason : null
+                    holdBaseCharge: latestEvent.status === 'ON_HOLD' ? latestEvent.holdBaseCharge : 0,
+                    holdReason: latestEvent.status === 'ON_HOLD' ? latestEvent.holdReason : null,
+                    holdPaid: holdPaid
                 }
             });
         }

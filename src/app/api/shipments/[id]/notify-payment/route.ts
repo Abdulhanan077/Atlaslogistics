@@ -81,9 +81,15 @@ export async function POST(
 
         if (installmentsChanged) {
             updateData.holdInstallments = JSON.stringify(list);
-            updateData.holdPaid = list
-                .filter(item => !item.isDeleted)
-                .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            const activeHoldEvent = shipment?.events.find(e => e.status === 'ON_HOLD');
+            if (activeHoldEvent) {
+                const holdStart = new Date(activeHoldEvent.timestamp);
+                updateData.holdPaid = list
+                    .filter(item => !item.isDeleted && new Date(item.timestamp) >= holdStart)
+                    .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            } else {
+                updateData.holdPaid = 0;
+            }
         } else if (inputHoldPaid !== undefined) {
             updateData.holdPaid = inputHoldPaid;
         }

@@ -105,6 +105,7 @@ model ShipmentEvent {
   deletedAt   DateTime?
   holdFee     Float?   @default(0)
   holdReason  String?
+  holdBaseCharge Float?   @default(0)
 }
 
 model SiteSettings {

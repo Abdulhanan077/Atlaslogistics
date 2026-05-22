@@ -86,9 +86,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
             if (installmentsChanged) {
                 updateData.holdInstallments = JSON.stringify(list);
-                updateData.holdPaid = list
-                    .filter(item => !item.isDeleted)
-                    .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+                
+                const activeHoldEvent = await prisma.shipmentEvent.findFirst({
+                    where: { shipmentId: id, status: 'ON_HOLD', isDeleted: false },
+                    orderBy: [
+                        { timestamp: 'desc' },
+                        { createdAt: 'desc' }
+                    ]
+                });
+
+                if (activeHoldEvent) {
+                    const holdStart = new Date(activeHoldEvent.timestamp);
+                    updateData.holdPaid = list
+                        .filter(item => !item.isDeleted && new Date(item.timestamp) >= holdStart)
+                        .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+                } else {
+                    updateData.holdPaid = 0;
+                }
             }
         }
 

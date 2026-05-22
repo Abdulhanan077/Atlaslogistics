@@ -29,6 +29,7 @@ interface ShipmentEvent {
     isDeleted?: boolean;
     holdFee?: number | null;
     holdReason?: string | null;
+    holdBaseCharge?: number | null;
 }
 
 interface Shipment {
@@ -152,7 +153,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         }
     };
 
-    const activeHoldEvent = shipment.events.find(e => e.status === 'ON_HOLD');
+    const activeHoldEvent = shipment.events.find(e => e.status === 'ON_HOLD' && !e.isDeleted);
 
     const [holdPanelFee, setHoldPanelFee] = useState('0');
     const [holdPanelReason, setHoldPanelReason] = useState('');
@@ -169,9 +170,13 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     let storageAccrued = 0;
     let totalDue = 0;
     if (activeHoldEvent) {
+        const nonDeletedEvents = shipment.events.filter(e => !e.isDeleted);
+        const k = nonDeletedEvents.findIndex(e => e.id === activeHoldEvent.id);
+        const isCurrentlyOnHold = shipment.status === 'ON_HOLD';
+        const holdEnd = (!isCurrentlyOnHold && k > 0) ? new Date(nonDeletedEvents[k - 1].timestamp) : new Date();
+        
         const holdStart = new Date(activeHoldEvent.timestamp);
-        const now = new Date();
-        const diffTime = Math.max(0, now.getTime() - holdStart.getTime());
+        const diffTime = Math.max(0, holdEnd.getTime() - holdStart.getTime());
         diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
         const feePerDay = parseFloat(holdPanelFee) || 0;
         storageAccrued = diffDays * feePerDay;
@@ -186,7 +191,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             setHoldPanelFee(activeHoldEvent.holdFee !== undefined && activeHoldEvent.holdFee !== null ? activeHoldEvent.holdFee.toString() : (shipment.holdFee?.toString() || '0'));
             setHoldPanelReason(activeHoldEvent.holdReason || shipment.holdReason || '');
             setHoldPanelHidden(shipment.holdHidden || false);
-            setHoldPanelBaseCharge(shipment.holdBaseCharge !== undefined && shipment.holdBaseCharge !== null ? shipment.holdBaseCharge.toString() : '0');
+            setHoldPanelBaseCharge(activeHoldEvent.holdBaseCharge !== undefined && activeHoldEvent.holdBaseCharge !== null ? activeHoldEvent.holdBaseCharge.toString() : (shipment.holdBaseCharge !== undefined && shipment.holdBaseCharge !== null ? shipment.holdBaseCharge.toString() : '0'));
             setHoldPanelPaid(shipment.holdPaid !== undefined && shipment.holdPaid !== null ? shipment.holdPaid.toString() : '0');
             try {
                 const parsed = JSON.parse(shipment.holdInstallments || '[]');
@@ -275,6 +280,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     description: activeHoldEvent.description || '',
                     holdFee: parseFloat(holdPanelFee) || 0,
                     holdReason: holdPanelReason,
+                    holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0,
                     timestamp: activeHoldEvent.timestamp
                 })
             });
@@ -414,7 +420,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         destLat: parseShipmentInfo(shipment.receiverInfo).destLat || '',
         destLng: parseShipmentInfo(shipment.receiverInfo).destLng || '',
         holdFee: '',
-        holdReason: ''
+        holdReason: '',
+        holdBaseCharge: ''
     });
 
     useEffect(() => {
@@ -536,7 +543,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         latitude: '',
         longitude: '',
         holdFee: '',
-        holdReason: ''
+        holdReason: '',
+        holdBaseCharge: ''
     });
 
     const handleEditEventClick = (event: ShipmentEvent) => {
@@ -549,7 +557,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             latitude: String(event.latitude || ''),
             longitude: String(event.longitude || ''),
             holdFee: event.holdFee !== undefined && event.holdFee !== null ? String(event.holdFee) : '',
-            holdReason: event.holdReason || ''
+            holdReason: event.holdReason || '',
+            holdBaseCharge: event.holdBaseCharge !== undefined && event.holdBaseCharge !== null ? String(event.holdBaseCharge) : ''
         });
     };
 
@@ -566,7 +575,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     ...editEventData,
                     timestamp: new Date(editEventData.timestamp + ':00Z').toISOString(),
                     holdFee: editEventData.status === 'ON_HOLD' && editEventData.holdFee !== '' ? parseFloat(editEventData.holdFee.toString()) : 0,
-                    holdReason: editEventData.status === 'ON_HOLD' ? editEventData.holdReason : null
+                    holdReason: editEventData.status === 'ON_HOLD' ? editEventData.holdReason : null,
+                    holdBaseCharge: editEventData.status === 'ON_HOLD' && editEventData.holdBaseCharge !== '' ? parseFloat(editEventData.holdBaseCharge.toString()) : 0
                 })
             });
 
@@ -688,7 +698,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     longitude: formData.longitude,
                     timestamp: new Date(formData.timestamp + ':00Z').toISOString(),
                     holdFee: formData.status === 'ON_HOLD' && formData.holdFee !== '' ? parseFloat(formData.holdFee.toString()) : 0,
-                    holdReason: formData.status === 'ON_HOLD' ? formData.holdReason : null
+                    holdReason: formData.status === 'ON_HOLD' ? formData.holdReason : null,
+                    holdBaseCharge: formData.status === 'ON_HOLD' && formData.holdBaseCharge !== '' ? parseFloat(formData.holdBaseCharge.toString()) : 0
                 })
             });
 
@@ -718,7 +729,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     longitude: '',
                     timestamp: new Date().toISOString().slice(0, 16),
                     holdFee: '',
-                    holdReason: ''
+                    holdReason: '',
+                    holdBaseCharge: ''
                 }));
                 router.refresh();
                 toast.success('Status updated successfully');
@@ -838,14 +850,16 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         <ShipmentChat shipmentId={shipment.id} />
                         
                         {/* Hold Settings & Control Panel */}
-                        {mounted && shipment.status === 'ON_HOLD' && activeHoldEvent && (
+                        {mounted && activeHoldEvent && (
                             <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-lg space-y-4">
                                 <div className="flex items-center justify-between pb-3 border-b border-amber-200">
                                     <div className="flex items-center gap-2">
-                                        <span className="flex h-2.5 w-2.5 relative">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                                        </span>
+                                        {shipment.status === 'ON_HOLD' && (
+                                            <span className="flex h-2.5 w-2.5 relative">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                            </span>
+                                        )}
                                         <h3 className="font-bold text-amber-900 text-sm tracking-tight">Active Hold Controls</h3>
                                     </div>
                                     {/* Resend notification button [M] */}
@@ -1026,85 +1040,87 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 </div>
 
                                 {/* Clear Hold Transition Section */}
-                                <div className="pt-3 border-t border-amber-200">
-                                    {!showReleaseForm ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setReleaseLocation(activeHoldEvent.location || '');
-                                                setShowReleaseForm(true);
-                                            }}
-                                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1"
-                                        >
-                                            <Check className="w-3.5 h-3.5" />
-                                            Confirm Clear Hold
-                                        </button>
-                                    ) : (
-                                        <div className="space-y-3 bg-white p-3 rounded-xl border border-amber-200">
-                                            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                                                <span className="text-xs font-bold text-slate-800">Release Transit Status</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowReleaseForm(false)}
-                                                    className="text-slate-400 hover:text-slate-600"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                                    Transition Status
-                                                </label>
-                                                <select
-                                                    value={releaseStatus}
-                                                    onChange={(e) => setReleaseStatus(e.target.value)}
-                                                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                >
-                                                    <option value="IN_TRANSIT">IN TRANSIT</option>
-                                                    <option value="PENDING">PENDING</option>
-                                                    <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
-                                                    <option value="DELIVERED">DELIVERED</option>
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                                    Current Location
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={releaseLocation}
-                                                    onChange={(e) => setReleaseLocation(e.target.value)}
-                                                    placeholder="Enter current city/hub..."
-                                                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                                                    Status Description
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={releaseDescription}
-                                                    onChange={(e) => setReleaseDescription(e.target.value)}
-                                                    placeholder="Status details..."
-                                                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                />
-                                            </div>
-
+                                {shipment.status === 'ON_HOLD' && (
+                                    <div className="pt-3 border-t border-amber-200">
+                                        {!showReleaseForm ? (
                                             <button
                                                 type="button"
-                                                onClick={handleConfirmClearHold}
-                                                disabled={updating}
-                                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all"
+                                                onClick={() => {
+                                                    setReleaseLocation(activeHoldEvent.location || '');
+                                                    setShowReleaseForm(true);
+                                                }}
+                                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1"
                                             >
-                                                {updating ? 'Releasing...' : 'Confirm Release Event'}
+                                                <Check className="w-3.5 h-3.5" />
+                                                Confirm Clear Hold
                                             </button>
-                                        </div>
-                                    )}
-                                </div>
+                                        ) : (
+                                            <div className="space-y-3 bg-white p-3 rounded-xl border border-amber-200">
+                                                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                                                    <span className="text-xs font-bold text-slate-800">Release Transit Status</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowReleaseForm(false)}
+                                                        className="text-slate-400 hover:text-slate-600"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                        Transition Status
+                                                    </label>
+                                                    <select
+                                                        value={releaseStatus}
+                                                        onChange={(e) => setReleaseStatus(e.target.value)}
+                                                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                    >
+                                                        <option value="IN_TRANSIT">IN TRANSIT</option>
+                                                        <option value="PENDING">PENDING</option>
+                                                        <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
+                                                        <option value="DELIVERED">DELIVERED</option>
+                                                    </select>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                        Current Location
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={releaseLocation}
+                                                        onChange={(e) => setReleaseLocation(e.target.value)}
+                                                        placeholder="Enter current city/hub..."
+                                                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                        Status Description
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={releaseDescription}
+                                                        onChange={(e) => setReleaseDescription(e.target.value)}
+                                                        placeholder="Status details..."
+                                                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleConfirmClearHold}
+                                                    disabled={updating}
+                                                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all"
+                                                >
+                                                    {updating ? 'Releasing...' : 'Confirm Release Event'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Payment History Ledger */}
                                 {holdInstallments.length > 0 && (
@@ -1122,56 +1138,68 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-amber-100 text-slate-700">
-                                                    {holdInstallments.map((inst) => (
-                                                        <tr key={inst.id} className={`hover:bg-amber-50/50 transition-colors ${inst.isDeleted ? 'bg-red-50/10' : ''}`}>
-                                                            <td className={`px-3 py-2 whitespace-nowrap ${inst.isDeleted ? 'line-through text-slate-400/80 font-normal' : 'text-slate-500'}`}>
-                                                                {new Date(inst.timestamp).toLocaleDateString(undefined, {
-                                                                    month: 'short',
-                                                                    day: 'numeric',
-                                                                    year: '2-digit'
-                                                                })}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-right">
-                                                                {inst.isDeleted ? (
+                                                    {holdInstallments.map((inst) => {
+                                                        const isPrevHold = activeHoldEvent && new Date(inst.timestamp) < new Date(activeHoldEvent.timestamp);
+                                                        return (
+                                                            <tr key={inst.id} className={`hover:bg-amber-50/50 transition-colors ${inst.isDeleted ? 'bg-red-50/10' : ''} ${isPrevHold ? 'opacity-65 bg-slate-50/40' : ''}`}>
+                                                                <td className={`px-3 py-2 whitespace-nowrap ${inst.isDeleted ? 'line-through text-slate-400/80 font-normal' : 'text-slate-500'}`}>
                                                                     <div className="inline-flex items-center gap-1.5">
-                                                                        <span className="line-through text-slate-400/80 font-normal">
+                                                                        <span>
+                                                                            {new Date(inst.timestamp).toLocaleDateString(undefined, {
+                                                                                month: 'short',
+                                                                                day: 'numeric',
+                                                                                year: '2-digit'
+                                                                            })}
+                                                                        </span>
+                                                                        {isPrevHold && !inst.isDeleted && (
+                                                                            <span className="text-[9px] bg-slate-100 text-slate-500 border border-slate-200 rounded px-1 py-0.5 font-bold uppercase tracking-wider">
+                                                                                Prev Hold
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right">
+                                                                    {inst.isDeleted ? (
+                                                                        <div className="inline-flex items-center gap-1.5">
+                                                                            <span className="line-through text-slate-400/80 font-normal">
+                                                                                ${(parseFloat(inst.amount.toString()) || 0).toFixed(2)}
+                                                                            </span>
+                                                                            <span className="text-[9px] bg-red-50 text-red-600 border border-red-100 rounded px-1 py-0.5 font-bold uppercase tracking-wider scale-90 origin-right">
+                                                                                Cancelled
+                                                                            </span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className={`font-semibold ${isPrevHold ? 'text-slate-500' : 'text-slate-900'}`}>
                                                                             ${(parseFloat(inst.amount.toString()) || 0).toFixed(2)}
                                                                         </span>
-                                                                        <span className="text-[9px] bg-red-50 text-red-600 border border-red-100 rounded px-1 py-0.5 font-bold uppercase tracking-wider scale-90 origin-right">
-                                                                            Cancelled
-                                                                        </span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="font-semibold text-slate-900">
-                                                                        ${(parseFloat(inst.amount.toString()) || 0).toFixed(2)}
-                                                                    </span>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-3 py-2 text-center">
-                                                                {inst.isDeleted ? (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleRestoreInstallment(inst.id)}
-                                                                        disabled={updating}
-                                                                        className="p-1 hover:bg-emerald-50 hover:text-emerald-600 text-emerald-600/85 rounded transition-all disabled:opacity-50"
-                                                                        title="Restore payment entry"
-                                                                    >
-                                                                        <RotateCcw className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleDeleteInstallment(inst.id)}
-                                                                        disabled={updating}
-                                                                        className="p-1 hover:bg-red-50 hover:text-red-600 text-slate-400 rounded transition-all disabled:opacity-50"
-                                                                        title="Cancel payment entry"
-                                                                    >
-                                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-center">
+                                                                    {inst.isDeleted ? (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleRestoreInstallment(inst.id)}
+                                                                            disabled={updating}
+                                                                            className="p-1 hover:bg-emerald-50 hover:text-emerald-600 text-emerald-600/85 rounded transition-all disabled:opacity-50"
+                                                                            title="Restore payment entry"
+                                                                        >
+                                                                            <RotateCcw className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleDeleteInstallment(inst.id)}
+                                                                            disabled={updating}
+                                                                            className="p-1 hover:bg-red-50 hover:text-red-600 text-slate-400 rounded transition-all disabled:opacity-50"
+                                                                            title="Cancel payment entry"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1820,13 +1848,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="text-[10px] text-brand-text-muted block mb-1">Warning / Reason</label>
+                                                            <label className="text-[10px] text-brand-text-muted block mb-1">Base Hold Charge ($)</label>
                                                             <input
-                                                                type="text"
+                                                                type="number"
+                                                                step="any"
                                                                 className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
-                                                                value={editEventData.holdReason}
-                                                                onChange={e => setEditEventData({ ...editEventData, holdReason: e.target.value })}
-                                                                placeholder="Reason"
+                                                                value={editEventData.holdBaseCharge}
+                                                                onChange={e => setEditEventData({ ...editEventData, holdBaseCharge: e.target.value })}
+                                                                placeholder="0.00"
                                                             />
                                                         </div>
                                                     </div>
@@ -2006,13 +2035,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-xs text-brand-text-muted">Warning Reason</label>
+                                            <label className="text-xs text-brand-text-muted">Base Hold Charge ($)</label>
                                             <input
-                                                type="text"
+                                                type="number"
+                                                step="any"
                                                 className="w-full bg-brand-surface border border-brand-border rounded px-2.5 py-1.5 text-sm text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                                value={formData.holdReason}
-                                                onChange={e => setFormData({ ...formData, holdReason: e.target.value })}
-                                                placeholder="Hold reason"
+                                                value={formData.holdBaseCharge}
+                                                onChange={e => setFormData({ ...formData, holdBaseCharge: e.target.value })}
+                                                placeholder="0.00"
                                             />
                                         </div>
                                     </div>
