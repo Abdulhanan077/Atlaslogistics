@@ -467,13 +467,17 @@ export async function sendPaymentNotificationEmail({
         
         const trackingUrl = `${process.env.NEXTAUTH_URL}/track/${trackingNumber}`;
 
+        const subject = amountPaid > 0
+            ? `Payment Receipt & Balance Statement: Shipment ${trackingNumber}`
+            : `Storage Invoice & Balance Statement: Shipment ${trackingNumber}`;
+
         const html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Payment Received & Balance Statement</title>
+                <title>${amountPaid > 0 ? 'Payment Received & Balance Statement' : 'Storage Invoice & Balance Statement'}</title>
             </head>
             <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 40px 0;">
@@ -499,7 +503,10 @@ export async function sendPaymentNotificationEmail({
                                         </h2>
                                         
                                         <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-                                            We are writing to confirm that an installment payment of <strong>$${amountPaid.toFixed(2)}</strong> has been credited to your shipment hold account. Below is the detailed statement showing your storage fees and remaining balance.
+                                            ${amountPaid > 0 
+                                                ? `We are writing to confirm that an installment payment of <strong>$${amountPaid.toFixed(2)}</strong> has been credited to your shipment hold account. Below is the detailed statement showing your storage fees and remaining balance.`
+                                                : `We are writing to provide a statement reminder of the outstanding storage fees and remaining balance for your shipment. Below is the detailed breakdown of your account status.`
+                                            }
                                         </p>
 
                                         <!-- Statement Breakdown Table -->
@@ -581,7 +588,7 @@ export async function sendPaymentNotificationEmail({
         const mailOptions: MailOptions = {
             from: emailHeaderName,
             to: to,
-            subject: `Payment Receipt & Balance Statement: Shipment ${trackingNumber}`,
+            subject: subject,
             html: html,
         };
 
