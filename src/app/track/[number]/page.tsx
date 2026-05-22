@@ -1,10 +1,11 @@
 import prisma from "@/lib/prisma"
 
 import Link from "next/link"
-import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck } from "lucide-react"
+import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck, AlertTriangle } from "lucide-react"
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import TrackingChat from "@/components/TrackingChat";
 import FormattedDate from "@/components/FormattedDate";
+import PayFeesButton from "@/components/PayFeesButton";
 import { parseShipmentInfo } from '@/lib/utils';
 
 async function getShipment(trackingNumber: string) {
@@ -201,6 +202,70 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
             </nav>
 
             <main className="relative z-10 max-w-[1400px] mx-auto px-4 lg:px-8 py-8 lg:py-12 space-y-8">
+
+                {/* Hold / Outstanding Fee Warning Banner */}
+                {((shipment.holdFee && shipment.holdFee > 0) || shipment.status === 'ON_HOLD') && !shipment.holdHidden && (() => {
+                    const activeHoldEvent = shipment.events.find((e: any) => e.status === 'ON_HOLD');
+                    const holdStart = activeHoldEvent ? new Date(activeHoldEvent.timestamp) : new Date(shipment.createdAt);
+                    const now = new Date();
+                    const diffTime = Math.max(0, now.getTime() - holdStart.getTime());
+                    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                    const dailyFee = activeHoldEvent?.holdFee || shipment.holdFee || 0;
+                    const totalAccumulatedFee = diffDays * dailyFee;
+                    const holdReason = activeHoldEvent?.holdReason || shipment.holdReason || "";
+
+                    return (
+                        <div className="relative z-10 overflow-hidden rounded-[2rem] border-2 border-[#ea580c] bg-[#fff7ed] p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            {/* Glow effect */}
+                            <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#ea580c]/5 blur-[50px] rounded-full pointer-events-none" />
+                            
+                            <div className="flex gap-4 items-start flex-1 w-full">
+                                <div className="space-y-3 w-full">
+                                    <h2 className="text-xl font-black text-[#c2410c] tracking-tight flex items-center gap-2">
+                                        ⚠️ ACTION REQUIRED: PACKAGE ON HOLD
+                                    </h2>
+                                    <p className="text-[#7c2d12] text-sm leading-relaxed max-w-2xl">
+                                        Your package is currently on hold. Please note that a daily storage charge of <span className="font-bold">${dailyFee}</span> will be applied for each day the package remains on hold.
+                                    </p>
+                                    {holdReason && (
+                                        <div className="border border-dashed border-[#ea580c] rounded-xl p-4 bg-orange-50/50 text-[#7c2d12] text-xs">
+                                            <span className="font-bold block mb-1">Reason:</span>
+                                            {holdReason}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {shipment.status === 'ON_HOLD' ? (
+                                <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end gap-3 self-stretch md:self-auto bg-white/45 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl">
+                                    <div className="text-left sm:text-right md:text-right space-y-1">
+                                        <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest">Storage Charge Details</p>
+                                        <p className="text-xs font-semibold text-[#7c2d12]">Rate: ${dailyFee.toFixed(2)} / day</p>
+                                        <p className="text-xs font-semibold text-[#7c2d12]">Days Elapsed: {diffDays} {diffDays === 1 ? 'day' : 'days'}</p>
+                                        <div className="pt-1 border-t border-[#ea580c]/30 mt-1">
+                                            <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest">Total Accumulated</p>
+                                            <p className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">${totalAccumulatedFee.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                    <PayFeesButton />
+                                </div>
+                            ) : shipment.holdFee && shipment.holdFee > 0 ? (
+                                <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end gap-3 self-stretch md:self-auto bg-white/45 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl">
+                                    <div className="text-left sm:text-right md:text-right">
+                                        <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest">Additional Charge Due</p>
+                                        <p className="text-3xl font-black text-slate-900 tracking-tight mt-0.5">${shipment.holdFee.toFixed(2)}</p>
+                                    </div>
+                                    <PayFeesButton />
+                                </div>
+                            ) : (
+                                <div className="shrink-0 w-full md:w-auto bg-white/45 backdrop-blur-md border border-[#ea580c]/30 p-4 rounded-2xl text-center md:text-right">
+                                    <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest">Status</p>
+                                    <p className="text-lg font-black text-[#c2410c] tracking-tight mt-0.5 uppercase">AWAITING RESOLUTION</p>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* Hero Tracking Card */}
                 <div className="bg-white backdrop-blur-2xl border border-slate-200 rounded-[2rem] p-6 lg:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
@@ -420,6 +485,10 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                             <div className="relative pl-6 space-y-8 before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-[2px] before:bg-gradient-to-b before:from-blue-400 before:via-slate-200 before:to-transparent">
                                 {shipment.events.map((event: any, index: number) => {
                                     const isLatest = index === 0;
+                                    const showWarningBox = event.status === 'ON_HOLD' && !shipment.holdHidden && isLatest;
+                                    const dailyFee = event.holdFee || shipment.holdFee || 0;
+                                    const holdReason = event.holdReason || shipment.holdReason || "";
+                                    
                                     return (
                                         <div key={event.id} className="relative group">
                                             {/* Dot */}
@@ -430,23 +499,48 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                 <div className={`relative w-full h-full rounded-full border-2 transition-transform duration-300 group-hover:scale-125 ${getTimelineDotColor(event.status)}`} />
                                             </div>
 
-                                            <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${isLatest ? 'bg-slate-50 border-slate-200 shadow-md' : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200'}`}>
+                                            <div className={`p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${
+                                                showWarningBox 
+                                                    ? 'bg-[#fff7ed] border-[#ea580c] border-2 shadow-md' 
+                                                    : isLatest 
+                                                        ? 'bg-slate-50 border-slate-200 shadow-md' 
+                                                        : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200'
+                                            }`}>
                                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 mb-2">
-                                                    <p className={`font-bold text-lg tracking-tight ${getStatusColor(event.status)}`}>
-                                                        {event.status.replace(/_/g, ' ')}
+                                                    <p className={`font-bold text-lg tracking-tight ${showWarningBox ? 'text-[#c2410c]' : getStatusColor(event.status)}`}>
+                                                        {showWarningBox ? '⚠️ ACTION REQUIRED: PACKAGE ON HOLD' : event.status.replace(/_/g, ' ')}
                                                     </p>
-                                                    <span className="text-sm font-medium text-slate-500 whitespace-nowrap">
+                                                    <span className={`text-sm font-medium whitespace-nowrap ${showWarningBox ? 'text-[#7c2d12]' : 'text-slate-500'}`}>
                                                         <FormattedDate date={event.timestamp} />
                                                     </span>
                                                 </div>
-                                                <p className="text-slate-900 font-medium mb-2 flex items-center gap-2">
-                                                    <MapPin className={`w-4 h-4 animate-bounce ${getStatusColor(event.status)}`} />
+                                                <p className={`font-medium mb-2 flex items-center gap-2 ${showWarningBox ? 'text-[#7c2d12]' : 'text-slate-900'}`}>
+                                                    <MapPin className={`w-4 h-4 animate-bounce ${showWarningBox ? 'text-[#ea580c]' : getStatusColor(event.status)}`} />
                                                     {event.location || 'Location Pending'}
                                                 </p>
-                                                {event.description && (
-                                                    <p className="text-slate-600 text-sm leading-relaxed bg-slate-100 p-3 rounded-xl border border-slate-200 mt-3">
-                                                        {event.description}
-                                                    </p>
+                                                {showWarningBox ? (
+                                                    <div className="mt-3 space-y-3">
+                                                        <p className="text-[#7c2d12] text-sm leading-relaxed">
+                                                            Your package is currently on hold. Please note that a daily storage charge of <span className="font-bold">${dailyFee}</span> will be applied for each day the package remains on hold.
+                                                        </p>
+                                                        {holdReason && (
+                                                            <div className="border border-dashed border-[#ea580c] rounded-xl p-3 bg-orange-50/50 text-[#7c2d12] text-xs">
+                                                                <span className="font-bold block mb-1">Reason:</span>
+                                                                {holdReason}
+                                                            </div>
+                                                        )}
+                                                        {event.description && (
+                                                            <p className="text-slate-600 text-sm leading-relaxed bg-white/70 p-3 rounded-xl border border-orange-200 mt-2">
+                                                                {event.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    event.description && (
+                                                        <p className="text-slate-600 text-sm leading-relaxed bg-slate-100 p-3 rounded-xl border border-slate-200 mt-3">
+                                                            {event.description}
+                                                        </p>
+                                                    )
                                                 )}
                                             </div>
                                         </div>

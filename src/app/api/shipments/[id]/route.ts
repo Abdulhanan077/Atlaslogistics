@@ -14,7 +14,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const body = await req.json();
 
         // Allowed fields to update
-        const { createdAt, status, origin, destination, trackingNumber, productDescription, imageUrls, videoUrls, senderInfo, receiverInfo, customerEmail } = body;
+        const { createdAt, status, origin, destination, trackingNumber, productDescription, imageUrls, videoUrls, senderInfo, receiverInfo, customerEmail, holdFee, holdReason, holdHidden } = body;
 
         // Verify ownership
         const existingShipment = await prisma.shipment.findUnique({ where: { id } });
@@ -36,6 +36,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         if (receiverInfo !== undefined) updateData.receiverInfo = receiverInfo;
         if (customerEmail !== undefined) updateData.customerEmail = customerEmail;
         if (body.showRoute !== undefined) updateData.showRoute = body.showRoute;
+        if (holdFee !== undefined) updateData.holdFee = holdFee !== null ? parseFloat(holdFee) : 0;
+        if (holdReason !== undefined) updateData.holdReason = holdReason;
+        if (holdHidden !== undefined) updateData.holdHidden = holdHidden;
 
         const updatedShipment = await prisma.shipment.update({
             where: { id },

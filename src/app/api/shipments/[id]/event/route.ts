@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     try {
         const body = await req.json();
-        const { status, location, description, timestamp, latitude, longitude } = body;
+        const { status, location, description, timestamp, latitude, longitude, holdFee, holdReason } = body;
 
         // Verify ownership first
         const shipment = await prisma.shipment.findUnique({ where: { id } });
@@ -30,7 +30,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 description,
                 latitude: latitude ? parseFloat(latitude) : null,
                 longitude: longitude ? parseFloat(longitude) : null,
-                timestamp: timestamp ? new Date(timestamp) : undefined
+                timestamp: timestamp ? new Date(timestamp) : undefined,
+                holdFee: status === 'ON_HOLD' ? (holdFee !== undefined && holdFee !== null && holdFee !== '' ? parseFloat(holdFee.toString()) : 0) : 0,
+                holdReason: status === 'ON_HOLD' ? holdReason || null : null
             }
         });
 
@@ -57,7 +59,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         if (latestEvent) {
             await prisma.shipment.update({
                 where: { id },
-                data: { status: latestEvent.status }
+                data: {
+                    status: latestEvent.status,
+                    holdFee: latestEvent.status === 'ON_HOLD' ? latestEvent.holdFee : 0,
+                    holdReason: latestEvent.status === 'ON_HOLD' ? latestEvent.holdReason : null
+                }
             });
         }
 
@@ -76,7 +82,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 status,
                 location: location || "In Transit",
                 description: truncatedDesc,
-                receiverName: receiver.name
+                receiverName: receiver.name,
+                holdFee: status === 'ON_HOLD' ? (holdFee !== undefined && holdFee !== null && holdFee !== '' ? parseFloat(holdFee.toString()) : 0) : undefined,
+                holdReason: status === 'ON_HOLD' ? holdReason || undefined : undefined
             });
         }
 

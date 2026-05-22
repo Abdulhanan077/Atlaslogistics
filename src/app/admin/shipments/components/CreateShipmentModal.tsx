@@ -63,7 +63,7 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
         videoUrls: getInitialVideoUrls(),
         originLat: sender?.originLat || '',
         originLng: sender?.originLng || '',
-        createdAt: getInitialDateString()
+        createdAt: getInitialDateString(),
     });
     const [loading, setLoading] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
@@ -136,7 +136,7 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
             productDescription: formData.productDescription,
             imageUrls: formData.imageUrls,
             videoUrls: formData.videoUrls,
-            createdAt: formData.createdAt
+            createdAt: formData.createdAt,
         };
 
         try {
@@ -280,6 +280,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                             <input type="datetime-local" className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" value={formData.createdAt} onChange={e => setFormData({ ...formData, createdAt: e.target.value })} />
                         </div>
                     </div>
+
+
 
                     <hr className="border-brand-border" />
 

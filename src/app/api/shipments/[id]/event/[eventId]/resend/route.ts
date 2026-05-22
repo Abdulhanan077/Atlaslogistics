@@ -51,7 +51,9 @@ export async function POST(
             status: event.status,
             location: event.location || "In Transit",
             description: truncatedDesc,
-            receiverName: receiver.name
+            receiverName: receiver.name,
+            holdFee: event.status === 'ON_HOLD' ? event.holdFee : undefined,
+            holdReason: event.status === 'ON_HOLD' ? event.holdReason : undefined
         });
 
         await logAction(session.user.id, "RESEND_EMAIL", id, { 

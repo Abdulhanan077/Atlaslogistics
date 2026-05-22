@@ -23,6 +23,12 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
+        const handleOpenChat = () => setIsOpen(true);
+        window.addEventListener('open-chat', handleOpenChat);
+        return () => window.removeEventListener('open-chat', handleOpenChat);
+    }, []);
+
+    useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = '38px';
             const scrollHeight = textareaRef.current.scrollHeight;

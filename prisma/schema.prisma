@@ -69,6 +69,9 @@ model Shipment {
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
   showRoute Boolean   @default(true)
+  holdFee           Float?    @default(0)
+  holdReason        String?
+  holdHidden        Boolean   @default(false)
 }
 
 model Message {
@@ -97,6 +100,8 @@ model ShipmentEvent {
   createdAt   DateTime @default(now())
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
+  holdFee     Float?   @default(0)
+  holdReason  String?
 }
 
 model SiteSettings {

@@ -13,7 +13,7 @@ export async function PATCH(
 
     try {
         const body = await req.json();
-        const { status, location, description, timestamp, latitude, longitude, isDeleted } = body;
+        const { status, location, description, timestamp, latitude, longitude, isDeleted, holdFee, holdReason } = body;
 
         // Verify ownership/admin rights
         const shipment = await prisma.shipment.findUnique({
@@ -41,7 +41,9 @@ export async function PATCH(
                 longitude: longitude !== undefined ? (longitude ? parseFloat(longitude) : null) : undefined,
                 timestamp: timestamp ? new Date(timestamp) : undefined,
                 isDeleted: isDeleted !== undefined ? isDeleted : undefined,
-                deletedAt: isDeleted ? new Date() : (isDeleted === false ? null : undefined)
+                deletedAt: isDeleted ? new Date() : (isDeleted === false ? null : undefined),
+                holdFee: status !== undefined ? (status === 'ON_HOLD' ? (holdFee !== undefined && holdFee !== null && holdFee !== '' ? parseFloat(holdFee.toString()) : 0) : 0) : undefined,
+                holdReason: status !== undefined ? (status === 'ON_HOLD' ? holdReason || null : null) : undefined
             }
         });
 
@@ -68,7 +70,11 @@ export async function PATCH(
         if (latestEvent) {
             await prisma.shipment.update({
                 where: { id },
-                data: { status: latestEvent.status }
+                data: {
+                    status: latestEvent.status,
+                    holdFee: latestEvent.status === 'ON_HOLD' ? latestEvent.holdFee : 0,
+                    holdReason: latestEvent.status === 'ON_HOLD' ? latestEvent.holdReason : null
+                }
             });
         }
 
@@ -155,12 +161,20 @@ export async function DELETE(
         if (latestEvent) {
             await prisma.shipment.update({
                 where: { id },
-                data: { status: latestEvent.status }
+                data: {
+                    status: latestEvent.status,
+                    holdFee: latestEvent.status === 'ON_HOLD' ? latestEvent.holdFee : 0,
+                    holdReason: latestEvent.status === 'ON_HOLD' ? latestEvent.holdReason : null
+                }
             });
         } else {
             await prisma.shipment.update({
                 where: { id },
-                data: { status: 'PENDING' }
+                data: {
+                    status: 'PENDING',
+                    holdFee: 0,
+                    holdReason: null
+                }
             });
         }
 

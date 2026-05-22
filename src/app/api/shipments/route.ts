@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { senderInfo, receiverInfo, origin, destination, estimatedDelivery, customerEmail } = body;
+        const { senderInfo, receiverInfo, origin, destination, estimatedDelivery, customerEmail, holdFee, holdReason } = body;
 
         // Generate random tracking number (e.g., TRK12345678)
         const trackingNumber = `TRK${Math.floor(10000000 + Math.random() * 90000000)}`;
@@ -37,6 +37,8 @@ export async function POST(req: Request) {
                 productDescription: body.productDescription,
                 status: "CREATED",
                 adminId: session.user.id,
+                holdFee: holdFee !== undefined && holdFee !== null ? parseFloat(holdFee) : 0,
+                holdReason: holdReason || null,
                 events: {
                     create: {
                         status: "CREATED",

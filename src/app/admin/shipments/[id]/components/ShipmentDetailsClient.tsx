@@ -27,6 +27,8 @@ interface ShipmentEvent {
     latitude?: number | string | null;
     longitude?: number | string | null;
     isDeleted?: boolean;
+    holdFee?: number | null;
+    holdReason?: string | null;
 }
 
 interface Shipment {
@@ -45,6 +47,9 @@ interface Shipment {
     status: string;
     events: ShipmentEvent[];
     showRoute: boolean;
+    holdFee?: number | null;
+    holdReason?: string | null;
+    holdHidden?: boolean;
 }
 
 interface ActiveUpload {
@@ -63,10 +68,16 @@ interface Settings {
 
 export default function ShipmentDetailsClient({ shipment, settings }: { shipment: Shipment, settings?: Settings | null }) {
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const [updating, setUpdating] = useState(false);
     const [liveVehicleType, setLiveVehicleType] = useState(parseShipmentInfo(shipment.senderInfo).vehicleType || 'TRUCK');
     const [geocoding, setGeocoding] = useState<string | null>(null);
     const [activeUploads, setActiveUploads] = useState<ActiveUpload[]>([]);
+    const [overrideHold, setOverrideHold] = useState(false);
+    const isLocked = shipment.status === 'ON_HOLD' && !shipment.holdHidden && !overrideHold;
 
     const cancelUpload = (id: string) => {
         const upload = activeUploads.find(u => u.id === id);
@@ -138,6 +149,115 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         }
     };
 
+    const activeHoldEvent = shipment.events.find(e => e.status === 'ON_HOLD');
+
+    const [holdPanelFee, setHoldPanelFee] = useState('0');
+    const [holdPanelReason, setHoldPanelReason] = useState('');
+    const [holdPanelHidden, setHoldPanelHidden] = useState(false);
+
+    useEffect(() => {
+        if (activeHoldEvent) {
+            setHoldPanelFee(activeHoldEvent.holdFee !== undefined && activeHoldEvent.holdFee !== null ? activeHoldEvent.holdFee.toString() : (shipment.holdFee?.toString() || '0'));
+            setHoldPanelReason(activeHoldEvent.holdReason || shipment.holdReason || '');
+            setHoldPanelHidden(shipment.holdHidden || false);
+        }
+    }, [shipment.holdFee, shipment.holdReason, shipment.holdHidden, activeHoldEvent]);
+
+    const [showReleaseForm, setShowReleaseForm] = useState(false);
+    const [releaseStatus, setReleaseStatus] = useState('IN_TRANSIT');
+    const [releaseLocation, setReleaseLocation] = useState('');
+    const [releaseDescription, setReleaseDescription] = useState('Hold cleared. Resuming transit.');
+
+    const handleSaveHoldSettings = async () => {
+        if (!activeHoldEvent) return;
+        setUpdating(true);
+        const toastId = toast.loading("Saving hold settings...");
+        try {
+            // 1. Update the latest event
+            const eventRes = await fetch(`/api/shipments/${shipment.id}/event/${activeHoldEvent.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: 'ON_HOLD',
+                    location: activeHoldEvent.location || '',
+                    description: activeHoldEvent.description || '',
+                    holdFee: parseFloat(holdPanelFee) || 0,
+                    holdReason: holdPanelReason,
+                    timestamp: activeHoldEvent.timestamp
+                })
+            });
+
+            // 2. Update the shipment (including visibility)
+            const shipmentRes = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    holdFee: parseFloat(holdPanelFee) || 0,
+                    holdReason: holdPanelReason,
+                    holdHidden: holdPanelHidden
+                })
+            });
+
+            if (eventRes.ok && shipmentRes.ok) {
+                toast.success("Hold settings updated successfully!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to save settings", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error saving hold settings", { id: toastId });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleConfirmClearHold = async () => {
+        if (!releaseLocation.trim()) {
+            toast.error("Please enter a location for the release event");
+            return;
+        }
+
+        setUpdating(true);
+        const toastId = toast.loading("Clearing hold status...");
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}/event`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: releaseStatus,
+                    location: releaseLocation,
+                    description: releaseDescription,
+                    timestamp: new Date().toISOString(),
+                    holdFee: 0,
+                    holdReason: null
+                })
+            });
+
+            // Also make sure holdHidden is cleared or reset to false when hold is cleared!
+            await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    holdHidden: false
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Hold cleared successfully!", { id: toastId });
+                setShowReleaseForm(false);
+                router.refresh();
+            } else {
+                toast.error("Failed to clear hold", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error clearing hold", { id: toastId });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     const [formData, setFormData] = useState({
         status: 'PENDING',
         location: '',
@@ -146,7 +266,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         longitude: '',
         timestamp: '',
         destLat: parseShipmentInfo(shipment.receiverInfo).destLat || '',
-        destLng: parseShipmentInfo(shipment.receiverInfo).destLng || ''
+        destLng: parseShipmentInfo(shipment.receiverInfo).destLng || '',
+        holdFee: '',
+        holdReason: ''
     });
 
     useEffect(() => {
@@ -176,6 +298,10 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         }
     };
     const handleRestoreEvent = async (eventId: string) => {
+        if (isLocked) {
+            toast.error("Updates are locked. Clear hold, hide it, or override restriction first.");
+            return;
+        }
         try {
             const res = await fetch(`/api/shipments/${shipment.id}/event/${eventId}`, {
                 method: 'PATCH',
@@ -214,6 +340,10 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     };
 
     const handleDeleteEvent = (eventId: string, isPermanent = false) => {
+        if (isLocked) {
+            toast.error("Updates are locked. Clear hold, hide it, or override restriction first.");
+            return;
+        }
         toast.dismiss(); // Prevent stacking multiple dialogs
         toast((t) => (
             <div className="flex flex-col gap-3 p-1">
@@ -258,7 +388,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         description: '',
         timestamp: '',
         latitude: '',
-        longitude: ''
+        longitude: '',
+        holdFee: '',
+        holdReason: ''
     });
 
     const handleEditEventClick = (event: ShipmentEvent) => {
@@ -269,18 +401,26 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             description: event.description || '',
             timestamp: new Date(event.timestamp).toISOString().slice(0, 16),
             latitude: String(event.latitude || ''),
-            longitude: String(event.longitude || '')
+            longitude: String(event.longitude || ''),
+            holdFee: event.holdFee !== undefined && event.holdFee !== null ? String(event.holdFee) : '',
+            holdReason: event.holdReason || ''
         });
     };
 
     const handleSaveEvent = async (eventId: string) => {
+        if (isLocked) {
+            toast.error("Updates are locked. Clear hold, hide it, or override restriction first.");
+            return;
+        }
         try {
             const res = await fetch(`/api/shipments/${shipment.id}/event/${eventId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...editEventData,
-                    timestamp: new Date(editEventData.timestamp + ':00Z').toISOString()
+                    timestamp: new Date(editEventData.timestamp + ':00Z').toISOString(),
+                    holdFee: editEventData.status === 'ON_HOLD' && editEventData.holdFee !== '' ? parseFloat(editEventData.holdFee.toString()) : 0,
+                    holdReason: editEventData.status === 'ON_HOLD' ? editEventData.holdReason : null
                 })
             });
 
@@ -322,7 +462,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         destLat: parsedReceiver.destLat || '',
         destLng: parsedReceiver.destLng || '',
         originLat: parsedSender.originLat || '',
-        originLng: parsedSender.originLng || '',
+        originLng: parsedSender.originLng || ''
     });
 
     const handleEditSubmit = async (e: React.FormEvent) => {
@@ -385,6 +525,10 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isLocked) {
+            toast.error("Updates are locked. Clear hold, hide it, or override restriction first.");
+            return;
+        }
         setUpdating(true);
         try {
             const res = await fetch(`/api/shipments/${shipment.id}/event`, {
@@ -396,7 +540,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     description: formData.description,
                     latitude: formData.latitude,
                     longitude: formData.longitude,
-                    timestamp: new Date(formData.timestamp + ':00Z').toISOString()
+                    timestamp: new Date(formData.timestamp + ':00Z').toISOString(),
+                    holdFee: formData.status === 'ON_HOLD' && formData.holdFee !== '' ? parseFloat(formData.holdFee.toString()) : 0,
+                    holdReason: formData.status === 'ON_HOLD' ? formData.holdReason : null
                 })
             });
 
@@ -424,7 +570,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     description: '',
                     latitude: '',
                     longitude: '',
-                    timestamp: new Date().toISOString().slice(0, 16)
+                    timestamp: new Date().toISOString().slice(0, 16),
+                    holdFee: '',
+                    holdReason: ''
                 }));
                 router.refresh();
                 toast.success('Status updated successfully');
@@ -531,8 +679,209 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
                 {/* Left Column: Chat - Sticky */}
                 <div className="xl:col-span-3 order-3 xl:order-1 print:hidden">
-                    <div className="sticky top-6">
+                    <div className="sticky top-6 space-y-6">
                         <ShipmentChat shipmentId={shipment.id} />
+                        
+                        {/* Hold Settings & Control Panel */}
+                        {mounted && shipment.status === 'ON_HOLD' && activeHoldEvent && (
+                            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-lg space-y-4">
+                                <div className="flex items-center justify-between pb-3 border-b border-amber-200">
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-2.5 w-2.5 relative">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                        </span>
+                                        <h3 className="font-bold text-amber-900 text-sm tracking-tight">Active Hold Controls</h3>
+                                    </div>
+                                    {/* Resend notification button [M] */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendEmail(activeHoldEvent.id)}
+                                        disabled={sendingEmailId === activeHoldEvent.id}
+                                        className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 disabled:opacity-50 rounded-lg transition-all"
+                                        title="Resend hold notification email to customer"
+                                    >
+                                        {sendingEmailId === activeHoldEvent.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Mail className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Inputs */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                                            Daily Fee ($)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={holdPanelFee}
+                                            onChange={(e) => setHoldPanelFee(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full bg-white border border-amber-200 text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                                            Warning / Hold Reason
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            value={holdPanelReason}
+                                            onChange={(e) => setHoldPanelReason(e.target.value)}
+                                            placeholder="Provide reason for storage warning..."
+                                            className="w-full bg-white border border-amber-200 text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Visibility Toggle */}
+                                    <div className="flex items-center justify-between py-2 border-t border-amber-200/50 border-b border-amber-200/50">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-amber-900">Hide from Customer</span>
+                                            <span className="text-[10px] text-amber-700/80">Suppress alert banner on portal</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setHoldPanelHidden(!holdPanelHidden)}
+                                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                holdPanelHidden ? 'bg-amber-600' : 'bg-slate-200'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                    holdPanelHidden ? 'translate-x-5' : 'translate-x-0'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {/* Calculated Hold Stats */}
+                                    {(() => {
+                                        const holdStart = new Date(activeHoldEvent.timestamp);
+                                        const now = new Date();
+                                        const diffTime = Math.max(0, now.getTime() - holdStart.getTime());
+                                        const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                                        const feePerDay = parseFloat(holdPanelFee) || 0;
+                                        const total = diffDays * feePerDay;
+
+                                        return (
+                                            <div className="bg-amber-100/50 rounded-xl p-3 text-xs text-amber-900 space-y-1.5">
+                                                <div className="flex justify-between">
+                                                    <span className="text-amber-800">Hold Date:</span>
+                                                    <span className="font-semibold">
+                                                        <FormattedDate date={activeHoldEvent.timestamp} mode="date" />
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-amber-800">Days Elapsed:</span>
+                                                    <span className="font-semibold">{diffDays} {diffDays === 1 ? 'day' : 'days'}</span>
+                                                </div>
+                                                <div className="flex justify-between pt-1.5 border-t border-amber-200/50 text-sm font-bold">
+                                                    <span>Total Storage Accrued:</span>
+                                                    <span className="text-amber-700">${total.toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Save Button */}
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveHoldSettings}
+                                        disabled={updating}
+                                        className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-amber-600/10"
+                                    >
+                                        {updating ? 'Saving...' : 'Save Hold Settings'}
+                                    </button>
+                                </div>
+
+                                {/* Clear Hold Transition Section */}
+                                <div className="pt-3 border-t border-amber-200">
+                                    {!showReleaseForm ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setReleaseLocation(activeHoldEvent.location || '');
+                                                setShowReleaseForm(true);
+                                            }}
+                                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/10 flex items-center justify-center gap-1"
+                                        >
+                                            <Check className="w-3.5 h-3.5" />
+                                            Confirm Clear Hold
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-3 bg-white p-3 rounded-xl border border-amber-200">
+                                            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                                                <span className="text-xs font-bold text-slate-800">Release Transit Status</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowReleaseForm(false)}
+                                                    className="text-slate-400 hover:text-slate-600"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                    Transition Status
+                                                </label>
+                                                <select
+                                                    value={releaseStatus}
+                                                    onChange={(e) => setReleaseStatus(e.target.value)}
+                                                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                >
+                                                    <option value="IN_TRANSIT">IN TRANSIT</option>
+                                                    <option value="PENDING">PENDING</option>
+                                                    <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
+                                                    <option value="DELIVERED">DELIVERED</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                    Current Location
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={releaseLocation}
+                                                    onChange={(e) => setReleaseLocation(e.target.value)}
+                                                    placeholder="Enter current city/hub..."
+                                                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                    Status Description
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={releaseDescription}
+                                                    onChange={(e) => setReleaseDescription(e.target.value)}
+                                                    placeholder="Status details..."
+                                                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={handleConfirmClearHold}
+                                                disabled={updating}
+                                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all"
+                                            >
+                                                {updating ? 'Releasing...' : 'Confirm Release Event'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -569,6 +918,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         <p className="text-blue-400 print:text-blue-600 font-bold text-sm">
                                             Est. Delivery: <FormattedDate date={shipment.estimatedDelivery} mode="date" />
                                         </p>
+                                    )}
+                                    {((shipment.holdFee && shipment.holdFee > 0) || shipment.holdReason) && (
+                                        <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 text-sm max-w-md">
+                                            <p className="font-bold flex items-center gap-1.5">
+                                                ⚠️ Hold Charge: ${shipment.holdFee || 0}
+                                            </p>
+                                            {shipment.holdReason && <p className="text-xs mt-1 text-brand-text-muted">{shipment.holdReason}</p>}
+                                        </div>
                                     )}
                                     <button
                                         onClick={() => setIsEditing(!isEditing)}
@@ -778,6 +1135,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 onChange={e => setEditData({ ...editData, customerEmail: e.target.value })}
                                                 placeholder="customer@example.com"
                                             />
+                                            {/* Hold Fee and Reason inputs removed - now managed via ON_HOLD tracking events */}
                                         </div>
                                         <div>
                                             <label className="text-xs text-brand-text-muted block mb-1">Product Description</label>
@@ -1151,6 +1509,31 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         />
                                                     </div>
                                                 </div>
+                                                {editEventData.status === 'ON_HOLD' && (
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] text-brand-text-muted block mb-1">Daily Hold Fee ($)</label>
+                                                            <input
+                                                                type="number"
+                                                                step="any"
+                                                                className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                                value={editEventData.holdFee}
+                                                                onChange={e => setEditEventData({ ...editEventData, holdFee: e.target.value })}
+                                                                placeholder="0.00"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-brand-text-muted block mb-1">Warning / Reason</label>
+                                                            <input
+                                                                type="text"
+                                                                className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-sm text-brand-text"
+                                                                value={editEventData.holdReason}
+                                                                onChange={e => setEditEventData({ ...editEventData, holdReason: e.target.value })}
+                                                                placeholder="Reason"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 <div>
                                                     <label className="text-xs text-brand-text-muted block mb-1">Description</label>
                                                     <textarea
@@ -1199,7 +1582,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleEditEventClick(event); }}
-                                                            className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-blue-500 transition-colors"
+                                                            disabled={isLocked}
+                                                            className={`p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-blue-500 transition-colors ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                             title="Edit Event"
                                                         >
                                                             <Pencil className="w-4 h-4" />
@@ -1208,14 +1592,16 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                             <>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleRestoreEvent(event.id); }}
-                                                                    className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-green-500 transition-colors"
+                                                                    disabled={isLocked}
+                                                                    className={`p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-green-500 transition-colors ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                                     title="Restore Event"
                                                                 >
                                                                     <RotateCcw className="w-4 h-4" />
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id, true); }}
-                                                                    className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-700 transition-colors"
+                                                                    disabled={isLocked}
+                                                                    className={`p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-700 transition-colors ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                                     title="Permanently Delete"
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />
@@ -1224,7 +1610,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         ) : (
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.id); }}
-                                                                className="p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-500 transition-colors"
+                                                                disabled={isLocked}
+                                                                className={`p-2 hover:bg-brand-bg rounded-lg text-brand-text-muted hover:text-red-500 transition-colors ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                                                                 title="Delete Event"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
@@ -1232,6 +1619,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         )}
                                                     </div>
                                                 </div>
+                                                {event.status === 'ON_HOLD' && ((event.holdFee && event.holdFee > 0) || event.holdReason) && (
+                                                    <div className="mt-1.5 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500 text-xs max-w-sm">
+                                                        <p className="font-bold flex items-center gap-1">
+                                                            ⚠️ Hold Charge: ${event.holdFee || 0}/day
+                                                        </p>
+                                                        {event.holdReason && <p className="mt-0.5 text-brand-text-muted">{event.holdReason}</p>}
+                                                    </div>
+                                                )}
                                                 <p className="text-brand-text-muted text-sm print:text-gray-500">{event.description}</p>
                                                 <p className="text-brand-text-muted/60 text-xs print:text-gray-400"><FormattedDate date={event.timestamp} /></p>
                                             </div>
@@ -1264,129 +1659,175 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     {/* Update Event Form */}
                     <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl sticky top-6">
                         <h3 className="text-lg font-bold text-brand-text mb-4">Add Tracking Event</h3>
+                        
+                        {shipment.status === 'ON_HOLD' && !shipment.holdHidden && (
+                            <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl space-y-2">
+                                <p className="text-xs text-orange-400 font-medium">
+                                    ⚠️ Updates are locked because the package is currently on hold. Clear the hold, hide it, or override to proceed.
+                                </p>
+                                <label className="flex items-center gap-2 cursor-pointer text-xs text-brand-text font-semibold select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={overrideHold}
+                                        onChange={(e) => setOverrideHold(e.target.checked)}
+                                        className="rounded border-brand-border bg-brand-surface text-orange-500 focus:ring-orange-500 focus:ring-offset-0 focus:ring-0"
+                                    />
+                                    Override hold restriction
+                                </label>
+                            </div>
+                        )}
+
                         <form onSubmit={handleUpdate} className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm text-brand-text-muted">New Status</label>
-                                <select
-                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                    value={formData.status}
-                                    onChange={e => setFormData({ ...formData, status: e.target.value })}
-                                >
-                                    <option value="PENDING">PENDING</option>
-                                    <option value="IN_TRANSIT">IN TRANSIT</option>
-                                    <option value="ON_HOLD">ON HOLD</option>
-                                    <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
-                                    <option value="DELIVERED">DELIVERED</option>
-                                    <option value="RETURNED">RETURNED</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm text-brand-text-muted">Date/Time</label>
-                                <input
-                                    type="datetime-local"
-                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                    value={formData.timestamp}
-                                    onChange={e => setFormData({ ...formData, timestamp: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm text-brand-text-muted">Location</label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-brand-text-muted" />
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="e.g. Distribution Center, NY"
-                                        className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-10 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                        value={formData.location}
-                                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => handleGeocode('event')}
-                                        disabled={geocoding === 'event'}
-                                        className="absolute right-2 top-2.5 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
-                                        title="Auto-find coordinates"
+                            <fieldset disabled={isLocked} className="space-y-4 disabled:opacity-50">
+                                <div className="space-y-2">
+                                    <label className="text-sm text-brand-text-muted">New Status</label>
+                                    <select
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                        value={formData.status}
+                                        onChange={e => setFormData({ ...formData, status: e.target.value })}
                                     >
-                                        {geocoding === 'event' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                                    </button>
+                                        <option value="PENDING">PENDING</option>
+                                        <option value="IN_TRANSIT">IN TRANSIT</option>
+                                        <option value="ON_HOLD">ON HOLD</option>
+                                        <option value="OUT_FOR_DELIVERY">OUT FOR DELIVERY</option>
+                                        <option value="DELIVERED">DELIVERED</option>
+                                        <option value="RETURNED">RETURNED</option>
+                                    </select>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                                {formData.status === 'ON_HOLD' && (
+                                    <div className="grid grid-cols-2 gap-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl">
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-brand-text-muted">Daily Hold Fee ($)</label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                className="w-full bg-brand-surface border border-brand-border rounded px-2.5 py-1.5 text-sm text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                                value={formData.holdFee}
+                                                onChange={e => setFormData({ ...formData, holdFee: e.target.value })}
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-brand-text-muted">Warning Reason</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-brand-surface border border-brand-border rounded px-2.5 py-1.5 text-sm text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                                value={formData.holdReason}
+                                                onChange={e => setFormData({ ...formData, holdReason: e.target.value })}
+                                                placeholder="Hold reason"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="space-y-2">
-                                    <label className="text-sm text-slate-400">Latitude</label>
+                                    <label className="text-sm text-brand-text-muted">Date/Time</label>
                                     <input
-                                        type="number"
-                                        step="any"
-                                        placeholder="e.g. 40.7128"
+                                        type="datetime-local"
                                         className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                        value={formData.latitude}
-                                        onChange={e => setFormData({ ...formData, latitude: e.target.value })}
+                                        value={formData.timestamp}
+                                        onChange={e => setFormData({ ...formData, timestamp: e.target.value })}
                                     />
                                 </div>
+
                                 <div className="space-y-2">
-                                    <label className="text-sm text-slate-400">Longitude</label>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        placeholder="e.g. -74.0060"
-                                        className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
-                                        value={formData.longitude}
-                                        onChange={e => setFormData({ ...formData, longitude: e.target.value })}
-                                    />
+                                    <label className="text-sm text-brand-text-muted">Location</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-brand-text-muted" />
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="e.g. Distribution Center, NY"
+                                            className="w-full bg-brand-surface border border-brand-border rounded-lg pl-9 pr-10 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                            value={formData.location}
+                                            onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGeocode('event')}
+                                            disabled={geocoding === 'event'}
+                                            className="absolute right-2 top-2.5 p-1 text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                                            title="Auto-find coordinates"
+                                        >
+                                            {geocoding === 'event' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm text-slate-400">Description / Note</label>
-                                <textarea
-                                    rows={3}
-                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                                    placeholder="e.g. Package arrived at facility"
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                />
-                            </div>
-
-                            <hr className="border-brand-border/50" />
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-blue-400 uppercase tracking-wider text-[10px]">Final Destination Coords (Optional)</label>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] text-brand-text-muted">Dest. Lat</label>
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-slate-400">Latitude</label>
                                         <input
                                             type="number"
                                             step="any"
                                             placeholder="e.g. 40.7128"
-                                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                                            value={formData.destLat}
-                                            onChange={e => setFormData({ ...formData, destLat: e.target.value })}
+                                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                            value={formData.latitude}
+                                            onChange={e => setFormData({ ...formData, latitude: e.target.value })}
                                         />
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] text-brand-text-muted">Dest. Lng</label>
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-slate-400">Longitude</label>
                                         <input
                                             type="number"
                                             step="any"
                                             placeholder="e.g. -74.0060"
-                                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                                            value={formData.destLng}
-                                            onChange={e => setFormData({ ...formData, destLng: e.target.value })}
+                                            className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500"
+                                            value={formData.longitude}
+                                            onChange={e => setFormData({ ...formData, longitude: e.target.value })}
                                         />
                                     </div>
                                 </div>
-                            </div>
 
-                            <button
-                                type="submit"
-                                disabled={updating}
-                                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex justify-center items-center"
-                            >
-                                {updating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Update Status'}
-                            </button>
+                                <div className="space-y-2">
+                                    <label className="text-sm text-slate-400">Description / Note</label>
+                                    <textarea
+                                        rows={3}
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                        placeholder="e.g. Package arrived at facility"
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    />
+                                </div>
+
+                                <hr className="border-brand-border/50" />
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-blue-400 uppercase tracking-wider text-[10px]">Final Destination Coords (Optional)</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-brand-text-muted">Dest. Lat</label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                placeholder="e.g. 40.7128"
+                                                className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                                                value={formData.destLat}
+                                                onChange={e => setFormData({ ...formData, destLat: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-brand-text-muted">Dest. Lng</label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                placeholder="e.g. -74.0060"
+                                                className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-1.5 text-brand-text outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                                                value={formData.destLng}
+                                                onChange={e => setFormData({ ...formData, destLng: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={updating}
+                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex justify-center items-center"
+                                >
+                                    {updating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Update Status'}
+                                </button>
+                            </fieldset>
                         </form>
                     </div>
                 </div>

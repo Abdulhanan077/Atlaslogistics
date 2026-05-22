@@ -18,6 +18,8 @@ interface EmailParams {
     estimatedDelivery?: string;
     productDescription?: string;
     attachment?: { filename: string; content: Buffer };
+    holdFee?: number | null;
+    holdReason?: string | null;
 }
 
 interface MailOptions {
@@ -42,7 +44,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-export async function sendShipmentEmail({ to, trackingNumber, status, location, description, receiverName, senderName, origin, destination, receiverAddress, estimatedDelivery, productDescription, attachment }: EmailParams) {
+export async function sendShipmentEmail({ to, trackingNumber, status, location, description, receiverName, senderName, origin, destination, receiverAddress, estimatedDelivery, productDescription, attachment, holdFee, holdReason }: EmailParams) {
     if (!process.env.SCALEWAY_SMTP_USER || !process.env.SCALEWAY_SMTP_PASSWORD) {
         console.warn('SCALEWAY_SMTP_USER or SCALEWAY_SMTP_PASSWORD is/are not set. Skipping email.');
         return;
@@ -128,6 +130,21 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         <p style="font-size: 16px; line-height: 1.5; color: #334155; margin: 0 0 24px 0;">
                                             ${statusText}
                                         </p>
+
+                                        ${(status.toUpperCase() === 'ON_HOLD' || (holdFee !== undefined && holdFee !== null && holdFee > 0)) ? `
+                                        <div style="background-color: #fff7ed; border: 2px solid #ea580c; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                                            <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #c2410c; font-weight: 700;">⚠️ ACTION REQUIRED: PACKAGE ON HOLD</h3>
+                                            <p style="margin: 0 0 12px 0; font-size: 14px; color: #7c2d12; line-height: 1.5;">
+                                                Your package is currently on hold. Please note that a daily storage charge of <strong>$${holdFee || 0}</strong> will be applied for each day the package remains on hold.
+                                            </p>
+                                            ${holdReason ? `
+                                            <div style="border-top: 1px dashed #fed7aa; padding-top: 12px; margin-top: 12px;">
+                                                <strong style="display: block; color: #c2410c; font-size: 13px; text-transform: uppercase; margin-bottom: 4px;">Reason for Hold</strong>
+                                                <p style="margin: 0; font-size: 14px; color: #9a3412;">${holdReason}</p>
+                                            </div>
+                                            ` : ''}
+                                        </div>
+                                        ` : ''}
 
                                         ${isCreated ? `
                                         <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
