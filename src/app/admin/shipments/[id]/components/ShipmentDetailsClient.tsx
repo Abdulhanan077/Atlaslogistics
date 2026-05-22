@@ -649,37 +649,37 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto p-6">
-            <div className="flex items-center justify-between print:hidden">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center text-brand-text-muted hover:text-brand-text transition-colors"
+                    className="flex items-center text-brand-text-muted hover:text-brand-text transition-colors self-start"
                 >
                     <ArrowLeft className="w-5 h-5 mr-2" />
                     Back
                 </button>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <a
                         href={`/track/${shipment.trackingNumber}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border"
+                        className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border text-sm font-medium whitespace-nowrap"
                     >
-                        <ExternalLink className="w-5 h-5 mr-2" />
+                        <ExternalLink className="w-4 h-4 mr-2 flex-shrink-0" />
                         View Customer Page
                     </a>
                     <a
                         href={`/api/shipments/${shipment.id}/label`}
                         download={`LABEL-${shipment.trackingNumber}.pdf`}
-                        className="flex items-center px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all shadow-lg shadow-brand-primary/20"
+                        className="flex items-center px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all shadow-lg shadow-brand-primary/20 text-sm font-medium whitespace-nowrap"
                     >
-                        <FileText className="w-5 h-5 mr-2" />
+                        <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
                         Download Waybill
                     </a>
                     <button
                         onClick={() => window.print()}
-                        className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border"
+                        className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border text-sm font-medium whitespace-nowrap"
                     >
-                        <Printer className="w-5 h-5 mr-2" />
+                        <Printer className="w-4 h-4 mr-2 flex-shrink-0" />
                         Print Details
                     </button>
                 </div>
