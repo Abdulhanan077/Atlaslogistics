@@ -440,6 +440,7 @@ export interface PaymentEmailParams {
     amountPaid: number;
     remainingBalance: number;
     holdReason?: string | null;
+    newPaymentAmount?: number;
 }
 
 export async function sendPaymentNotificationEmail({
@@ -453,7 +454,8 @@ export async function sendPaymentNotificationEmail({
     totalDue,
     amountPaid,
     remainingBalance,
-    holdReason
+    holdReason,
+    newPaymentAmount
 }: PaymentEmailParams) {
     if (!process.env.SCALEWAY_SMTP_USER || !process.env.SCALEWAY_SMTP_PASSWORD) {
         console.warn('SCALEWAY_SMTP_USER or SCALEWAY_SMTP_PASSWORD is/are not set. Skipping email.');
@@ -467,7 +469,9 @@ export async function sendPaymentNotificationEmail({
         
         const trackingUrl = `${process.env.NEXTAUTH_URL}/track/${trackingNumber}`;
 
-        const subject = amountPaid > 0
+        const isNewPayment = newPaymentAmount !== undefined && newPaymentAmount > 0;
+
+        const subject = isNewPayment
             ? `Payment Receipt & Balance Statement: Shipment ${trackingNumber}`
             : `Storage Invoice & Balance Statement: Shipment ${trackingNumber}`;
 
@@ -477,7 +481,7 @@ export async function sendPaymentNotificationEmail({
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${amountPaid > 0 ? 'Payment Received & Balance Statement' : 'Storage Invoice & Balance Statement'}</title>
+                <title>${isNewPayment ? 'Payment Received & Balance Statement' : 'Storage Invoice & Balance Statement'}</title>
             </head>
             <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 40px 0;">
@@ -503,9 +507,11 @@ export async function sendPaymentNotificationEmail({
                                         </h2>
                                         
                                         <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-                                            ${amountPaid > 0 
-                                                ? `We are writing to confirm that an installment payment of <strong>$${amountPaid.toFixed(2)}</strong> has been credited to your shipment hold account. Below is the detailed statement showing your storage fees and remaining balance.`
-                                                : `We are writing to provide a statement reminder of the outstanding storage fees and remaining balance for your shipment. Below is the detailed breakdown of your account status.`
+                                            ${isNewPayment 
+                                                ? `We are writing to confirm that an installment payment of <strong>$${newPaymentAmount.toFixed(2)}</strong> has been credited to your shipment hold account. Below is the detailed statement showing your storage fees and remaining balance.`
+                                                : amountPaid > 0
+                                                    ? `We are writing to provide a statement reminder of the outstanding storage fees and remaining balance for your shipment. Below is the detailed breakdown of your account status (including your previous payment(s) of <strong>$${amountPaid.toFixed(2)}</strong>).`
+                                                    : `We are writing to provide a statement reminder of the outstanding storage fees and remaining balance for your shipment. Below is the detailed breakdown of your account status.`
                                             }
                                         </p>
 
@@ -535,6 +541,12 @@ export async function sendPaymentNotificationEmail({
                                                     <td style="padding: 10px 0 6px 0; color: #7c2d12; font-weight: 600;">Total Amount Due:</td>
                                                     <td align="right" style="padding: 10px 0 6px 0; font-weight: 700; color: #0f172a;">$${totalDue.toFixed(2)}</td>
                                                 </tr>
+                                                ${isNewPayment && newPaymentAmount ? `
+                                                <tr>
+                                                    <td style="padding: 6px 0; color: #047857; font-weight: 600;">Current Installment Paid:</td>
+                                                    <td align="right" style="padding: 6px 0; font-weight: 700; color: #047857;">-$${newPaymentAmount.toFixed(2)}</td>
+                                                </tr>
+                                                ` : ''}
                                                 <tr>
                                                     <td style="padding: 6px 0; color: #047857; font-weight: 600; border-bottom: 2px solid #fed7aa; padding-bottom: 10px;">Total Paid to Date:</td>
                                                     <td align="right" style="padding: 6px 0; font-weight: 700; color: #047857; border-bottom: 2px solid #fed7aa; padding-bottom: 10px;">-$${amountPaid.toFixed(2)}</td>

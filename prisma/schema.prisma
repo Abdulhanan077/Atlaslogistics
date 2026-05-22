@@ -74,6 +74,7 @@ model Shipment {
   holdHidden        Boolean   @default(false)
   holdBaseCharge    Float?    @default(0)
   holdPaid          Float?    @default(0)
+  holdInstallments  String    @default("[]")
 }
 
 model Message {

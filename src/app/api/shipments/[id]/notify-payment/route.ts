@@ -50,6 +50,7 @@ export async function POST(
         const inputHoldReason = body.holdReason !== undefined ? body.holdReason : undefined;
         const inputHoldBaseCharge = body.holdBaseCharge !== undefined ? parseFloat(body.holdBaseCharge) : undefined;
         const inputHoldPaid = body.holdPaid !== undefined ? parseFloat(body.holdPaid) : undefined;
+        const inputNewInstallment = body.newInstallment !== undefined ? parseFloat(body.newInstallment.toString()) : undefined;
 
         let finalShipment = shipment;
 
@@ -58,7 +59,34 @@ export async function POST(
         if (inputHoldFee !== undefined) updateData.holdFee = inputHoldFee;
         if (inputHoldReason !== undefined) updateData.holdReason = inputHoldReason;
         if (inputHoldBaseCharge !== undefined) updateData.holdBaseCharge = inputHoldBaseCharge;
-        if (inputHoldPaid !== undefined) updateData.holdPaid = inputHoldPaid;
+
+        let installmentsChanged = false;
+        let list: any[] = [];
+        try {
+            list = JSON.parse(shipment.holdInstallments || "[]");
+            if (!Array.isArray(list)) list = [];
+        } catch (e) {
+            list = [];
+        }
+
+        if (inputNewInstallment !== undefined && inputNewInstallment > 0) {
+            const instId = 'inst_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+            list.push({
+                id: instId,
+                amount: inputNewInstallment,
+                timestamp: new Date().toISOString()
+            });
+            installmentsChanged = true;
+        }
+
+        if (installmentsChanged) {
+            updateData.holdInstallments = JSON.stringify(list);
+            updateData.holdPaid = list
+                .filter(item => !item.isDeleted)
+                .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        } else if (inputHoldPaid !== undefined) {
+            updateData.holdPaid = inputHoldPaid;
+        }
 
         if (Object.keys(updateData).length > 0) {
             await prisma.shipment.update({
@@ -116,6 +144,29 @@ export async function POST(
         const remainingBalance = totalDue - amountPaid;
         const holdReason = activeHoldEvent?.holdReason || finalShipment.holdReason || "";
 
+        let newPaymentAmount = inputNewInstallment;
+        if (newPaymentAmount === undefined || newPaymentAmount <= 0) {
+            let list: any[] = [];
+            try {
+                list = JSON.parse(finalShipment.holdInstallments || "[]");
+                if (!Array.isArray(list)) list = [];
+            } catch (e) {
+                list = [];
+            }
+
+            const activeInstallments = list.filter(item => !item.isDeleted);
+            if (activeInstallments.length > 0) {
+                const latest = activeInstallments[activeInstallments.length - 1];
+                const latestTime = new Date(latest.timestamp).getTime();
+                const diffMs = Date.now() - latestTime;
+                // If the latest installment was added in the last 5 minutes (300,000 ms),
+                // treat it as the new/current payment amount for the email.
+                if (diffMs < 5 * 60 * 1000) {
+                    newPaymentAmount = parseFloat(latest.amount) || 0;
+                }
+            }
+        }
+
         await sendPaymentNotificationEmail({
             to: finalShipment.customerEmail!,
             trackingNumber: finalShipment.trackingNumber,
@@ -127,7 +178,8 @@ export async function POST(
             totalDue,
             amountPaid,
             remainingBalance,
-            holdReason
+            holdReason,
+            newPaymentAmount
         });
 
         await logAction(session.user.id, "NOTIFY_PAYMENT", id, {

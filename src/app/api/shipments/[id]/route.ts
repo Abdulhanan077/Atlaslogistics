@@ -40,7 +40,61 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         if (holdReason !== undefined) updateData.holdReason = holdReason;
         if (holdHidden !== undefined) updateData.holdHidden = holdHidden;
         if (body.holdBaseCharge !== undefined) updateData.holdBaseCharge = body.holdBaseCharge !== null ? parseFloat(body.holdBaseCharge) : 0;
-        if (body.holdPaid !== undefined) updateData.holdPaid = body.holdPaid !== null ? parseFloat(body.holdPaid) : 0;
+        // Handle newInstallment, deleteInstallmentId or restoreInstallmentId
+        let installmentsChanged = false;
+        if (body.newInstallment !== undefined || body.deleteInstallmentId !== undefined || body.restoreInstallmentId !== undefined) {
+            let list: any[] = [];
+            try {
+                list = JSON.parse(existingShipment.holdInstallments || "[]");
+                if (!Array.isArray(list)) list = [];
+            } catch (e) {
+                list = [];
+            }
+
+            if (body.newInstallment !== undefined && parseFloat(body.newInstallment.toString()) > 0) {
+                const amount = parseFloat(body.newInstallment.toString());
+                const instId = 'inst_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+                list.push({
+                    id: instId,
+                    amount,
+                    timestamp: new Date().toISOString()
+                });
+                installmentsChanged = true;
+            }
+
+            if (body.deleteInstallmentId !== undefined && body.deleteInstallmentId) {
+                const targetId = body.deleteInstallmentId.toString();
+                list = list.map(item => {
+                    if (item.id === targetId) {
+                        return { ...item, isDeleted: true };
+                    }
+                    return item;
+                });
+                installmentsChanged = true;
+            }
+
+            if (body.restoreInstallmentId !== undefined && body.restoreInstallmentId) {
+                const targetId = body.restoreInstallmentId.toString();
+                list = list.map(item => {
+                    if (item.id === targetId) {
+                        return { ...item, isDeleted: false };
+                    }
+                    return item;
+                });
+                installmentsChanged = true;
+            }
+
+            if (installmentsChanged) {
+                updateData.holdInstallments = JSON.stringify(list);
+                updateData.holdPaid = list
+                    .filter(item => !item.isDeleted)
+                    .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            }
+        }
+
+        if (body.holdPaid !== undefined && !installmentsChanged) {
+            updateData.holdPaid = body.holdPaid !== null ? parseFloat(body.holdPaid) : 0;
+        }
 
         const updatedShipment = await prisma.shipment.update({
             where: { id },

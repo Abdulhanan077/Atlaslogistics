@@ -52,6 +52,7 @@ interface Shipment {
     holdHidden?: boolean;
     holdBaseCharge?: number | null;
     holdPaid?: number | null;
+    holdInstallments?: string;
 }
 
 interface ActiveUpload {
@@ -159,6 +160,26 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     const [holdPanelBaseCharge, setHoldPanelBaseCharge] = useState('0');
     const [holdPanelPaid, setHoldPanelPaid] = useState('0');
     const [sendingPaymentEmail, setSendingPaymentEmail] = useState(false);
+    const [newInstallment, setNewInstallment] = useState('');
+    const [holdInstallments, setHoldInstallments] = useState<{ id: string; amount: number; timestamp: string; isDeleted?: boolean }[]>([]);
+
+    // Calculate remaining balance dynamically
+    let remainingBalance = 0;
+    let diffDays = 0;
+    let storageAccrued = 0;
+    let totalDue = 0;
+    if (activeHoldEvent) {
+        const holdStart = new Date(activeHoldEvent.timestamp);
+        const now = new Date();
+        const diffTime = Math.max(0, now.getTime() - holdStart.getTime());
+        diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        const feePerDay = parseFloat(holdPanelFee) || 0;
+        storageAccrued = diffDays * feePerDay;
+        const baseCharge = parseFloat(holdPanelBaseCharge) || 0;
+        totalDue = baseCharge + storageAccrued;
+        const amountPaid = parseFloat(holdPanelPaid) || 0;
+        remainingBalance = totalDue - amountPaid;
+    }
 
     useEffect(() => {
         if (activeHoldEvent) {
@@ -167,16 +188,80 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             setHoldPanelHidden(shipment.holdHidden || false);
             setHoldPanelBaseCharge(shipment.holdBaseCharge !== undefined && shipment.holdBaseCharge !== null ? shipment.holdBaseCharge.toString() : '0');
             setHoldPanelPaid(shipment.holdPaid !== undefined && shipment.holdPaid !== null ? shipment.holdPaid.toString() : '0');
+            try {
+                const parsed = JSON.parse(shipment.holdInstallments || '[]');
+                setHoldInstallments(Array.isArray(parsed) ? parsed : []);
+            } catch (e) {
+                setHoldInstallments([]);
+            }
         }
-    }, [shipment.holdFee, shipment.holdReason, shipment.holdHidden, shipment.holdBaseCharge, shipment.holdPaid, activeHoldEvent]);
+    }, [shipment.holdFee, shipment.holdReason, shipment.holdHidden, shipment.holdBaseCharge, shipment.holdPaid, shipment.holdInstallments, activeHoldEvent]);
 
     const [showReleaseForm, setShowReleaseForm] = useState(false);
     const [releaseStatus, setReleaseStatus] = useState('IN_TRANSIT');
     const [releaseLocation, setReleaseLocation] = useState('');
     const [releaseDescription, setReleaseDescription] = useState('Hold cleared. Resuming transit.');
 
+    const handleDeleteInstallment = async (installmentId: string) => {
+        setUpdating(true);
+        const toastId = toast.loading("Cancelling installment...");
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deleteInstallmentId: installmentId
+                })
+            });
+            if (res.ok) {
+                toast.success("Installment cancelled successfully!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to cancel installment", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error cancelling installment", { id: toastId });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    const handleRestoreInstallment = async (installmentId: string) => {
+        setUpdating(true);
+        const toastId = toast.loading("Restoring installment...");
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    restoreInstallmentId: installmentId
+                })
+            });
+            if (res.ok) {
+                toast.success("Installment restored successfully!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to restore installment", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error restoring installment", { id: toastId });
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     const handleSaveHoldSettings = async () => {
         if (!activeHoldEvent) return;
+
+        // Warning when amount is over remaining balance
+        const inputAmount = parseFloat(newInstallment) || 0;
+        if (inputAmount > remainingBalance) {
+            const proceed = window.confirm(`Warning: The entered installment amount ($${inputAmount.toFixed(2)}) exceeds the remaining balance ($${remainingBalance.toFixed(2)}).\n\nDo you want to proceed?`);
+            if (!proceed) return;
+        }
+
         setUpdating(true);
         const toastId = toast.loading("Saving hold settings...");
         try {
@@ -195,20 +280,25 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             });
 
             // 2. Update the shipment (including visibility, base charge and amount paid)
+            const shipmentPayload: any = {
+                holdFee: parseFloat(holdPanelFee) || 0,
+                holdReason: holdPanelReason,
+                holdHidden: holdPanelHidden,
+                holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0
+            };
+            if (newInstallment && parseFloat(newInstallment) > 0) {
+                shipmentPayload.newInstallment = parseFloat(newInstallment);
+            }
+
             const shipmentRes = await fetch(`/api/shipments/${shipment.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    holdFee: parseFloat(holdPanelFee) || 0,
-                    holdReason: holdPanelReason,
-                    holdHidden: holdPanelHidden,
-                    holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0,
-                    holdPaid: parseFloat(holdPanelPaid) || 0
-                })
+                body: JSON.stringify(shipmentPayload)
             });
 
             if (eventRes.ok && shipmentRes.ok) {
                 toast.success("Hold settings updated successfully!", { id: toastId });
+                setNewInstallment('');
                 router.refresh();
             } else {
                 toast.error("Failed to save settings", { id: toastId });
@@ -226,21 +316,35 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             toast.error("Customer email is not set for this shipment!");
             return;
         }
+
+        // Warning when amount is over remaining balance
+        const inputAmount = parseFloat(newInstallment) || 0;
+        if (inputAmount > remainingBalance) {
+            const proceed = window.confirm(`Warning: The entered installment amount ($${inputAmount.toFixed(2)}) exceeds the remaining balance ($${remainingBalance.toFixed(2)}).\n\nDo you want to proceed?`);
+            if (!proceed) return;
+        }
+
         setSendingPaymentEmail(true);
         const toastId = toast.loading("Sending payment statement email...");
         try {
+            const emailPayload: any = {
+                holdFee: parseFloat(holdPanelFee) || 0,
+                holdReason: holdPanelReason,
+                holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0
+            };
+            if (newInstallment && parseFloat(newInstallment) > 0) {
+                emailPayload.newInstallment = parseFloat(newInstallment);
+            }
+
             const res = await fetch(`/api/shipments/${shipment.id}/notify-payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    holdFee: parseFloat(holdPanelFee) || 0,
-                    holdReason: holdPanelReason,
-                    holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0,
-                    holdPaid: parseFloat(holdPanelPaid) || 0
-                })
+                body: JSON.stringify(emailPayload)
             });
+
             if (res.ok) {
                 toast.success("Payment & balance statement email sent!", { id: toastId });
+                setNewInstallment('');
                 router.refresh();
             } else {
                 const text = await res.text();
@@ -792,19 +896,35 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         />
                                     </div>
 
+                                    {/* Total Paid to Date - Read Only Display */}
                                     <div>
                                         <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
                                             Total Paid to Date ($)
+                                        </label>
+                                        <div className="w-full bg-amber-100/70 border border-amber-200 text-amber-950 font-bold rounded-xl px-3 py-2 text-sm">
+                                            ${(parseFloat(holdPanelPaid) || 0).toFixed(2)}
+                                        </div>
+                                    </div>
+
+                                    {/* Record New Installment */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
+                                            Record New Installment ($)
                                         </label>
                                         <input
                                             type="number"
                                             step="0.01"
                                             min="0"
-                                            value={holdPanelPaid}
-                                            onChange={(e) => setHoldPanelPaid(e.target.value)}
-                                            placeholder="0.00"
+                                            value={newInstallment}
+                                            onChange={(e) => setNewInstallment(e.target.value)}
+                                            placeholder="Enter installment amount (e.g. 200.00)"
                                             className="w-full bg-white border border-amber-200 text-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
                                         />
+                                        {parseFloat(newInstallment) > remainingBalance && (
+                                            <p className="mt-1 text-[11px] font-semibold text-red-600 flex items-center gap-1 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1">
+                                                <span>⚠️</span> Exceeds remaining balance of ${remainingBalance.toFixed(2)}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -842,53 +962,40 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     </div>
 
                                     {/* Calculated Hold Stats */}
-                                    {(() => {
-                                        const holdStart = new Date(activeHoldEvent.timestamp);
-                                        const now = new Date();
-                                        const diffTime = Math.max(0, now.getTime() - holdStart.getTime());
-                                        const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-                                        const feePerDay = parseFloat(holdPanelFee) || 0;
-                                        const storageAccrued = diffDays * feePerDay;
-                                        const baseCharge = parseFloat(holdPanelBaseCharge) || 0;
-                                        const totalDue = baseCharge + storageAccrued;
-                                        const amountPaid = parseFloat(holdPanelPaid) || 0;
-                                        const remainingBalance = totalDue - amountPaid;
-
-                                        return (
-                                            <div className="bg-amber-100/50 rounded-xl p-3 text-xs text-amber-900 space-y-1.5 border border-amber-200/50">
-                                                <div className="flex justify-between">
-                                                    <span className="text-amber-800">Hold Date:</span>
-                                                    <span className="font-semibold">
-                                                        <FormattedDate date={activeHoldEvent.timestamp} mode="date" />
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-amber-800">Days Elapsed:</span>
-                                                    <span className="font-semibold">{diffDays} {diffDays === 1 ? 'day' : 'days'}</span>
-                                                </div>
-                                                <div className="pt-1.5 border-t border-dashed border-amber-200 flex justify-between">
-                                                    <span className="text-amber-800">Base Charge:</span>
-                                                    <span className="font-semibold">${baseCharge.toFixed(2)}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-amber-800">Storage Accrued:</span>
-                                                    <span className="font-semibold">${storageAccrued.toFixed(2)}</span>
-                                                </div>
-                                                <div className="flex justify-between font-bold text-amber-950">
-                                                    <span>Total Amount Due:</span>
-                                                    <span>${totalDue.toFixed(2)}</span>
-                                                </div>
-                                                <div className="flex justify-between text-emerald-800">
-                                                    <span>Amount Paid:</span>
-                                                    <span className="font-semibold">-${amountPaid.toFixed(2)}</span>
-                                                </div>
-                                                <div className="flex justify-between pt-1.5 border-t border-amber-200/80 text-sm font-black text-amber-950">
-                                                    <span>Remaining Balance:</span>
-                                                    <span className="text-amber-700">${remainingBalance.toFixed(2)}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
+                                    <div className="bg-amber-100/50 rounded-xl p-3 text-xs text-amber-900 space-y-1.5 border border-amber-200/50">
+                                        <div className="flex justify-between">
+                                            <span className="text-amber-800">Hold Date:</span>
+                                            <span className="font-semibold">
+                                                <FormattedDate date={activeHoldEvent.timestamp} mode="date" />
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-amber-800">Days Elapsed:</span>
+                                            <span className="font-semibold">{diffDays} {diffDays === 1 ? 'day' : 'days'}</span>
+                                        </div>
+                                        <div className="pt-1.5 border-t border-dashed border-amber-200 flex justify-between">
+                                            <span className="text-amber-800">Base Charge:</span>
+                                            <span className="font-semibold">${(parseFloat(holdPanelBaseCharge) || 0).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-amber-800">Storage Accrued:</span>
+                                            <span className="font-semibold">${storageAccrued.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold text-amber-950">
+                                            <span>Total Amount Due:</span>
+                                            <span>${totalDue.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-emerald-800 font-semibold">
+                                            <span>Amount Paid:</span>
+                                            <span className="font-semibold">-${(parseFloat(holdPanelPaid) || 0).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between pt-1.5 border-t border-amber-200/80 text-sm font-black text-amber-950">
+                                            <span>Remaining Balance:</span>
+                                            <span className={remainingBalance <= 0 ? "text-emerald-700 font-bold" : "text-amber-700 font-bold"}>
+                                                {remainingBalance < 0 ? `-$${Math.abs(remainingBalance).toFixed(2)}` : `$${remainingBalance.toFixed(2)}`}
+                                            </span>
+                                        </div>
+                                    </div>
 
                                     {/* Action Buttons */}
                                     <div className="space-y-2">
@@ -998,6 +1105,78 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Payment History Ledger */}
+                                {holdInstallments.length > 0 && (
+                                    <div className="space-y-1.5 pt-3 border-t border-amber-200/50">
+                                        <span className="block text-xs font-bold text-amber-800 uppercase tracking-wider">
+                                            Payment History
+                                        </span>
+                                        <div className="bg-white rounded-xl border border-amber-200 overflow-hidden max-h-48 overflow-y-auto">
+                                            <table className="w-full text-left text-xs border-collapse">
+                                                <thead>
+                                                    <tr className="bg-amber-50 text-amber-800 border-b border-amber-200 font-bold">
+                                                        <th className="px-3 py-2">Date</th>
+                                                        <th className="px-3 py-2 text-right">Amount</th>
+                                                        <th className="px-3 py-2 text-center w-8"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-amber-100 text-slate-700">
+                                                    {holdInstallments.map((inst) => (
+                                                        <tr key={inst.id} className={`hover:bg-amber-50/50 transition-colors ${inst.isDeleted ? 'bg-red-50/10' : ''}`}>
+                                                            <td className={`px-3 py-2 whitespace-nowrap ${inst.isDeleted ? 'line-through text-slate-400/80 font-normal' : 'text-slate-500'}`}>
+                                                                {new Date(inst.timestamp).toLocaleDateString(undefined, {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    year: '2-digit'
+                                                                })}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-right">
+                                                                {inst.isDeleted ? (
+                                                                    <div className="inline-flex items-center gap-1.5">
+                                                                        <span className="line-through text-slate-400/80 font-normal">
+                                                                            ${(parseFloat(inst.amount.toString()) || 0).toFixed(2)}
+                                                                        </span>
+                                                                        <span className="text-[9px] bg-red-50 text-red-600 border border-red-100 rounded px-1 py-0.5 font-bold uppercase tracking-wider scale-90 origin-right">
+                                                                            Cancelled
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="font-semibold text-slate-900">
+                                                                        ${(parseFloat(inst.amount.toString()) || 0).toFixed(2)}
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                {inst.isDeleted ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleRestoreInstallment(inst.id)}
+                                                                        disabled={updating}
+                                                                        className="p-1 hover:bg-emerald-50 hover:text-emerald-600 text-emerald-600/85 rounded transition-all disabled:opacity-50"
+                                                                        title="Restore payment entry"
+                                                                    >
+                                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDeleteInstallment(inst.id)}
+                                                                        disabled={updating}
+                                                                        className="p-1 hover:bg-red-50 hover:text-red-600 text-slate-400 rounded transition-all disabled:opacity-50"
+                                                                        title="Cancel payment entry"
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
