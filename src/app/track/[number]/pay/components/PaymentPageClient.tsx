@@ -446,39 +446,6 @@ export default function PaymentPageClient({ shipment, settings }: PaymentPageCli
                                         </span>
                                         <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
                                     </a>
-                                    <a
-                                        href="https://coinatmradar.com/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            🏪 Coin ATM Radar (Global Map)
-                                        </span>
-                                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                                    </a>
-                                    <a
-                                        href="https://bitcoindepot.com/locations/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            🔴 Bitcoin Depot Locator (8,000+ ATMs)
-                                        </span>
-                                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                                    </a>
-                                    <a
-                                        href="https://www.coinflip.tech/atm-locations"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            ⚡ CoinFlip ATM Locations
-                                        </span>
-                                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                                    </a>
                                 </div>
                             </div>
 
@@ -486,7 +453,7 @@ export default function PaymentPageClient({ shipment, settings }: PaymentPageCli
                             <div className="border-t border-slate-150 pt-4 space-y-3">
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">How to Pay at a Bitcoin ATM</p>
                                 <ol className="list-decimal pl-4 text-xs text-slate-500 space-y-2.5 leading-relaxed">
-                                    <li>Locate a nearby ATM using the directories above.</li>
+                                    <li>Locate a nearby ATM using the Google Maps link above.</li>
                                     <li>Select <strong>"Buy Bitcoin"</strong> or <strong>"Send Crypto"</strong> on the ATM screen.</li>
                                     <li>When prompted for a destination wallet address, <strong>scan our Bitcoin payment QR code</strong> from your phone screen.</li>
                                     <li>Insert cash matching the remaining balance shown.</li>
