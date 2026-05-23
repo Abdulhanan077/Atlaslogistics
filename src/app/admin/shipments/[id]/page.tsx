@@ -5,9 +5,9 @@ import { notFound, redirect } from "next/navigation"
 import ShipmentDetailsClient from "./components/ShipmentDetailsClient"
 
 export default async function ShipmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) redirect('/login');
+    const { id } = await params;
 
     const shipment = await prisma.shipment.findUnique({
         where: { id },

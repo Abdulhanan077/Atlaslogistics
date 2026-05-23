@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import AdminSidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/Header';
 import { Menu } from 'lucide-react';
@@ -45,7 +45,9 @@ export default function AdminLayoutClient({
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
                 print:hidden
             `}>
-                <AdminSidebar role={user.role} onClose={() => setIsSidebarOpen(false)} settings={settings} />
+                <Suspense fallback={<div className="w-full h-full bg-brand-surface border-r border-brand-border" />}>
+                    <AdminSidebar role={user.role} onClose={() => setIsSidebarOpen(false)} settings={settings} />
+                </Suspense>
             </div>
 
             {/* Main Content */}

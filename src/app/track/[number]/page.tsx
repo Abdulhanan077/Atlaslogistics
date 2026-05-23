@@ -1,11 +1,10 @@
 import prisma from "@/lib/prisma"
 
 import Link from "next/link"
-import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck, AlertTriangle } from "lucide-react"
+import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck, AlertTriangle, Coins } from "lucide-react"
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import TrackingChat from "@/components/TrackingChat";
 import FormattedDate from "@/components/FormattedDate";
-import PayFeesButton from "@/components/PayFeesButton";
 import { parseShipmentInfo } from '@/lib/utils';
 
 async function getShipment(trackingNumber: string) {
@@ -142,6 +141,14 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
     const { number } = await params;
     const shipment: any = await getShipment(number);
     const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } });
+    const plainSettings = settings ? {
+        companyName: settings.companyName,
+        usdtTrc20Address: settings.usdtTrc20Address,
+        usdtBep20Address: settings.usdtBep20Address,
+        btcAddress: settings.btcAddress,
+        supportEmail: settings.supportEmail,
+        supportPhone: settings.supportPhone,
+    } : null;
 
     if (!shipment) {
         return (
@@ -278,7 +285,13 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             </div>
                                         </div>
                                     </div>
-                                    <PayFeesButton />
+                                    <Link
+                                        href={`/track/${shipment.trackingNumber}/pay`}
+                                        className="inline-flex items-center justify-center px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg shadow-amber-600/25 hover:shadow-amber-500/40 text-sm text-center cursor-pointer text-center"
+                                    >
+                                        <Coins className="w-4 h-4 mr-2" />
+                                        Pay Outstanding Fees
+                                    </Link>
                                 </div>
                             ) : shipment.holdFee && shipment.holdFee > 0 ? (
                                 <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/70 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl shadow-sm">
@@ -305,7 +318,6 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             </div>
                                         </div>
                                     </div>
-                                    <PayFeesButton />
                                 </div>
                             ) : (
                                 <div className="shrink-0 w-full md:w-auto bg-white/45 backdrop-blur-md border border-[#ea580c]/30 p-4 rounded-2xl text-center md:text-right">
