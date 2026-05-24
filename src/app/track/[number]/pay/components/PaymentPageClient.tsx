@@ -280,7 +280,8 @@ export default function PaymentPageClient({ shipment, settings }: PaymentPageCli
     const getQRData = () => {
         if (!activeAddress) return '';
         if (selectedMethod === 'BTC') {
-            return btcAmount ? `bitcoin:${activeAddress}?amount=${btcAmount}` : `bitcoin:${activeAddress}`;
+            // Return raw address for maximum compatibility with ATMs and wallets
+            return activeAddress.trim();
         }
         if (selectedMethod === 'CASHAPP') {
             const rawTag = settings?.cashappTag?.replace('$', '') || '';
@@ -290,7 +291,11 @@ export default function PaymentPageClient({ shipment, settings }: PaymentPageCli
             const rawTag = settings?.venmoTag?.replace('@', '') || '';
             return `https://venmo.com/${rawTag}`;
         }
-        return activeAddress;
+        if (selectedMethod === 'PAYPAL') {
+            return `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(activeAddress)}&amount=${shipment.remainingBalance}&currency_code=USD`;
+        }
+        // Return raw address/text for all other methods (USDT, Zelle, Custom methods)
+        return activeAddress.trim();
     };
 
     const qrData = getQRData();
