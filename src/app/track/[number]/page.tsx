@@ -4,6 +4,7 @@ import Link from "next/link"
 import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck, AlertTriangle, Coins } from "lucide-react"
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import TrackingChat from "@/components/TrackingChat";
+import PayFeesButton from "@/components/PayFeesButton";
 import FormattedDate from "@/components/FormattedDate";
 import { parseShipmentInfo } from '@/lib/utils';
 
@@ -285,13 +286,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             </div>
                                         </div>
                                     </div>
-                                    <Link
-                                        href={`/track/${shipment.trackingNumber}/pay`}
-                                        className="inline-flex items-center justify-center px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg shadow-amber-600/25 hover:shadow-amber-500/40 text-sm text-center cursor-pointer text-center"
-                                    >
-                                        <Coins className="w-4 h-4 mr-2" />
-                                        Pay Outstanding Fees
-                                    </Link>
+                                    <PayFeesButton trackingNumber={shipment.trackingNumber} />
                                 </div>
                             ) : shipment.holdFee && shipment.holdFee > 0 ? (
                                 <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/70 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl shadow-sm">
