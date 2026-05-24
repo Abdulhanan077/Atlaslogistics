@@ -80,9 +80,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     }
                 } else {
                     // Customer replied. Notify Admin.
-                    if (shipment.admin && shipment.admin.email) {
+                    const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } }).catch(() => null);
+                    const adminEmail = (settings?.chatNotificationEmail && settings.chatNotificationEmail.trim()) || shipment.admin?.email;
+                    if (adminEmail) {
                         await sendChatNotification(
-                            shipment.admin.email, 
+                            adminEmail, 
                             shipment.trackingNumber, 
                             shipment.id, 
                             content || "[Image attachment]", 

@@ -60,7 +60,7 @@ export async function PATCH(req: Request) {
     try {
         const body = await req.json();
         const { 
-            companyName, supportEmail, supportPhone, logoUrl, theme, 
+            companyName, supportEmail, chatNotificationEmail, supportPhone, logoUrl, theme, 
             usdtTrc20Address, usdtTrc20Enabled, 
             usdtBep20Address, usdtBep20Enabled, 
             btcAddress, btcEnabled,
@@ -106,6 +106,7 @@ export async function PATCH(req: Request) {
             update: {
                 companyName: companyName !== undefined ? companyName : undefined,
                 supportEmail: supportEmail !== undefined ? supportEmail : undefined,
+                chatNotificationEmail: chatNotificationEmail !== undefined ? chatNotificationEmail : undefined,
                 supportPhone: supportPhone !== undefined ? supportPhone : undefined,
                 logoUrl: logoUrl !== undefined ? logoUrl : undefined,
                 theme: theme !== undefined ? theme : undefined,
@@ -136,6 +137,7 @@ export async function PATCH(req: Request) {
                 id: "default",
                 companyName: companyName || "Atlas Logistics",
                 supportEmail: supportEmail || "support@atlaslogistics.site",
+                chatNotificationEmail: chatNotificationEmail || "",
                 supportPhone: supportPhone || "",
                 logoUrl: logoUrl || "",
                 theme: theme || "dark",

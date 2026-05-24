@@ -19,6 +19,7 @@ export default function SettingsDashboard() {
     const [settings, setSettings] = useState({
         companyName: '',
         supportEmail: '',
+        chatNotificationEmail: '',
         supportPhone: '',
         logoUrl: '',
         theme: 'dark' as 'dark' | 'light',
@@ -53,6 +54,7 @@ export default function SettingsDashboard() {
                     setSettings({
                         companyName: data.companyName || '',
                         supportEmail: data.supportEmail || '',
+                        chatNotificationEmail: data.chatNotificationEmail || '',
                         supportPhone: data.supportPhone || '',
                         logoUrl: data.logoUrl || '',
                         theme: data.theme || 'dark',
@@ -270,6 +272,36 @@ export default function SettingsDashboard() {
                                     className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 />
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Email Notifications Section */}
+                <div className="p-8 border-b border-brand-border/50">
+                    <h2 className="text-xl font-semibold text-brand-text mb-6 flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-amber-500" />
+                        Notification Settings
+                    </h2>
+                    <p className="text-sm text-brand-text-muted mb-6">
+                        Configure where you want to receive alerts and notifications for the platform.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-brand-text-muted mb-2">Chat Notification Email</label>
+                            <div className="relative">
+                                <Mail className="absolute left-4 top-3.5 w-5 h-5 text-brand-text-muted/80" />
+                                <input
+                                    type="email"
+                                    value={settings.chatNotificationEmail}
+                                    onChange={e => setSettings({...settings, chatNotificationEmail: e.target.value})}
+                                    placeholder="notifications@domain.com"
+                                    className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl pl-12 pr-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                />
+                            </div>
+                            <p className="text-xs text-brand-text-muted/80 mt-2">
+                                New client messages in shipment chats will be forwarded to this email address. If left blank, it defaults to the email of the administrator who created the shipment.
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -112,6 +112,7 @@ model SiteSettings {
   id                String   @id @default("default")
   companyName       String   @default("Atlas Logistics")
   supportEmail      String   @default("support@atlaslogistics.site")
+  chatNotificationEmail String @default("")
   supportPhone      String   @default("")
   logoUrl           String   @default("")
   theme             String   @default("dark") // "dark", "light"
