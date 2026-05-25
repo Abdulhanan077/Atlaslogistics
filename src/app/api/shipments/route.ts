@@ -34,6 +34,7 @@ export async function POST(req: Request) {
                 imageUrls: JSON.stringify(body.imageUrls || []), // SQLite fix
                 videoUrls: JSON.stringify(body.videoUrls || []),
                 createdAt: body.createdAt ? new Date(body.createdAt) : undefined,
+                systemCreatedAt: new Date(),
                 productDescription: body.productDescription,
                 status: "CREATED",
                 adminId: session.user.id,
@@ -123,7 +124,7 @@ export async function GET(req: Request) {
         const shipments = await prisma.shipment.findMany({
             where: whereClause,
             orderBy: {
-                createdAt: 'desc'
+                systemCreatedAt: 'desc'
             },
             include: {
                 events: {

@@ -62,6 +62,7 @@ model Shipment {
   events ShipmentEvent[]
 
   createdAt DateTime @default(now())
+  systemCreatedAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   messages Message[]

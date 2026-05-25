@@ -12,7 +12,7 @@ import FormattedDate from '@/components/FormattedDate';
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import { parseShipmentInfo } from '@/lib/utils';
 import { geocodeAddress, reverseGeocode } from '@/lib/geocoding';
-import { upload } from '@vercel/blob/client';
+import { uploadToR2 as upload } from '@/lib/upload-client';
 
 // PDF rendering is now handled server-side to avoid client-side bundling issues
 const ShippingLabel = null;

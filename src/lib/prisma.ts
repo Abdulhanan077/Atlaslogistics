@@ -1,16 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import { Pool, neonConfig } from '@neondatabase/serverless'
 import { PrismaNeon } from '@prisma/adapter-neon'
-// Use native WebSocket if available (Node 22+), fallback to 'ws' package
-if (typeof globalThis.WebSocket !== 'undefined') {
-    neonConfig.webSocketConstructor = globalThis.WebSocket
-} else {
-    const ws = require('ws')
-    neonConfig.webSocketConstructor = ws
-}
-
-// Enable HTTP connection for better stability in serverless/Next.js dev environments
-(neonConfig as any).useFetchConnection = true
+const ws = require('ws')
+neonConfig.webSocketConstructor = ws
 
 const prismaClientSingleton = () => {
     const connectionString = process.env.DATABASE_URL

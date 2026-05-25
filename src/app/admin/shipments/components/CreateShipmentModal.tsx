@@ -5,7 +5,7 @@ import { X, Loader2, Search } from 'lucide-react';
 import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from 'react-hot-toast';
 import { parseShipmentInfo } from '@/lib/utils';
-import { upload } from '@vercel/blob/client';
+import { uploadToR2 as upload } from '@/lib/upload-client';
 
 interface ActiveUpload {
     id: string;

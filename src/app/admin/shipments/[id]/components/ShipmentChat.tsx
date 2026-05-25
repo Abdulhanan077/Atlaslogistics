@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check, Paperclip } from 'lucide-react';
-import { upload } from '@vercel/blob/client';
+import { uploadToR2 as upload } from '@/lib/upload-client';
 
 interface Message {
     id: string;

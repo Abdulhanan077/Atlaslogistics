@@ -2,7 +2,8 @@ import prisma from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import { del, list } from '@vercel/blob';
+import { ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/lib/r2";
 
 export async function GET() {
     const session = await getServerSession(authOptions);
@@ -11,8 +12,17 @@ export async function GET() {
     }
 
     try {
-        const { blobs } = await list();
-        const totalSize = blobs.reduce((acc, blob) => acc + blob.size, 0);
+        // List objects from R2
+        let totalSize = 0;
+        try {
+            const listCommand = new ListObjectsV2Command({
+                Bucket: R2_BUCKET_NAME,
+            });
+            const s3List = await r2Client.send(listCommand);
+            totalSize = (s3List.Contents || []).reduce((acc, obj) => acc + (obj.Size || 0), 0);
+        } catch (s3Error) {
+            console.error("Failed to list objects from R2:", s3Error);
+        }
 
         const shipments = (await prisma.shipment.findMany({
             where: { isDeleted: false },
@@ -96,12 +106,31 @@ export async function DELETE(request: Request) {
             return new NextResponse('Cannot delete media less than a month old', { status: 403 });
         }
 
-        // Delete from Vercel Blob
+        // Delete from storage provider
         try {
-            await del(url);
-        } catch (blobError) {
-            console.error("Blob deletion error:", blobError);
-            // Continue anyway to sync DB if blob is already gone or other error
+            if (url.includes('vercel-storage.com')) {
+                const { del } = await import('@vercel/blob');
+                await del(url);
+            } else {
+                let key = url;
+                if (url.startsWith(R2_PUBLIC_URL)) {
+                    key = url.substring(R2_PUBLIC_URL.length + 1); // remove leading slash
+                } else {
+                    try {
+                        const parsedUrl = new URL(url);
+                        key = parsedUrl.pathname.substring(1); // remove leading slash
+                    } catch (e) {}
+                }
+
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: R2_BUCKET_NAME,
+                    Key: key,
+                });
+                await r2Client.send(deleteCommand);
+            }
+        } catch (storageError) {
+            console.error("Storage deletion error:", storageError);
+            // Continue anyway to sync DB if file is already gone or other error
         }
 
         // Update Shipment in DB

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Building2, Mail, Phone, Upload, Loader2, Save, Moon, Sun, Trash2, Coins, CreditCard, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/components/ThemeProvider';
-import { upload } from '@vercel/blob/client';
+import { uploadToR2 as upload } from '@/lib/upload-client';
 import { useSession } from 'next-auth/react';
 
 export default function SettingsDashboard() {

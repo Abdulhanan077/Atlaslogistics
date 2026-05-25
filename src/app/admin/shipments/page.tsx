@@ -26,7 +26,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
 
     const shipments = (await prisma.shipment.findMany({
         where: whereClause,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { systemCreatedAt: 'desc' },
         select: {
             id: true,
             trackingNumber: true,
@@ -41,6 +41,7 @@ export default async function ShipmentsPage({ searchParams }: { searchParams: Pr
             imageUrls: true,
             videoUrls: true,
             createdAt: true,
+            systemCreatedAt: true,
             events: {
                 orderBy: [
                     { timestamp: 'desc' },

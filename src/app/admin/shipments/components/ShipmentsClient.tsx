@@ -26,16 +26,18 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    const filteredShipments = initialShipments.filter(shipment => {
-        // Normalize the search terms for dash and case insensitivity
-        const searchNormalized = searchTerm.toUpperCase().replace(/-/g, '');
-        const shipmentNormalized = shipment.trackingNumber.toUpperCase().replace(/-/g, '');
+    const filteredShipments = initialShipments
+        .filter(shipment => {
+            // Normalize the search terms for dash and case insensitivity
+            const searchNormalized = searchTerm.toUpperCase().replace(/-/g, '');
+            const shipmentNormalized = shipment.trackingNumber.toUpperCase().replace(/-/g, '');
 
-        const matchesSearch = shipmentNormalized.includes(searchNormalized) ||
-            shipment.receiverInfo.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'ALL' || shipment.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+            const matchesSearch = shipmentNormalized.includes(searchNormalized) ||
+                shipment.receiverInfo.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = statusFilter === 'ALL' || shipment.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        })
+        .sort((a, b) => new Date(b.systemCreatedAt).getTime() - new Date(a.systemCreatedAt).getTime());
 
     return (
         <div className="space-y-6">
@@ -97,8 +99,11 @@ export default function ShipmentsClient({ initialShipments }: { initialShipments
                                 <tr key={shipment.id} className="hover:bg-brand-bg transition-colors group">
                                     <td className="px-6 py-4">
                                         <span className="font-mono text-blue-400 font-medium">{shipment.trackingNumber}</span>
-                                        <div className="text-brand-text-muted/80 text-xs mt-1">
+                                        <div className="text-brand-text-muted/80 text-xs mt-0.5">
                                             {parseShipmentInfo(shipment.receiverInfo).name || 'Unknown Receiver'}
+                                        </div>
+                                        <div className="text-brand-text-muted/50 text-[10px] mt-1">
+                                            Created: {new Date(shipment.systemCreatedAt || shipment.createdAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
