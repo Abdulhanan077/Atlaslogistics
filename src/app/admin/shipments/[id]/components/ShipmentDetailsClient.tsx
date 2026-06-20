@@ -140,6 +140,39 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     const [overrideHold, setOverrideHold] = useState(false);
     const isLocked = shipment.status === 'ON_HOLD' && !shipment.holdHidden && !overrideHold;
 
+    const [isEditingDescription, setIsEditingDescription] = useState(false);
+    const [descriptionValue, setDescriptionValue] = useState(shipment.productDescription || '');
+    const [savingDescription, setSavingDescription] = useState(false);
+
+    useEffect(() => {
+        setDescriptionValue(shipment.productDescription || '');
+    }, [shipment.productDescription]);
+
+    const handleSaveDescription = async () => {
+        setSavingDescription(true);
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productDescription: descriptionValue
+                })
+            });
+            if (res.ok) {
+                setIsEditingDescription(false);
+                router.refresh();
+                toast.success("Shipping description updated");
+            } else {
+                toast.error('Failed to update shipping description');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Error updating shipping description');
+        } finally {
+            setSavingDescription(false);
+        }
+    };
+
     const cancelUpload = (id: string) => {
         const upload = activeUploads.find(u => u.id === id);
         if (upload) {
@@ -1808,14 +1841,59 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     </div>
 
                                     {/* Shipping Description */}
-                                    {shipment.productDescription && (
-                                        <div className="mb-6">
-                                            <p className="text-xs text-brand-text-muted uppercase font-bold tracking-widest mb-2">Shipping Description</p>
-                                            <div className="p-4 bg-brand-bg/50 rounded-xl border border-brand-border">
-                                                <p className="text-brand-text whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
-                                            </div>
+                                    <div className="mb-6">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-xs text-brand-text-muted uppercase font-bold tracking-widest">Shipping Description</p>
+                                            {!isEditingDescription && (
+                                                <button
+                                                    onClick={() => {
+                                                        setDescriptionValue(shipment.productDescription || '');
+                                                        setIsEditingDescription(true);
+                                                    }}
+                                                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer print:hidden"
+                                                >
+                                                    <Pencil className="w-3 h-3" />
+                                                    Edit
+                                                </button>
+                                            )}
                                         </div>
-                                    )}
+                                        {isEditingDescription ? (
+                                            <div className="space-y-3">
+                                                <textarea
+                                                    rows={5}
+                                                    className="w-full bg-brand-bg border border-brand-border rounded-xl p-3 text-sm text-brand-text resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    value={descriptionValue}
+                                                    onChange={e => setDescriptionValue(e.target.value)}
+                                                    placeholder="Enter shipping description..."
+                                                />
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={() => setIsEditingDescription(false)}
+                                                        className="px-3 py-1 bg-brand-surface border border-brand-border text-brand-text text-xs rounded-lg hover:bg-brand-bg/50 transition-colors"
+                                                        disabled={savingDescription}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSaveDescription}
+                                                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-1 shadow-lg shadow-blue-500/20"
+                                                        disabled={savingDescription}
+                                                    >
+                                                        {savingDescription ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 bg-brand-bg/50 rounded-xl border border-brand-border">
+                                                {shipment.productDescription ? (
+                                                    <p className="text-brand-text whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
+                                                ) : (
+                                                    <p className="text-brand-text-muted italic text-sm">No shipping description. Click edit to add one.</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* Recipient Information Section */}
                                     <div className="mb-4 mt-6">
