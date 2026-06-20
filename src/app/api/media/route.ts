@@ -25,13 +25,13 @@ export async function GET() {
         }
 
         const shipments = (await prisma.shipment.findMany({
-            where: { isDeleted: false },
             select: {
                 id: true,
                 trackingNumber: true,
                 imageUrls: true,
                 videoUrls: true,
                 createdAt: true,
+                isDeleted: true,
             } as any
         })) as any[];
 
@@ -50,7 +50,8 @@ export async function GET() {
                     type: 'image',
                     shipmentId: s.id,
                     trackingNumber: s.trackingNumber,
-                    createdAt: s.createdAt
+                    createdAt: s.createdAt,
+                    isDeleted: s.isDeleted
                 });
             });
 
@@ -60,7 +61,8 @@ export async function GET() {
                     type: 'video',
                     shipmentId: s.id,
                     trackingNumber: s.trackingNumber,
-                    createdAt: s.createdAt
+                    createdAt: s.createdAt,
+                    isDeleted: s.isDeleted
                 });
             });
         });
@@ -85,68 +87,87 @@ export async function DELETE(request: Request) {
     }
 
     try {
-        const { url, shipmentId, type } = await request.json();
-        if (!url || !shipmentId) {
+        const body = await request.json();
+        
+        // Normalize single vs bulk deletions
+        const items = body.items || [{ url: body.url, shipmentId: body.shipmentId, type: body.type }];
+        
+        if (!items || items.length === 0) {
             return new NextResponse('Missing required fields', { status: 400 });
         }
 
-        // Fetch shipment to verify age and current URLs
-        const shipment = await prisma.shipment.findUnique({
-            where: { id: shipmentId }
-        });
-
-        if (!shipment) {
-            return new NextResponse('Shipment not found', { status: 404 });
-        }
-
-        // Check age (1 month = 30 days)
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-        if (new Date(shipment.createdAt) > oneMonthAgo) {
-            return new NextResponse('Cannot delete media less than a month old', { status: 403 });
-        }
-
-        // Delete from storage provider
-        try {
-            if (url.includes('vercel-storage.com')) {
-                const { del } = await import('@vercel/blob');
-                await del(url);
-            } else {
-                let key = url;
-                if (url.startsWith(R2_PUBLIC_URL)) {
-                    key = url.substring(R2_PUBLIC_URL.length + 1); // remove leading slash
-                } else {
-                    try {
-                        const parsedUrl = new URL(url);
-                        key = parsedUrl.pathname.substring(1); // remove leading slash
-                    } catch (e) {}
-                }
-
-                const deleteCommand = new DeleteObjectCommand({
-                    Bucket: R2_BUCKET_NAME,
-                    Key: key,
-                });
-                await r2Client.send(deleteCommand);
+        // Group items by shipmentId to optimize database updates
+        const itemsByShipment: Record<string, Array<{ url: string; type: 'image' | 'video' }>> = {};
+        for (const item of items) {
+            if (!item.url || !item.shipmentId) continue;
+            if (!itemsByShipment[item.shipmentId]) {
+                itemsByShipment[item.shipmentId] = [];
             }
-        } catch (storageError) {
-            console.error("Storage deletion error:", storageError);
-            // Continue anyway to sync DB if file is already gone or other error
+            itemsByShipment[item.shipmentId].push({ url: item.url, type: item.type });
         }
 
-        // Update Shipment in DB
-        if (type === 'image') {
-            const currentImages = JSON.parse(shipment.imageUrls);
-            const updatedImages = currentImages.filter((u: string) => u !== url);
-            await prisma.shipment.update({
-                where: { id: shipmentId },
-                data: { imageUrls: JSON.stringify(updatedImages) }
+        // Process deletion per shipment group
+        for (const [shipmentId, shipmentItems] of Object.entries(itemsByShipment)) {
+            const shipment = await prisma.shipment.findUnique({
+                where: { id: shipmentId }
             });
-        } else if (type === 'video') {
-            const currentVideos = JSON.parse((shipment as any).videoUrls || "[]");
-            const updatedVideos = currentVideos.filter((u: string) => u !== url);
+
+            if (!shipment) continue;
+
+            // Check age constraint (30 days retention policy)
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+            if (new Date(shipment.createdAt) > oneMonthAgo) {
+                return new NextResponse('Cannot delete media less than a month old', { status: 403 });
+            }
+
+            // Delete storage provider files
+            for (const item of shipmentItems) {
+                try {
+                    const url = item.url;
+                    if (url.includes('vercel-storage.com')) {
+                        const { del } = await import('@vercel/blob');
+                        await del(url);
+                    } else {
+                        let key = url;
+                        if (url.startsWith(R2_PUBLIC_URL)) {
+                            key = url.substring(R2_PUBLIC_URL.length + 1);
+                        } else {
+                            try {
+                                const parsedUrl = new URL(url);
+                                key = parsedUrl.pathname.substring(1);
+                            } catch (e) {}
+                        }
+
+                        const deleteCommand = new DeleteObjectCommand({
+                            Bucket: R2_BUCKET_NAME,
+                            Key: key,
+                        });
+                        await r2Client.send(deleteCommand);
+                    }
+                } catch (storageError) {
+                    console.error("Storage deletion error:", storageError);
+                }
+            }
+
+            // Update database records
+            let currentImages = [];
+            let currentVideos = [];
+            try {
+                currentImages = JSON.parse(shipment.imageUrls || "[]");
+                currentVideos = JSON.parse((shipment as any).videoUrls || "[]");
+            } catch (e) {}
+
+            const urlsToDelete = shipmentItems.map(item => item.url);
+            const updatedImages = currentImages.filter((u: string) => !urlsToDelete.includes(u));
+            const updatedVideos = currentVideos.filter((u: string) => !urlsToDelete.includes(u));
+
             await prisma.shipment.update({
                 where: { id: shipmentId },
-                data: { videoUrls: JSON.stringify(updatedVideos) } as any
+                data: {
+                    imageUrls: JSON.stringify(updatedImages),
+                    videoUrls: JSON.stringify(updatedVideos)
+                } as any
             });
         }
 

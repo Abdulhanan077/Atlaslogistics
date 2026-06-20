@@ -96,13 +96,12 @@ body {
   }
 }
 
-/* Hide browser-added headers and footers (URL, Date, etc.) during print */
+/* Configure print page margins (provides blank header and footer space on all pages) */
 @media print {
   @page {
     margin: 0;
   }
   body {
-    padding: 1.5cm;
     background: white !important;
   }
   /* Ensure background colors and images print */

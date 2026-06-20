@@ -1301,7 +1301,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                 </div>
 
                 {/* Middle Column: Details & Visual */}
-                <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full">
+                <div className="xl:col-span-6 space-y-6 order-1 xl:order-2 print:col-span-12 print:w-full print:p-[1.5cm] print:box-decoration-clone">
                     {/* Print Header - Matches Screenshot */}
                     <div className="hidden print:block mb-8 pb-4">
                         <div className="flex justify-between items-center mb-6">
@@ -1793,57 +1793,57 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     <h3 className="text-brand-text text-xl font-black mb-4 print:text-black uppercase tracking-tight">Product Details</h3>
                                     
                                     <div className="mb-4">
-                                        <p className="text-brand-text text-base font-bold">Shipment Summary — {settings?.companyName || 'Atlas Logistics'}</p>
+                                        <p className="text-brand-text text-base font-bold print:text-black">Shipment Summary — {settings?.companyName || 'Atlas Logistics'}</p>
                                     </div>
 
                                     {/* Product Details Table */}
-                                    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface divide-y divide-brand-border mb-6">
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface divide-y divide-brand-border mb-6 print:bg-white print:border-gray-300 print:divide-gray-300 print:break-inside-avoid">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Consignment Reference
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted font-mono break-all flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted font-mono break-all flex items-center print:text-gray-800">
                                                 {consignmentRef}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Tracking Number
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted font-mono break-all flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted font-mono break-all flex items-center print:text-gray-800">
                                                 {shipment.trackingNumber}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Carrier
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
                                                 {settings?.companyName || 'Atlas Logistics'}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Origin Hub
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
                                                 {shipment.origin || 'N/A'}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Destination Hub
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
                                                 {shipment.destination || 'N/A'}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Shipping Description */}
-                                    <div className="mb-6">
+                                    <div className="mb-6 print:break-inside-avoid">
                                         <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs text-brand-text-muted uppercase font-bold tracking-widest">Shipping Description</p>
+                                            <p className="text-xs text-brand-text-muted uppercase font-bold tracking-widest print:text-gray-500">Shipping Description</p>
                                             {!isEditingDescription && (
                                                 <button
                                                     onClick={() => {
@@ -1885,11 +1885,11 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="p-4 bg-brand-bg/50 rounded-xl border border-brand-border">
+                                            <div className="p-4 bg-brand-bg/50 rounded-xl border border-brand-border print:bg-white print:border-gray-300">
                                                 {shipment.productDescription ? (
-                                                    <p className="text-brand-text whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
+                                                    <p className="text-brand-text whitespace-pre-wrap leading-relaxed text-base print:text-black">{shipment.productDescription}</p>
                                                 ) : (
-                                                    <p className="text-brand-text-muted italic text-sm">No shipping description. Click edit to add one.</p>
+                                                    <p className="text-brand-text-muted italic text-sm print:text-gray-400">No shipping description. Click edit to add one.</p>
                                                 )}
                                             </div>
                                         )}
@@ -1897,42 +1897,42 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
                                     {/* Recipient Information Section */}
                                     <div className="mb-4 mt-6">
-                                        <p className="text-brand-text text-base font-bold flex items-center gap-2">
+                                        <p className="text-brand-text text-base font-bold flex items-center gap-2 print:text-black">
                                             📦 Recipient Information (Final Delivery Point – {shipment.destination || 'Destination'})
                                         </p>
                                     </div>
 
                                     {/* Recipient Info Table */}
-                                    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface divide-y divide-brand-border mb-6">
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface divide-y divide-brand-border mb-6 print:bg-white print:border-gray-300 print:divide-gray-300 print:break-inside-avoid">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Name
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
                                                 {parsedReceiver.name || 'N/A'}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Address
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
                                                 {parsedReceiver.address || 'N/A'}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Contact
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
                                                 {parsedReceiver.phone || 'N/A'}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Email
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center break-all">
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center break-all print:text-gray-800">
                                                 {shipment.customerEmail || parsedReceiver.email || 'N/A'}
                                             </div>
                                         </div>
@@ -1942,7 +1942,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                     {((shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
                                         <div className="space-y-8 mt-6">
                                             {shipment.imageUrls && shipment.imageUrls.length > 0 && (
-                                                <div>
+                                                <div className="print:break-inside-avoid">
                                                     <p className="text-brand-text-muted text-sm font-medium uppercase mb-3">Attached Images</p>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                                         {shipment.imageUrls.map((url: string, i: number) => (
@@ -1955,7 +1955,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 </div>
                                             )}
                                             {shipment.videoUrls && shipment.videoUrls.length > 0 && (
-                                                <div>
+                                                <div className="print:hidden">
                                                     <p className="text-brand-text-muted text-sm font-medium uppercase mb-3">Attached Video Proof</p>
                                                     <div className="grid grid-cols-1 gap-6">
                                                         {shipment.videoUrls.map((url: string, i: number) => (
