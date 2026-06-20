@@ -138,6 +138,63 @@ function getPingColor(status: string) {
     }
 }
 
+function generateConsignmentRef(origin: string | null | undefined, destination: string | null | undefined, trackingNumber: string): string {
+    const getCountryCode = (locationStr: string | null | undefined): string => {
+        if (!locationStr) return 'XX';
+        const s = locationStr.toUpperCase();
+        
+        // Match standard country abbreviations in parentheses: (US), (UK), (GH), (ACC), etc.
+        const parenMatch = s.match(/\(([^)]+)\)/);
+        if (parenMatch) {
+            const code = parenMatch[1].trim();
+            if (code.length === 2) return code;
+            if (code === 'ACC') return 'GH';
+            if (code === 'USA') return 'US';
+            if (code === 'UK') return 'UK';
+        }
+        
+        // Common matches
+        if (s.includes('GHANA')) return 'GH';
+        if (s.includes('UNITED STATES') || s.includes('USA') || s.includes('AMERICA')) return 'US';
+        if (s.includes('UNITED KINGDOM') || s.includes('UK') || s.includes('GREAT BRITAIN')) return 'UK';
+        if (s.includes('CANADA')) return 'CA';
+        if (s.includes('GERMANY')) return 'DE';
+        if (s.includes('FRANCE')) return 'FR';
+        if (s.includes('CHINA')) return 'CN';
+        if (s.includes('SPAIN')) return 'ES';
+        if (s.includes('ITALY')) return 'IT';
+        if (s.includes('TURKEY')) return 'TR';
+        if (s.includes('NIGERIA')) return 'NG';
+        if (s.includes('SOUTH AFRICA')) return 'ZA';
+        if (s.includes('UNITED ARAB EMIRATES') || s.includes('UAE')) return 'AE';
+        if (s.includes('SINGAPORE')) return 'SG';
+        if (s.includes('AUSTRALIA')) return 'AU';
+        
+        // Fallback: search for last word or comma separated parts
+        const parts = s.split(',');
+        const lastPart = parts[parts.length - 1].trim().replace(/[^A-Z]/g, '');
+        if (lastPart.length >= 2) {
+            return lastPart.substring(0, 2);
+        }
+        
+        const firstTwoLetters = s.replace(/[^A-Z]/g, '').substring(0, 2);
+        return firstTwoLetters.length === 2 ? firstTwoLetters : 'XX';
+    };
+
+    const originCode = getCountryCode(origin);
+    const destCode = getCountryCode(destination);
+    
+    // Deterministic 2-digit number from trackingNumber
+    let charSum = 0;
+    const cleanTrack = trackingNumber || '33';
+    for (let i = 0; i < cleanTrack.length; i++) {
+        charSum += cleanTrack.charCodeAt(i);
+    }
+    const numCode = (charSum % 90).toString().padStart(2, '0');
+
+    return `${originCode}-${destCode}-${numCode}-SCM`;
+}
+
 export default async function TrackingResultPage({ params }: { params: Promise<{ number: string }> }) {
     const { number } = await params;
     const shipment: any = await getShipment(number);
@@ -479,56 +536,156 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                         )}
 
                         {/* Product / Media Gallery */}
-                        {((shipment.productDescription) || (shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
-                            <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                                <h3 className="text-xl font-black text-slate-900 flex items-center mb-6 uppercase tracking-tight">
-                                    <ShieldCheck className="w-6 h-6 mr-3 text-blue-500" />
-                                    Product Details
-                                </h3>
+                        {shipment && (() => {
+                            const consignmentRef = generateConsignmentRef(shipment.origin, shipment.destination, shipment.trackingNumber);
+                            return (
+                                <div className="bg-white backdrop-blur-xl border border-slate-200 rounded-[2rem] p-8 lg:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                                    <h3 className="text-xl font-black text-slate-900 flex items-center mb-6 uppercase tracking-tight">
+                                        <ShieldCheck className="w-6 h-6 mr-3 text-blue-500" />
+                                        Product Details
+                                    </h3>
 
-                                {shipment.productDescription && (
-                                    <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">{shipment.productDescription}</p>
+                                    <div className="mb-6">
+                                        <p className="text-sm text-slate-500 font-medium">Description</p>
+                                        <p className="text-base font-bold text-slate-800 mt-0.5">Shipment Summary — {settings?.companyName || 'Atlas Logistics'}</p>
                                     </div>
-                                )}
 
-                                {shipment.imageUrls && shipment.imageUrls.length > 0 && (
-                                    <div className="mb-8">
-                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Attached Images</p>
-                                        <div className="grid grid-cols-2 gap-3 sm:gap-6">
-                                            {shipment.imageUrls.map((url: string, index: number) => (
-                                                <a
-                                                    key={index}
-                                                    href={url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="w-full relative rounded-2xl overflow-hidden border border-slate-200 hover:border-blue-300 transition-all group aspect-video shadow-sm"
-                                                >
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img src={url} alt={`Proof ${index}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                                                        <span className="text-white text-sm font-medium tracking-wide">Secure Asset Viewer — Parcel Item #{index + 1}</span>
+                                    {/* Product Details Table */}
+                                    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm divide-y divide-slate-200 mb-8">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Consignment Reference
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 font-mono break-all flex items-center">
+                                                {consignmentRef}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Tracking Number
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 font-mono break-all flex items-center">
+                                                {shipment.trackingNumber}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Carrier
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                {settings?.companyName || 'Atlas Logistics'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Origin Hub
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                {shipment.origin || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Destination Hub
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                {shipment.destination || 'N/A'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Shipping Description */}
+                                    {shipment.productDescription && (
+                                        <div className="mb-8">
+                                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Shipping Description</p>
+                                            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">{shipment.productDescription}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Recipient Information Section */}
+                                    <div className="mb-4 mt-8">
+                                        <p className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                            📦 Recipient Information (Final Delivery Point – {shipment.destination || 'Destination'})
+                                        </p>
+                                    </div>
+
+                                    {/* Recipient Info Table */}
+                                    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm divide-y divide-slate-200 mb-8">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Name
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                {shipment.parsedReceiver.name || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Address
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                {shipment.parsedReceiver.address || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Contact
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                {shipment.parsedReceiver.phone || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                            <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                Email
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center break-all">
+                                                {shipment.customerEmail || shipment.parsedReceiver.email || 'N/A'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Media Gallery */}
+                                    {shipment.imageUrls && shipment.imageUrls.length > 0 && (
+                                        <div className="mb-8">
+                                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Attached Images</p>
+                                            <div className="grid grid-cols-2 gap-3 sm:gap-6">
+                                                {shipment.imageUrls.map((url: string, index: number) => (
+                                                    <a
+                                                        key={index}
+                                                        href={url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="w-full relative rounded-2xl overflow-hidden border border-slate-200 hover:border-blue-300 transition-all group aspect-video shadow-sm"
+                                                    >
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img src={url} alt={`Proof ${index}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                                                            <span className="text-white text-sm font-medium tracking-wide">Secure Asset Viewer — Parcel Item #{index + 1}</span>
+                                                        </div>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {shipment.videoUrls && shipment.videoUrls.length > 0 && (
+                                        <div>
+                                            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Attached Videos</p>
+                                            <div className="grid grid-cols-1 gap-6">
+                                                {shipment.videoUrls.map((url: string, index: number) => (
+                                                    <div key={index} className="w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 shadow-md relative">
+                                                        <video src={url} controls controlsList="nodownload" className="w-full h-full object-contain" />
                                                     </div>
-                                                </a>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-
-                                {shipment.videoUrls && shipment.videoUrls.length > 0 && (
-                                    <div>
-                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Attached Videos</p>
-                                        <div className="grid grid-cols-1 gap-6">
-                                            {shipment.videoUrls.map((url: string, index: number) => (
-                                                <div key={index} className="w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 shadow-md relative">
-                                                    <video src={url} controls controlsList="nodownload" className="w-full h-full object-contain" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Right: Activity Log */}

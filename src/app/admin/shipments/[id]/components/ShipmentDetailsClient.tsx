@@ -70,6 +70,63 @@ interface Settings {
     supportPhone: string;
 }
 
+function generateConsignmentRef(origin: string | null | undefined, destination: string | null | undefined, trackingNumber: string): string {
+    const getCountryCode = (locationStr: string | null | undefined): string => {
+        if (!locationStr) return 'XX';
+        const s = locationStr.toUpperCase();
+        
+        // Match standard country abbreviations in parentheses: (US), (UK), (GH), (ACC), etc.
+        const parenMatch = s.match(/\(([^)]+)\)/);
+        if (parenMatch) {
+            const code = parenMatch[1].trim();
+            if (code.length === 2) return code;
+            if (code === 'ACC') return 'GH';
+            if (code === 'USA') return 'US';
+            if (code === 'UK') return 'UK';
+        }
+        
+        // Common matches
+        if (s.includes('GHANA')) return 'GH';
+        if (s.includes('UNITED STATES') || s.includes('USA') || s.includes('AMERICA')) return 'US';
+        if (s.includes('UNITED KINGDOM') || s.includes('UK') || s.includes('GREAT BRITAIN')) return 'UK';
+        if (s.includes('CANADA')) return 'CA';
+        if (s.includes('GERMANY')) return 'DE';
+        if (s.includes('FRANCE')) return 'FR';
+        if (s.includes('CHINA')) return 'CN';
+        if (s.includes('SPAIN')) return 'ES';
+        if (s.includes('ITALY')) return 'IT';
+        if (s.includes('TURKEY')) return 'TR';
+        if (s.includes('NIGERIA')) return 'NG';
+        if (s.includes('SOUTH AFRICA')) return 'ZA';
+        if (s.includes('UNITED ARAB EMIRATES') || s.includes('UAE')) return 'AE';
+        if (s.includes('SINGAPORE')) return 'SG';
+        if (s.includes('AUSTRALIA')) return 'AU';
+        
+        // Fallback: search for last word or comma separated parts
+        const parts = s.split(',');
+        const lastPart = parts[parts.length - 1].trim().replace(/[^A-Z]/g, '');
+        if (lastPart.length >= 2) {
+            return lastPart.substring(0, 2);
+        }
+        
+        const firstTwoLetters = s.replace(/[^A-Z]/g, '').substring(0, 2);
+        return firstTwoLetters.length === 2 ? firstTwoLetters : 'XX';
+    };
+
+    const originCode = getCountryCode(origin);
+    const destCode = getCountryCode(destination);
+    
+    // Deterministic 2-digit number from trackingNumber
+    let charSum = 0;
+    const cleanTrack = trackingNumber || '33';
+    for (let i = 0; i < cleanTrack.length; i++) {
+        charSum += cleanTrack.charCodeAt(i);
+    }
+    const numCode = (charSum % 90).toString().padStart(2, '0');
+
+    return `${originCode}-${destCode}-${numCode}-SCM`;
+}
+
 export default function ShipmentDetailsClient({ shipment, settings }: { shipment: Shipment, settings?: Settings | null }) {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -1696,27 +1753,123 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         </div>
 
                         {/* Product Details */}
-                        {(shipment.productDescription || (shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
-                            <div className="mb-8 pb-8 border-b border-brand-border print:border-none">
-                                <h3 className="text-brand-text text-xl font-black mb-4 print:text-black uppercase tracking-tight">Product Details</h3>
-                                <div className="grid grid-cols-1 gap-6">
-                                    {shipment.productDescription && (
-                                        <div className="space-y-4">
-                                            <div className="print:block hidden">
-                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Description</p>
+                        {shipment && (() => {
+                            const consignmentRef = generateConsignmentRef(shipment.origin, shipment.destination, shipment.trackingNumber);
+                            return (
+                                <div className="mb-8 pb-8 border-b border-brand-border print:border-none">
+                                    <h3 className="text-brand-text text-xl font-black mb-4 print:text-black uppercase tracking-tight">Product Details</h3>
+                                    
+                                    <div className="mb-4">
+                                        <p className="text-brand-text text-base font-bold">Shipment Summary — {settings?.companyName || 'Atlas Logistics'}</p>
+                                    </div>
+
+                                    {/* Product Details Table */}
+                                    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface divide-y divide-brand-border mb-6">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Consignment Reference
                                             </div>
-                                            <p className="text-brand-text print:text-black whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted font-mono break-all flex items-center">
+                                                {consignmentRef}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Tracking Number
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted font-mono break-all flex items-center">
+                                                {shipment.trackingNumber}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Carrier
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                                {settings?.companyName || 'Atlas Logistics'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Origin Hub
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                                {shipment.origin || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Destination Hub
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                                {shipment.destination || 'N/A'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Shipping Description */}
+                                    {shipment.productDescription && (
+                                        <div className="mb-6">
+                                            <p className="text-xs text-brand-text-muted uppercase font-bold tracking-widest mb-2">Shipping Description</p>
+                                            <div className="p-4 bg-brand-bg/50 rounded-xl border border-brand-border">
+                                                <p className="text-brand-text whitespace-pre-wrap leading-relaxed text-base">{shipment.productDescription}</p>
+                                            </div>
                                         </div>
                                     )}
+
+                                    {/* Recipient Information Section */}
+                                    <div className="mb-4 mt-6">
+                                        <p className="text-brand-text text-base font-bold flex items-center gap-2">
+                                            📦 Recipient Information (Final Delivery Point – {shipment.destination || 'Destination'})
+                                        </p>
+                                    </div>
+
+                                    {/* Recipient Info Table */}
+                                    <div className="border border-brand-border rounded-xl overflow-hidden bg-brand-surface divide-y divide-brand-border mb-6">
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Name
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                                {parsedReceiver.name || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Address
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                                {parsedReceiver.address || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Contact
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center">
+                                                {parsedReceiver.phone || 'N/A'}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+                                            <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center">
+                                                Email
+                                            </div>
+                                            <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center break-all">
+                                                {shipment.customerEmail || parsedReceiver.email || 'N/A'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Media Proof Gallery */}
                                     {((shipment.imageUrls && shipment.imageUrls.length > 0) || (shipment.videoUrls && shipment.videoUrls.length > 0)) && (
-                                        <div className="space-y-8">
+                                        <div className="space-y-8 mt-6">
                                             {shipment.imageUrls && shipment.imageUrls.length > 0 && (
                                                 <div>
                                                     <p className="text-brand-text-muted text-sm font-medium uppercase mb-3">Attached Images</p>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                                         {shipment.imageUrls.map((url: string, i: number) => (
                                                             <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-square bg-brand-surface rounded-xl overflow-hidden border border-brand-border hover:border-blue-500 transition-all hover:scale-[1.02] relative group shadow-sm">
-                                                                {/* eslint-disable-next-line @next/next-line @next/next-line @next/next/no-img-element */}
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                                                 <img src={url} alt={`Product ${i + 1}`} className="w-full h-full object-cover" />
                                                             </a>
                                                         ))}
@@ -1738,8 +1891,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Route Map (Visual) */}
                         {hasCoordinates && (
