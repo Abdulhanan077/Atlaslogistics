@@ -547,7 +547,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                                     <div className="mb-6">
                                         <p className="text-sm text-slate-500 font-medium">Description</p>
-                                        <p className="text-base font-bold text-slate-800 mt-0.5">Shipment Summary — {settings?.companyName || 'Atlas Logistics'}</p>
+                                        <p className="text-base font-bold text-black mt-0.5" style={{ fontFamily: "'Times New Roman', Times, serif" }}>Shipment Summary — {settings?.companyName || 'Atlas Logistics'}</p>
                                     </div>
 
                                     {/* Product Details Table */}
@@ -556,7 +556,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Consignment Reference
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 font-mono break-all flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 font-mono break-all flex items-center uppercase">
                                                 {consignmentRef}
                                             </div>
                                         </div>
@@ -564,7 +564,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Tracking Number
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 font-mono break-all flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 font-mono break-all flex items-center uppercase">
                                                 {shipment.trackingNumber}
                                             </div>
                                         </div>
@@ -572,7 +572,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Carrier
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                 {settings?.companyName || 'Atlas Logistics'}
                                             </div>
                                         </div>
@@ -581,14 +581,14 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                 <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                     Transit Mode
                                                 </div>
-                                                <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                     {(() => {
                                                         const vt = shipment.parsedSender.vehicleType;
-                                                        if (vt === 'TRUCK') return '🚚 Truck';
-                                                        if (vt === 'SHIP') return '🚢 Ship';
-                                                        if (vt === 'PLANE') return '✈️ Airplane';
-                                                        if (vt === 'VAN') return '🚐 Van';
-                                                        if (vt === 'TRAIN') return '🚆 Train';
+                                                        if (vt === 'TRUCK') return '🚚 TRUCK';
+                                                        if (vt === 'SHIP') return '🚢 SHIP';
+                                                        if (vt === 'PLANE') return '✈️ AIRPLANE';
+                                                        if (vt === 'VAN') return '🚐 VAN';
+                                                        if (vt === 'TRAIN') return '🚆 TRAIN';
                                                         return vt;
                                                     })()}
                                                 </div>
@@ -598,7 +598,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Origin Hub
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                 {shipment.origin || 'N/A'}
                                             </div>
                                         </div>
@@ -606,7 +606,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Destination Hub
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                 {shipment.destination || 'N/A'}
                                             </div>
                                         </div>
@@ -624,7 +624,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
                                     {/* Recipient Information Section */}
                                     <div className="mb-4 mt-8">
-                                        <p className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                        <p className="text-base font-bold text-black flex items-center gap-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
                                             📦 Recipient Information (Final Delivery Point – {shipment.destination || 'Destination'})
                                         </p>
                                     </div>
@@ -635,7 +635,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Name
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                 {shipment.parsedReceiver.name || 'N/A'}
                                             </div>
                                         </div>
@@ -643,7 +643,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Address
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                 {shipment.parsedReceiver.address || 'N/A'}
                                             </div>
                                         </div>
@@ -651,7 +651,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Contact
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center uppercase">
                                                 {shipment.parsedReceiver.phone || 'N/A'}
                                             </div>
                                         </div>
@@ -659,7 +659,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Email
                                             </div>
-                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center break-all">
+                                            <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center break-all uppercase">
                                                 {shipment.customerEmail || shipment.parsedReceiver.email || 'N/A'}
                                             </div>
                                         </div>
