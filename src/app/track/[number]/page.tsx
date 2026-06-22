@@ -617,7 +617,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         <div className="mb-8">
                                             <p className="text-xs text-slate-500 uppercase font-bold tracking-widest mb-4">Shipping Description</p>
                                             <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                                                <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">{shipment.productDescription}</p>
+                                                <p className="text-black leading-relaxed text-lg whitespace-pre-wrap" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{shipment.productDescription}</p>
                                             </div>
                                         </div>
                                     )}

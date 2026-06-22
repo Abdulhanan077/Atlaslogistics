@@ -27,6 +27,8 @@ interface MailOptions {
     to: string;
     subject: string;
     html: string;
+    text?: string;
+    replyTo?: string;
     attachments?: Array<{
         filename: string;
         content: Buffer | string;
@@ -270,11 +272,15 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
             </html>
         `;
 
+        const replyToEmail = settings?.supportEmail || 'support@atlaslogistics.site';
+
         const mailOptions: MailOptions = {
             from: emailHeaderName,
             to: to,
             subject: subject,
             html: html,
+            text: bodyText,
+            replyTo: replyToEmail,
         };
 
         if (attachment) {
@@ -368,11 +374,15 @@ export async function sendPasswordResetEmail(to: string, resetCode: string) {
             </html>
         `;
 
+        const replyToEmail = settings?.supportEmail || 'support@atlaslogistics.site';
+
         const mailOptions: MailOptions = {
             from: emailHeaderName,
             to: to,
             subject: 'Password Reset Sequence Initiated',
             html: html,
+            text: `Hi administrator,\n\nWe received a request to securely reset your password for the ${companyName} administrative panel.\n\nPlease use the 6-digit code below to set a new password:\n\n${resetCode}\n\nFor security reasons, this link will expire in exactly 1 hour.\n\nIf you did not make this request, you can safely ignore this email.`,
+            replyTo: replyToEmail,
         };
 
         const info = await transporter.sendMail(mailOptions);
@@ -452,11 +462,15 @@ export async function sendChatNotification(to: string, trackingNumber: string, s
             </html>
         `;
 
+        const replyToEmail = settings?.supportEmail || 'support@atlaslogistics.site';
+
         const mailOptions: MailOptions = {
             from: emailHeaderName,
             to: to,
             subject: `New Message Regarding Shipment ${trackingNumber}`,
             html: html,
+            text: `${isToAdmin ? 'A customer has replied to their shipment tracking thread.' : 'An administrator has replied to your tracking thread.'}\n\nTracking Number: ${trackingNumber}\n\n"${messageContent}"\n\nView details: ${actionUrl}`,
+            replyTo: replyToEmail,
         };
 
         const info = await transporter.sendMail(mailOptions);
@@ -636,11 +650,17 @@ export async function sendPaymentNotificationEmail({
             </html>
         `;
 
+        const replyToEmail = settings?.supportEmail || 'support@atlaslogistics.site';
+
         const mailOptions: MailOptions = {
             from: emailHeaderName,
             to: to,
             subject: subject,
             html: html,
+            text: `${isNewPayment 
+                ? `We are writing to confirm that an installment payment of $${newPaymentAmount.toFixed(2)} has been credited to your shipment hold account.` 
+                : `We are writing to provide a statement reminder of the outstanding storage fees and remaining balance for your shipment.`}\n\nTracking Number: ${trackingNumber}\nTotal Amount Due: $${totalDue.toFixed(2)}\nTotal Paid to Date: -$${amountPaid.toFixed(2)}\nRemaining Balance Due: $${remainingBalance.toFixed(2)}\n\nTrack your shipment: ${trackingUrl}`,
+            replyTo: replyToEmail,
         };
 
         const info = await transporter.sendMail(mailOptions);
