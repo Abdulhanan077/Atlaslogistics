@@ -26,11 +26,11 @@ export function parseShipmentInfo(infoString: string | null | undefined) {
     try {
         const parsed = JSON.parse(infoString);
         return {
+            ...parsed, // Keep other fields like destLat, destLng
             name: scrub(parsed.name || ''),
             phone: scrub(parsed.phone || ''),
             address: scrub(parsed.address || ''),
             vehicleType: parsed.vehicleType || 'TRUCK',
-            ...parsed, // Keep other fields like destLat, destLng
         };
     } catch {
         const parts = infoString.split(',').map(s => s.trim());

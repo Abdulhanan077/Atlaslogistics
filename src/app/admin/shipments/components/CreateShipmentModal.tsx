@@ -199,6 +199,7 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                                     <option value="PLANE">✈️ Airplane</option>
                                     <option value="VAN">🚐 Van</option>
                                     <option value="TRAIN">🚆 Train</option>
+                                    <option value="NONE">❌ None</option>
                                 </select>
                             </div>
                         </div>

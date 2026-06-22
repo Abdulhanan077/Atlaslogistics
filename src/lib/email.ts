@@ -56,6 +56,8 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
         const settings = await prisma.siteSettings.findUnique({ where: { id: "default" } });
         const companyName = settings?.companyName || 'Atlas Logistics';
         const emailHeaderName = `${companyName} <${process.env.SCALEWAY_SENDER_EMAIL || 'noreply@yourdomain.com'}>`;
+        const brandColor = settings?.emailBrandColor || '#2563eb';
+        const headerBg = settings?.emailHeaderBg || '#0f172a';
         
         const trackingUrl = `${process.env.NEXTAUTH_URL}/track/${trackingNumber}`;
         const upperStatus = status.toUpperCase();
@@ -66,15 +68,16 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
             switch (s.toUpperCase()) {
                 case 'CREATED':
                 case 'PENDING': return 'color: #ca8a04; background-color: #fefce8; border: 1px solid #fef08a;'; 
-                case 'IN_TRANSIT': return 'color: #2563eb; background-color: #eff6ff; border: 1px solid #bfdbfe;';
+                case 'IN_TRANSIT': return `color: ${brandColor}; background-color: #eff6ff; border: 1px solid #bfdbfe;`;
                 case 'ON_HOLD': return 'color: #ea580c; background-color: #fff7ed; border: 1px solid #fed7aa;';
                 case 'OUT_FOR_DELIVERY': return 'color: #9333ea; background-color: #faf5ff; border: 1px solid #e9d5ff;';
                 case 'DELIVERED': return 'color: #059669; background-color: #ecfdf5; border: 1px solid #a7f3d0;';
                 case 'RETURNED': return 'color: #dc2626; background-color: #fef2f2; border: 1px solid #fecaca;';
-                default: return 'color: #2563eb; background-color: #eff6ff; border: 1px solid #bfdbfe;'; 
+                default: return `color: ${brandColor}; background-color: #eff6ff; border: 1px solid #bfdbfe;`; 
             }
         };
 
+        // Core fallback/default email texts
         switch (upperStatus) {
             case 'CREATED':
                 subject = `Shipment Confirmed: Tracking Number ${trackingNumber}`;
@@ -106,6 +109,42 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                 break;
         }
 
+        // Apply custom templates if configured
+        if (settings?.emailTemplates) {
+            try {
+                const templatesMap = JSON.parse(settings.emailTemplates);
+                const template = templatesMap[upperStatus];
+                
+                const interpolateTemplate = (tpl: string) => {
+                    if (!tpl) return '';
+                    return tpl
+                        .replace(/{trackingNumber}/g, trackingNumber || '')
+                        .replace(/{receiverName}/g, receiverName || '')
+                        .replace(/{senderName}/g, senderName || '')
+                        .replace(/{origin}/g, origin || '')
+                        .replace(/{destination}/g, destination || '')
+                        .replace(/{receiverAddress}/g, receiverAddress || '')
+                        .replace(/{estimatedDelivery}/g, estimatedDelivery || '')
+                        .replace(/{status}/g, status.replace(/_/g, ' ') || '')
+                        .replace(/{companyName}/g, companyName || '');
+                };
+
+                if (template) {
+                    if (template.subject && template.subject.trim()) {
+                        subject = interpolateTemplate(template.subject);
+                    }
+                    if (template.body && template.body.trim()) {
+                        bodyText = interpolateTemplate(template.body);
+                    }
+                }
+            } catch (e) {
+                console.error("[EMAIL_TEMPLATE_PARSE_ERROR]", e);
+            }
+        }
+
+        // Format newlines as HTML br tags
+        const formattedBodyText = bodyText.replace(/\r?\n/g, '<br />');
+
         const html = `
             <!DOCTYPE html>
             <html lang="en">
@@ -121,7 +160,7 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                             <table width="100%" max-width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
                                 <!-- Header -->
                                 <tr>
-                                    <td align="center" style="background-color: #0f172a; padding: 40px 20px; border-bottom: 4px solid #2563eb;">
+                                    <td align="center" style="background-color: ${headerBg}; padding: 40px 20px; border-bottom: 4px solid ${brandColor};">
                                         ${settings?.logoUrl 
                                             ? `<img src="${settings.logoUrl}" alt="${companyName}" style="height: 60px; max-width: 250px; object-fit: contain; display: block;" />`
                                             : `<div style="color: #ffffff; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin: 0;">${companyName}</div>`
@@ -138,7 +177,7 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         </h2>
                                         
                                         <!-- Tracking & Status Card -->
-                                        <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 16px 20px; border-radius: 4px; margin-bottom: 24px;">
+                                        <div style="background-color: #f8fafc; border-left: 4px solid ${brandColor}; padding: 16px 20px; border-radius: 4px; margin-bottom: 24px;">
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                                 <tr>
                                                     <td>
@@ -161,7 +200,7 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         ` : ''}
                                         
                                         <p style="font-size: 16px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-                                            ${bodyText}
+                                            ${formattedBodyText}
                                         </p>
 
                                         ${(status.toUpperCase() === 'ON_HOLD' || (holdFee !== undefined && holdFee !== null && holdFee > 0)) ? `
@@ -179,7 +218,7 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         </div>
                                         ` : ''}
 
-                                        ${(senderName || receiverAddress || origin || destination || estimatedDelivery) ? `
+                                        ${(status.toUpperCase() === 'CREATED' && (senderName || receiverAddress || origin || destination || estimatedDelivery)) ? `
                                         <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
                                             <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Shipment Details</h3>
                                             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 14px; line-height: 1.6;">
@@ -203,7 +242,7 @@ export async function sendShipmentEmail({ to, trackingNumber, status, location, 
                                         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 30px;">
                                             <tr>
                                                 <td align="center">
-                                                    <a href="${trackingUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center; border: 1px solid #1d4ed8;">
+                                                    <a href="${trackingUrl}" style="display: inline-block; background-color: ${brandColor}; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center; border: 1px solid ${brandColor};">
                                                         Track Your Shipment
                                                     </a>
                                                 </td>

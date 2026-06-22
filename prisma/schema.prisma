@@ -137,5 +137,9 @@ model SiteSettings {
   zelleName         String   @default("")
   customCryptoMethods String @default("[]")
   customStandardMethods String @default("[]")
+  emailBrandColor     String   @default("#2563eb")
+  emailHeaderBg       String   @default("#0f172a")
+  emailTemplates      String   @default("{}")
   updatedAt         DateTime @updatedAt
 }
+

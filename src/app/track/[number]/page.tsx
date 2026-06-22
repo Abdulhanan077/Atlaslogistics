@@ -576,6 +576,24 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                 {settings?.companyName || 'Atlas Logistics'}
                                             </div>
                                         </div>
+                                        {shipment.parsedSender.vehicleType && shipment.parsedSender.vehicleType !== 'NONE' && (
+                                            <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+                                                <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
+                                                    Transit Mode
+                                                </div>
+                                                <div className="w-full sm:w-2/3 px-6 py-4 text-sm text-slate-600 flex items-center">
+                                                    {(() => {
+                                                        const vt = shipment.parsedSender.vehicleType;
+                                                        if (vt === 'TRUCK') return '🚚 Truck';
+                                                        if (vt === 'SHIP') return '🚢 Ship';
+                                                        if (vt === 'PLANE') return '✈️ Airplane';
+                                                        if (vt === 'VAN') return '🚐 Van';
+                                                        if (vt === 'TRAIN') return '🚆 Train';
+                                                        return vt;
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
                                             <div className="w-full sm:w-1/3 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-900 flex items-center">
                                                 Origin Hub

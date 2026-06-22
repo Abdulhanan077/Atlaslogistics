@@ -61,6 +61,7 @@ export async function PATCH(req: Request) {
         const body = await req.json();
         const { 
             companyName, supportEmail, chatNotificationEmail, supportPhone, logoUrl, theme, 
+            emailBrandColor, emailHeaderBg, emailTemplates,
             usdtTrc20Address, usdtTrc20Enabled, 
             usdtBep20Address, usdtBep20Enabled, 
             btcAddress, btcEnabled,
@@ -110,6 +111,9 @@ export async function PATCH(req: Request) {
                 supportPhone: supportPhone !== undefined ? supportPhone : undefined,
                 logoUrl: logoUrl !== undefined ? logoUrl : undefined,
                 theme: theme !== undefined ? theme : undefined,
+                emailBrandColor: emailBrandColor !== undefined ? emailBrandColor : undefined,
+                emailHeaderBg: emailHeaderBg !== undefined ? emailHeaderBg : undefined,
+                emailTemplates: emailTemplates !== undefined ? emailTemplates : undefined,
                 ...(isSuperAdmin ? {
                     usdtTrc20Address: usdtTrc20Address !== undefined ? usdtTrc20Address : undefined,
                     usdtTrc20Enabled: usdtTrc20Enabled !== undefined ? usdtTrc20Enabled : undefined,
@@ -141,6 +145,9 @@ export async function PATCH(req: Request) {
                 supportPhone: supportPhone || "",
                 logoUrl: logoUrl || "",
                 theme: theme || "dark",
+                emailBrandColor: emailBrandColor || "#2563eb",
+                emailHeaderBg: emailHeaderBg || "#0f172a",
+                emailTemplates: emailTemplates || "{}",
                 usdtTrc20Address: usdtTrc20Address || "",
                 usdtTrc20Enabled: usdtTrc20Enabled !== undefined ? usdtTrc20Enabled : true,
                 usdtBep20Address: usdtBep20Address || "",

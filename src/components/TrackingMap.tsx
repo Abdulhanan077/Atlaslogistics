@@ -20,6 +20,16 @@ const calculateBearing = (startLat: number, startLng: number, endLat: number, en
 };
 
 const getVehicleIcon = (type: string, rotation: number = 0) => {
+    if (type === 'NONE') {
+        return L.divIcon({
+            className: 'custom-vehicle-icon-none',
+            html: `<div style="background: #3b82f6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); border: 2px solid white; font-size: 16px;">📍</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+            popupAnchor: [0, -16]
+        });
+    }
+
     let emoji = "🚚";
     let baseRotation = 90; // Default emojis (truck, ship, etc) face left. For North (0 deg), rotate 90 deg.
     const isSideView = type !== 'PLANE';
@@ -339,6 +349,7 @@ export default function TrackingMap({
                             <Marker 
                                 position={center} 
                                 icon={getVehicleIcon(vehicleType, bearing)}
+                                zIndexOffset={1000}
                                 draggable={!!onDragEnd}
                                 eventHandlers={{
                                     dragend: (e) => {
@@ -398,7 +409,7 @@ export default function TrackingMap({
                             })()}
                         </>
                     ) : (
-                        <Marker position={center} icon={getVehicleIcon(vehicleType)}>
+                        <Marker position={center} icon={getVehicleIcon(vehicleType)} zIndexOffset={1000}>
                             <Popup>
                                 <span className="font-semibold text-slate-800">{locationName}</span>
                             </Popup>

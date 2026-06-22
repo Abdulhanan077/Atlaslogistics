@@ -1419,6 +1419,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                         <option value="PLANE">Airplane</option>
                                                         <option value="VAN">Van</option>
                                                         <option value="TRAIN">Train</option>
+                                                        <option value="NONE">None</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -1822,6 +1823,24 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 {settings?.companyName || 'Atlas Logistics'}
                                             </div>
                                         </div>
+                                        {parsedSender.vehicleType && parsedSender.vehicleType !== 'NONE' && (
+                                            <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
+                                                <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
+                                                    Transit Mode
+                                                </div>
+                                                <div className="w-full sm:w-2/3 px-4 py-3 text-sm text-brand-text-muted flex items-center print:text-gray-800">
+                                                    {(() => {
+                                                        const vt = parsedSender.vehicleType;
+                                                        if (vt === 'TRUCK') return '🚚 Truck';
+                                                        if (vt === 'SHIP') return '🚢 Ship';
+                                                        if (vt === 'PLANE') return '✈️ Airplane';
+                                                        if (vt === 'VAN') return '🚐 Van';
+                                                        if (vt === 'TRAIN') return '🚆 Train';
+                                                        return vt;
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-brand-border print:divide-gray-300">
                                             <div className="w-full sm:w-1/3 bg-brand-bg/50 px-4 py-3 text-sm font-bold text-brand-text flex items-center print:bg-gray-50 print:text-black">
                                                 Origin Hub
@@ -2210,6 +2229,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                             <option value="PLANE">✈️ Airplane</option>
                             <option value="VAN">🚐 Van</option>
                             <option value="TRAIN">🚆 Train</option>
+                            <option value="NONE">❌ None</option>
                         </select>
                     </div>
 

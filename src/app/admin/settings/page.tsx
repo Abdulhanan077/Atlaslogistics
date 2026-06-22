@@ -7,6 +7,37 @@ import { useTheme } from '@/components/ThemeProvider';
 import { uploadToR2 as upload } from '@/lib/upload-client';
 import { useSession } from 'next-auth/react';
 
+const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
+    CREATED: {
+        subject: "Shipment Confirmed: Tracking Number {trackingNumber}",
+        body: "We are pleased to confirm that we have received the billing and route details for your shipment. Your package is currently being processed at our origin facility and is being prepped for secure dispatch. You will receive another notification once the shipment is picked up and in transit."
+    },
+    PENDING: {
+        subject: "Awaiting Pickup: Shipment {trackingNumber} - Status Update",
+        body: "Your shipment status is now updated to Pending. This indicates that your package is scheduled for pickup by our courier team or is awaiting arrival at our local processing center. No action is required on your part at this time. Once the package has been scanned into our system, transit tracking will begin immediately."
+    },
+    IN_TRANSIT: {
+        subject: "In Transit: Tracking Update for Shipment {trackingNumber}",
+        body: "Your package is on its journey. It has departed from our regional logistics facility and is actively moving towards the destination. Our logistics network is tracking the shipment at every milestone to ensure secure transit. You can see the full route details and current location by clicking the tracking button below."
+    },
+    ON_HOLD: {
+        subject: "Important Update: Shipment {trackingNumber} Placed on Hold",
+        body: "Your shipment has been temporarily placed on hold. A hold state is typically applied when additional details (such as address verification or customs documentation) are required, or when storage fee reviews are pending. Please review the hold details and notice box below for instructions. If you need assistance resolving this hold, please click the tracking button and use the support chat to contact us."
+    },
+    OUT_FOR_DELIVERY: {
+        subject: "Out for Delivery: Expect your shipment today ({trackingNumber})",
+        body: "Great news! Your package has been sorted, loaded onto a local delivery vehicle, and is out for delivery today. Our driver is scheduled to arrive at your destination address before end of day. If a signature is required, please ensure an authorized recipient is present to sign for the package."
+    },
+    DELIVERED: {
+        subject: "Delivered: Shipment {trackingNumber} has arrived",
+        body: "Your package has been successfully delivered! Our courier has confirmed drop-off at your specified address. If you cannot find the package, please check around your building entrance, mailroom, or neighbors, or contact our support team immediately via our chat box by clicking the link below."
+    },
+    RETURNED: {
+        subject: "Returned Notice: Shipment {trackingNumber} returning to sender",
+        body: "We were unable to complete the delivery of your shipment, and it is now being returned to the sender. Common reasons for return include invalid delivery address details, multiple failed delivery attempts, or package rejection at the destination. Please contact the sender or reach out to our logistics support team for details on re-routing or re-shipping."
+    }
+};
+
 export default function SettingsDashboard() {
     const { data: session } = useSession();
     const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN';
@@ -16,6 +47,10 @@ export default function SettingsDashboard() {
     const [customCrypto, setCustomCrypto] = useState<Array<{ id: string; name: string; address: string; enabled: boolean }>>([]);
     const [customStandard, setCustomStandard] = useState<Array<{ id: string; name: string; value: string; payeeName: string; enabled: boolean }>>([]);
     
+    // Status custom templates map state
+    const [templatesMap, setTemplatesMap] = useState<Record<string, { subject: string; body: string }>>({});
+    const [activeStatusTab, setActiveStatusTab] = useState('CREATED');
+
     const [settings, setSettings] = useState({
         companyName: '',
         supportEmail: '',
@@ -40,7 +75,10 @@ export default function SettingsDashboard() {
         venmoName: '',
         zelleEmail: '',
         zelleEnabled: false,
-        zelleName: ''
+        zelleName: '',
+        emailBrandColor: '#2563eb',
+        emailHeaderBg: '#0f172a',
+        emailTemplates: '{}'
     });
 
     useEffect(() => {
@@ -75,9 +113,20 @@ export default function SettingsDashboard() {
                         venmoName: data.venmoName || '',
                         zelleEmail: data.zelleEmail || '',
                         zelleEnabled: data.zelleEnabled || false,
-                        zelleName: data.zelleName || ''
+                        zelleName: data.zelleName || '',
+                        emailBrandColor: data.emailBrandColor || '#2563eb',
+                        emailHeaderBg: data.emailHeaderBg || '#0f172a',
+                        emailTemplates: data.emailTemplates || '{}'
                     });
                     
+                    if (data.emailTemplates) {
+                        try {
+                            setTemplatesMap(JSON.parse(data.emailTemplates));
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+
                     if (data.customCryptoMethods) {
                         try {
                             setCustomCrypto(JSON.parse(data.customCryptoMethods));
@@ -116,6 +165,7 @@ export default function SettingsDashboard() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...settings,
+                    emailTemplates: JSON.stringify(templatesMap),
                     customCryptoMethods: JSON.stringify(customCrypto),
                     customStandardMethods: JSON.stringify(customStandard)
                 })
@@ -347,6 +397,201 @@ export default function SettingsDashboard() {
                                     <Sun className="w-5 h-5" />
                                     Light Mode
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Email Branding & Custom Templates */}
+                <div className="p-8 border-b border-brand-border/50">
+                    <h2 className="text-xl font-semibold text-brand-text mb-6 flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-blue-500" />
+                        Email Customization & Branding
+                    </h2>
+                    <p className="text-sm text-brand-text-muted mb-6">
+                        Customize the visual branding of outgoing emails and override the automated subject lines and messages sent to customers.
+                    </p>
+
+                    <div className="space-y-6">
+                        {/* Branding Colors */}
+                        <div className="bg-brand-bg/50 border border-brand-border/50 rounded-2xl p-6 space-y-4">
+                            <h3 className="text-sm font-semibold text-brand-text">Email Brand Colors</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-xs font-medium text-brand-text-muted mb-2">Accent / Button Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={settings.emailBrandColor}
+                                            onChange={e => setSettings({...settings, emailBrandColor: e.target.value})}
+                                            className="w-12 h-10 bg-brand-surface border border-brand-border rounded-xl cursor-pointer p-1"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={settings.emailBrandColor}
+                                            onChange={e => setSettings({...settings, emailBrandColor: e.target.value})}
+                                            placeholder="#2563eb"
+                                            className="flex-1 bg-brand-surface border border-brand-border text-brand-text rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-brand-text-muted mb-2">Header Background Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={settings.emailHeaderBg}
+                                            onChange={e => setSettings({...settings, emailHeaderBg: e.target.value})}
+                                            className="w-12 h-10 bg-brand-surface border border-brand-border rounded-xl cursor-pointer p-1"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={settings.emailHeaderBg}
+                                            onChange={e => setSettings({...settings, emailHeaderBg: e.target.value})}
+                                            placeholder="#0f172a"
+                                            className="flex-1 bg-brand-surface border border-brand-border text-brand-text rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Templates Editor */}
+                        <div className="bg-brand-bg/50 border border-brand-border/50 rounded-2xl p-6 space-y-6">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-border/50 pb-4">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-brand-text">Status Notification Templates</h3>
+                                    <p className="text-xs text-brand-text-muted mt-1">Select a status below to customize its automated email copy.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (confirm(`Are you sure you want to reset the template for ${activeStatusTab} to default?`)) {
+                                            const updated = { ...templatesMap };
+                                            delete updated[activeStatusTab];
+                                            setTemplatesMap(updated);
+                                            toast.success('Template reset to default values.');
+                                        }
+                                    }}
+                                    className="text-xs font-bold text-slate-400 hover:text-red-400 hover:bg-red-500/10 px-3 py-1.5 rounded-lg border border-brand-border transition-all self-start md:self-auto"
+                                >
+                                    Reset to Default
+                                </button>
+                            </div>
+
+                            {/* Status Tabs Navigation */}
+                            <div className="flex flex-wrap gap-1.5 p-1 bg-brand-surface border border-brand-border rounded-xl overflow-x-auto">
+                                {[
+                                    { key: 'CREATED', label: 'Confirmed' },
+                                    { key: 'PENDING', label: 'Pending' },
+                                    { key: 'IN_TRANSIT', label: 'In Transit' },
+                                    { key: 'ON_HOLD', label: 'On Hold' },
+                                    { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+                                    { key: 'DELIVERED', label: 'Delivered' },
+                                    { key: 'RETURNED', label: 'Returned' }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => setActiveStatusTab(tab.key)}
+                                        className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                                            activeStatusTab === tab.key
+                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
+                                            : 'text-brand-text-muted hover:text-brand-text hover:bg-brand-bg/50'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Active Template Editor Form */}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-brand-text-muted mb-2">Subject Line</label>
+                                    <input
+                                        type="text"
+                                        value={templatesMap[activeStatusTab]?.subject || ''}
+                                        onChange={e => {
+                                            const current = templatesMap[activeStatusTab] || { subject: '', body: '' };
+                                            setTemplatesMap({
+                                                ...templatesMap,
+                                                [activeStatusTab]: {
+                                                    ...current,
+                                                    subject: e.target.value
+                                                }
+                                            });
+                                        }}
+                                        placeholder={`Default: ${DEFAULT_TEMPLATES[activeStatusTab]?.subject}`}
+                                        className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-brand-text-muted mb-2">Email Body Text</label>
+                                    <textarea
+                                        rows={6}
+                                        value={templatesMap[activeStatusTab]?.body || ''}
+                                        onChange={e => {
+                                            const current = templatesMap[activeStatusTab] || { subject: '', body: '' };
+                                            setTemplatesMap({
+                                                ...templatesMap,
+                                                [activeStatusTab]: {
+                                                    ...current,
+                                                    body: e.target.value
+                                                }
+                                            });
+                                        }}
+                                        placeholder={`Default: ${DEFAULT_TEMPLATES[activeStatusTab]?.body}`}
+                                        className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none transition-all leading-relaxed"
+                                    />
+                                </div>
+                                
+                                {/* Info Box */}
+                                {!templatesMap[activeStatusTab]?.subject && !templatesMap[activeStatusTab]?.body && (
+                                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-slate-300">
+                                        💡 Currently using default automated template text. Modify the subject or body above to customize this email.
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Variables Legend */}
+                            <div className="border-t border-brand-border/50 pt-4 space-y-2">
+                                <h4 className="text-xs font-semibold text-brand-text">Available Dynamic Variables</h4>
+                                <p className="text-[11px] text-brand-text-muted">Insert these variables in your subject or body. They will be dynamically replaced when dispatching emails:</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                    {[
+                                        { code: '{trackingNumber}', desc: 'Tracking #' },
+                                        { code: '{receiverName}', desc: 'Recipient Name' },
+                                        { code: '{senderName}', desc: 'Sender Name' },
+                                        { code: '{origin}', desc: 'Origin Location' },
+                                        { code: '{destination}', desc: 'Destination Location' },
+                                        { code: '{receiverAddress}', desc: 'Delivery Address' },
+                                        { code: '{estimatedDelivery}', desc: 'Est. Delivery Date' },
+                                        { code: '{companyName}', desc: 'Company Name' },
+                                        { code: '{status}', desc: 'Shipment Status' }
+                                    ].map(variable => (
+                                        <button
+                                            key={variable.code}
+                                            type="button"
+                                            onClick={() => {
+                                                const current = templatesMap[activeStatusTab] || { subject: '', body: '' };
+                                                setTemplatesMap({
+                                                    ...templatesMap,
+                                                    [activeStatusTab]: {
+                                                        ...current,
+                                                        body: (current.body + ' ' + variable.code).trim()
+                                                    }
+                                                });
+                                                toast.success(`Appended ${variable.code} to body`);
+                                            }}
+                                            className="text-left p-2 rounded-xl bg-brand-surface hover:bg-brand-border/30 border border-brand-border/50 transition-all text-xs font-mono group"
+                                            title="Click to append to email body"
+                                        >
+                                            <span className="text-blue-500 group-hover:text-blue-400 font-bold block">{variable.code}</span>
+                                            <span className="text-[10px] text-brand-text-muted mt-0.5 block">{variable.desc}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>

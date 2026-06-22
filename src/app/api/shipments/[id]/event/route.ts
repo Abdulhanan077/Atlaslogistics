@@ -98,6 +98,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
         if (shipment.customerEmail) {
             const receiver = parseShipmentInfo(shipment.receiverInfo);
+            const sender = parseShipmentInfo(shipment.senderInfo);
             
             const truncatedDesc = description 
                 ? (description.length > 150 ? description.substring(0, 147) + '...' : description)
@@ -110,6 +111,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 location: location || "In Transit",
                 description: truncatedDesc,
                 receiverName: receiver.name,
+                receiverAddress: receiver.address,
+                senderName: sender.name,
+                origin: shipment.origin || undefined,
+                destination: shipment.destination || undefined,
+                estimatedDelivery: shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : undefined,
+                productDescription: shipment.productDescription || undefined,
                 holdFee: status === 'ON_HOLD' ? (holdFee !== undefined && holdFee !== null && holdFee !== '' ? parseFloat(holdFee.toString()) : 0) : undefined,
                 holdReason: status === 'ON_HOLD' ? holdReason || undefined : undefined
             });

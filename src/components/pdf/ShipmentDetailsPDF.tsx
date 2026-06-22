@@ -259,6 +259,19 @@ const ShipmentDetailsPDF: React.FC<ShipmentDetailsPDFProps> = ({ shipment, setti
                         <Text style={styles.productTitle}>Product Details</Text>
                         <Text style={styles.descLabel}>Description</Text>
                         <Text style={styles.productDesc}>{shipment.productDescription}</Text>
+                        {sender.vehicleType && sender.vehicleType !== 'NONE' && (
+                            <View style={{ marginTop: 10 }}>
+                                <Text style={styles.descLabel}>Transit Mode</Text>
+                                <Text style={styles.productDesc}>
+                                    {sender.vehicleType === 'TRUCK' ? 'Truck' :
+                                     sender.vehicleType === 'SHIP' ? 'Ship' :
+                                     sender.vehicleType === 'PLANE' ? 'Airplane' :
+                                     sender.vehicleType === 'VAN' ? 'Van' :
+                                     sender.vehicleType === 'TRAIN' ? 'Train' :
+                                     sender.vehicleType}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
 

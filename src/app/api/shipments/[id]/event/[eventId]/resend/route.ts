@@ -39,6 +39,7 @@ export async function POST(
         }
 
         const receiver = parseShipmentInfo(shipment.receiverInfo);
+        const sender = parseShipmentInfo(shipment.senderInfo);
         
         const description = event.description || "Status updated";
         const truncatedDesc = description.length > 150 
@@ -52,6 +53,12 @@ export async function POST(
             location: event.location || "In Transit",
             description: truncatedDesc,
             receiverName: receiver.name,
+            receiverAddress: receiver.address,
+            senderName: sender.name,
+            origin: shipment.origin || undefined,
+            destination: shipment.destination || undefined,
+            estimatedDelivery: shipment.estimatedDelivery ? new Date(shipment.estimatedDelivery).toLocaleDateString() : undefined,
+            productDescription: shipment.productDescription || undefined,
             holdFee: event.status === 'ON_HOLD' ? event.holdFee : undefined,
             holdReason: event.status === 'ON_HOLD' ? event.holdReason : undefined
         });
