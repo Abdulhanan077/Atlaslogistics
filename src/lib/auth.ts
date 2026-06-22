@@ -32,7 +32,32 @@ export const authOptions: NextAuthOptions = {
                 });
 
                 if (!user) {
-                    return null;
+                    const shipment = await prisma.shipment.findFirst({
+                        where: {
+                            trackerUsername: credentials.email,
+                            isDeleted: false
+                        }
+                    });
+
+                    if (!shipment || !shipment.trackerPassword) {
+                        return null;
+                    }
+
+                    const isPasswordValid = await bcrypt.compare(
+                        credentials.password,
+                        shipment.trackerPassword
+                    );
+
+                    if (!isPasswordValid) {
+                        return null;
+                    }
+
+                    return {
+                        id: shipment.id,
+                        email: shipment.trackerUsername || "",
+                        name: shipment.trackingNumber,
+                        role: "TRACKER",
+                    };
                 }
 
                 const isPasswordValid = await bcrypt.compare(

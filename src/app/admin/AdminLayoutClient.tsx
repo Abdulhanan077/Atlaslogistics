@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import AdminSidebar from '@/components/admin/Sidebar';
 import AdminHeader from '@/components/admin/Header';
 import { Menu } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface AdminUser {
+    id: string;
     name?: string | null;
     role: string;
     email?: string | null;
@@ -26,6 +28,17 @@ export default function AdminLayoutClient({
     settings: SiteSettings | null
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const pathname = usePathname();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (user && user.role === 'TRACKER') {
+            const allowedPath = `/admin/shipments/${user.id}`;
+            if (pathname !== allowedPath) {
+                router.replace(allowedPath);
+            }
+        }
+    }, [pathname, user, router]);
 
     if (!user) return null; // Safe fallback
 
@@ -46,7 +59,7 @@ export default function AdminLayoutClient({
                 print:hidden
             `}>
                 <Suspense fallback={<div className="w-full h-full bg-brand-surface border-r border-brand-border" />}>
-                    <AdminSidebar role={user.role} onClose={() => setIsSidebarOpen(false)} settings={settings} />
+                    <AdminSidebar role={user.role} userId={user.id} onClose={() => setIsSidebarOpen(false)} settings={settings} />
                 </Suspense>
             </div>
 

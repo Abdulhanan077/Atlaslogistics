@@ -9,8 +9,9 @@ interface SiteSettings {
     logoUrl?: string | null;
 }
 
-export default function AdminSidebar({ role, onClose, settings }: { 
+export default function AdminSidebar({ role, userId, onClose, settings }: { 
     role: string; 
+    userId?: string;
     onClose?: () => void;
     settings: SiteSettings | null;
 }) {
@@ -18,7 +19,9 @@ export default function AdminSidebar({ role, onClose, settings }: {
     const searchParams = useSearchParams();
     const viewAs = searchParams.get('viewAs');
 
-    const links = [
+    const links = role === 'TRACKER' ? [
+        { href: `/admin/shipments/${userId}`, label: 'My Shipment', icon: Package }
+    ] : [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/admin/shipments', label: 'Shipments', icon: Package },
         { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },

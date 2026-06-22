@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 import { logAction } from "@/lib/logger";
 
@@ -14,11 +15,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const body = await req.json();
 
         // Allowed fields to update
-        const { createdAt, status, origin, destination, trackingNumber, productDescription, imageUrls, videoUrls, senderInfo, receiverInfo, customerEmail, holdFee, holdReason, holdHidden } = body;
+        const { createdAt, status, origin, destination, trackingNumber, productDescription, imageUrls, videoUrls, senderInfo, receiverInfo, customerEmail, holdFee, holdReason, holdHidden, trackerUsername, trackerPassword } = body;
 
         // Verify ownership
         const existingShipment = await prisma.shipment.findUnique({ where: { id } });
-        if (!existingShipment || (existingShipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
+        if (!existingShipment) {
+            return new NextResponse("Not Found", { status: 404 });
+        }
+
+        const isTracker = (session.user as any).role === 'TRACKER';
+        if (isTracker) {
+            if ((session.user as any).id !== id) {
+                return new NextResponse("Forbidden", { status: 403 });
+            }
+        } else if (existingShipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN') {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
@@ -40,6 +50,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         if (holdReason !== undefined) updateData.holdReason = holdReason;
         if (holdHidden !== undefined) updateData.holdHidden = holdHidden;
         if (body.holdBaseCharge !== undefined) updateData.holdBaseCharge = body.holdBaseCharge !== null ? parseFloat(body.holdBaseCharge) : 0;
+
+        if (trackerUsername !== undefined) {
+            const trimmedUsername = trackerUsername ? trackerUsername.trim() : "";
+            if (trimmedUsername && trimmedUsername.toLowerCase() !== existingShipment.trackerUsername?.toLowerCase()) {
+                const existingUser = await prisma.user.findFirst({
+                    where: { email: { equals: trimmedUsername, mode: 'insensitive' } }
+                });
+                const existingShipmentWithUsername = await prisma.shipment.findFirst({
+                    where: { trackerUsername: { equals: trimmedUsername, mode: 'insensitive' } }
+                });
+                if (existingUser || existingShipmentWithUsername) {
+                    return new NextResponse("Username already taken", { status: 400 });
+                }
+            }
+            updateData.trackerUsername = trimmedUsername || null;
+        }
+
+        if (trackerPassword !== undefined && trackerPassword !== null && trackerPassword.trim() !== "") {
+            updateData.trackerPassword = await bcrypt.hash(trackerPassword.trim(), 10);
+        }
+
         // Handle newInstallment, deleteInstallmentId or restoreInstallmentId
         let installmentsChanged = false;
         if (body.newInstallment !== undefined || body.deleteInstallmentId !== undefined || body.restoreInstallmentId !== undefined) {
@@ -138,7 +169,13 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     try {
         // Verify ownership
         const existingShipment = await prisma.shipment.findUnique({ where: { id } });
-        if (!existingShipment || (existingShipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
+        if (!existingShipment) return new NextResponse("Not Found", { status: 404 });
+
+        if ((session.user as any).role === 'TRACKER') {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
+        if (existingShipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN') {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 

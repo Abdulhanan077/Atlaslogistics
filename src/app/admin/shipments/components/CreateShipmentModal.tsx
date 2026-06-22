@@ -64,6 +64,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
         originLat: sender?.originLat || '',
         originLng: sender?.originLng || '',
         createdAt: getInitialDateString(),
+        trackerUsername: initialData?.trackerUsername || '',
+        trackerPassword: '',
     });
     const [loading, setLoading] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
@@ -137,6 +139,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
             imageUrls: formData.imageUrls,
             videoUrls: formData.videoUrls,
             createdAt: formData.createdAt,
+            trackerUsername: formData.trackerUsername,
+            trackerPassword: formData.trackerPassword,
         };
 
         try {
@@ -152,7 +156,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                 toast.success('Shipment created successfully');
                 onClose();
             } else {
-                toast.error('Failed to create shipment');
+                const errMsg = await res.text().catch(() => 'Failed to create shipment');
+                toast.error(errMsg);
             }
         } catch (error) {
             console.error(error);
@@ -284,6 +289,38 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
 
 
 
+                    <hr className="border-brand-border" />
+ 
+                    {/* Tracker Access Credentials */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">Tracker Access Credentials</h3>
+                        <p className="text-xs text-brand-text-muted">
+                            Create a custom username and password for this shipment. When used, the client can only access this shipment.
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-brand-text-muted">Tracker Username (Email/Identifier)</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="e.g. client_username or email" 
+                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" 
+                                    value={formData.trackerUsername} 
+                                    onChange={e => setFormData({ ...formData, trackerUsername: e.target.value })} 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-brand-text-muted">Tracker Password</label>
+                                <input 
+                                    type="password" 
+                                    placeholder="Enter secure password" 
+                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" 
+                                    value={formData.trackerPassword} 
+                                    onChange={e => setFormData({ ...formData, trackerPassword: e.target.value })} 
+                                />
+                            </div>
+                        </div>
+                    </div>
+ 
                     <hr className="border-brand-border" />
 
                     {/* Product Details & Images */}

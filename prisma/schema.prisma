@@ -76,6 +76,8 @@ model Shipment {
   holdBaseCharge    Float?    @default(0)
   holdPaid          Float?    @default(0)
   holdInstallments  String    @default("[]")
+  trackerUsername   String?   @unique
+  trackerPassword   String?
 }
 
 model Message {

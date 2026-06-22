@@ -17,7 +17,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
         // Verify ownership first
         const shipment = await prisma.shipment.findUnique({ where: { id } });
-        if (!shipment || (shipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN')) {
+        if (!shipment) {
+            return new NextResponse("Not Found", { status: 404 });
+        }
+
+        const isTracker = (session.user as any).role === 'TRACKER';
+        if (isTracker) {
+            if ((session.user as any).id !== id) {
+                return new NextResponse("Forbidden", { status: 403 });
+            }
+        } else if (shipment.adminId !== session.user.id && session.user.role !== 'SUPER_ADMIN') {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 

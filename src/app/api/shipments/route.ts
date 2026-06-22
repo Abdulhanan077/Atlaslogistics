@@ -8,16 +8,41 @@ import { parseShipmentInfo } from "@/lib/utils";
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import ShipmentDetailsPDF from '@/components/pdf/ShipmentDetailsPDF';
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session || !session.user) {
         return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    if ((session.user as any).role === 'TRACKER') {
+        return new NextResponse("Forbidden", { status: 403 });
     }
 
     try {
         const body = await req.json();
-        const { senderInfo, receiverInfo, origin, destination, estimatedDelivery, customerEmail, holdFee, holdReason } = body;
+        const { senderInfo, receiverInfo, origin, destination, estimatedDelivery, customerEmail, holdFee, holdReason, trackerUsername, trackerPassword } = body;
+
+        if (trackerUsername) {
+            const trimmedUsername = trackerUsername.trim();
+            if (trimmedUsername) {
+                const existingUser = await prisma.user.findFirst({
+                    where: { email: { equals: trimmedUsername, mode: 'insensitive' } }
+                });
+                const existingShipment = await prisma.shipment.findFirst({
+                    where: { trackerUsername: { equals: trimmedUsername, mode: 'insensitive' } }
+                });
+                if (existingUser || existingShipment) {
+                    return new NextResponse("Username already taken", { status: 400 });
+                }
+            }
+        }
+
+        let hashedTrackerPassword = null;
+        if (trackerPassword && trackerPassword.trim()) {
+            hashedTrackerPassword = await bcrypt.hash(trackerPassword.trim(), 10);
+        }
 
         // Generate random tracking number (e.g., TRK12345678)
         const trackingNumber = `TRK${Math.floor(10000000 + Math.random() * 90000000)}`;
@@ -40,6 +65,8 @@ export async function POST(req: Request) {
                 adminId: session.user.id,
                 holdFee: holdFee !== undefined && holdFee !== null ? parseFloat(holdFee) : 0,
                 holdReason: holdReason || null,
+                trackerUsername: trackerUsername?.trim() || null,
+                trackerPassword: hashedTrackerPassword,
                 events: {
                     create: {
                         status: "CREATED",
@@ -115,7 +142,9 @@ export async function GET(req: Request) {
         // OR if they are a SUPER_ADMIN requesting to view a specific admin.
         // If a SUPER_ADMIN requests without viewAs, they get all shipments.
         const whereClause: any = { isDeleted: false };
-        if (session.user.role === 'SUPER_ADMIN' && viewAs) {
+        if ((session.user as any).role === 'TRACKER') {
+            whereClause.id = (session.user as any).id;
+        } else if (session.user.role === 'SUPER_ADMIN' && viewAs) {
             whereClause.adminId = viewAs;
         } else if (session.user.role !== 'SUPER_ADMIN') {
             whereClause.adminId = session.user.id;

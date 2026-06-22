@@ -3,10 +3,15 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import ShipmentsClient from "./components/ShipmentsClient"
 import DashboardStats from "./components/DashboardStats"
+import { redirect } from "next/navigation"
 
 export default async function ShipmentsPage({ searchParams }: { searchParams: Promise<{ viewAs?: string }> }) {
     const session = await getServerSession(authOptions)
-    if (!session) return null
+    if (!session || !session.user) return null
+
+    if ((session.user as any).role === 'TRACKER') {
+        redirect(`/admin/shipments/${(session.user as any).id}`)
+    }
 
     const { viewAs } = await searchParams;
     let targetUserId: string | null = session.user.id;

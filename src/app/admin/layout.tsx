@@ -9,7 +9,11 @@ export default async function AdminLayout({
 }: {
     children: React.ReactNode
 }) {
-    const session = { user: { id: "cmod8twi00000ud94t6lqqzlw", role: "SUPER_ADMIN", name: "Admin User" } };
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+        redirect("/login");
+    }
 
     const settings = await prisma.siteSettings.findFirst().catch(() => null);
     const serializedUser = session.user ? JSON.parse(JSON.stringify(session.user)) : null;

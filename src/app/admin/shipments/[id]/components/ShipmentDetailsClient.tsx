@@ -54,6 +54,8 @@ interface Shipment {
     holdBaseCharge?: number | null;
     holdPaid?: number | null;
     holdInstallments?: string;
+    trackerUsername?: string | null;
+    trackerPassword?: string | null;
 }
 
 interface ActiveUpload {
@@ -708,7 +710,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         destLat: parsedReceiver.destLat || '',
         destLng: parsedReceiver.destLng || '',
         originLat: parsedSender.originLat || '',
-        originLng: parsedSender.originLng || ''
+        originLng: parsedSender.originLng || '',
+        trackerUsername: shipment.trackerUsername || '',
+        trackerPassword: ''
     });
 
     const handleEditSubmit = async (e: React.FormEvent) => {
@@ -727,7 +731,9 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     videoUrls: editData.videoUrls,
                     estimatedDelivery: editData.estimatedDelivery ? new Date(editData.estimatedDelivery + ':00Z').toISOString() : null,
                     senderInfo: JSON.stringify({ name: editData.senderName, phone: editData.senderPhone, address: editData.senderAddress, vehicleType: editData.vehicleType, originLat: editData.originLat, originLng: editData.originLng }),
-                    receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress, destLat: editData.destLat, destLng: editData.destLng })
+                    receiverInfo: JSON.stringify({ name: editData.receiverName, phone: editData.receiverPhone, address: editData.receiverAddress, destLat: editData.destLat, destLng: editData.destLng }),
+                    trackerUsername: editData.trackerUsername,
+                    trackerPassword: editData.trackerPassword
                 })
             });
             if (res.ok) {
@@ -735,7 +741,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                 router.refresh();
                 toast.success("Shipment details updated");
             } else {
-                toast.error('Failed to update shipment details');
+                const text = await res.text().catch(() => 'Failed to update shipment details');
+                toast.error(text);
             }
         } catch (e) {
             console.error(e);
@@ -1552,6 +1559,29 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                                 placeholder="customer@example.com"
                                             />
                                             {/* Hold Fee and Reason inputs removed - now managed via ON_HOLD tracking events */}
+                                        </div>
+                                        <div className="bg-brand-bg/30 p-3 rounded border border-brand-border space-y-3">
+                                            <label className="text-xs font-semibold text-blue-500 uppercase tracking-wider block mb-1">Tracker Credentials</label>
+                                            <div>
+                                                <label className="text-[10px] text-brand-text-muted block mb-0.5">Tracker Username (Email/Identifier)</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-xs text-brand-text"
+                                                    value={editData.trackerUsername}
+                                                    onChange={e => setEditData({ ...editData, trackerUsername: e.target.value })}
+                                                    placeholder="client_username"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] text-brand-text-muted block mb-0.5">Tracker Password (leave empty to keep unchanged)</label>
+                                                <input
+                                                    type="password"
+                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-xs text-brand-text"
+                                                    value={editData.trackerPassword}
+                                                    onChange={e => setEditData({ ...editData, trackerPassword: e.target.value })}
+                                                    placeholder="Change secure password"
+                                                />
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="text-xs text-brand-text-muted block mb-1">Product Description</label>

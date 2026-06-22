@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Package, Truck, CheckCircle, Clock } from "lucide-react"
+import { redirect } from "next/navigation"
 
 async function getStats(userId: string | null) {
     const where: any = { isDeleted: false };
@@ -20,7 +21,11 @@ async function getStats(userId: string | null) {
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ viewAs?: string }> }) {
     const session = await getServerSession(authOptions);
-    if (!session) return null;
+    if (!session || !session.user) return null;
+
+    if ((session.user as any).role === 'TRACKER') {
+        redirect(`/admin/shipments/${(session.user as any).id}`);
+    }
 
     const { viewAs } = await searchParams;
     let targetUserId: string | null = session.user.id; // Default to self
