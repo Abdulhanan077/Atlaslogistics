@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, Search } from 'lucide-react';
+import { X, Loader2, Search, Eye, EyeOff } from 'lucide-react';
 import { geocodeAddress } from '@/lib/geocoding';
 import { toast } from 'react-hot-toast';
 import { parseShipmentInfo } from '@/lib/utils';
@@ -70,6 +70,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
     const [loading, setLoading] = useState(false);
     const [geocoding, setGeocoding] = useState(false);
     const [activeUploads, setActiveUploads] = useState<ActiveUpload[]>([]);
+    const [createTrackerLogin, setCreateTrackerLogin] = useState(!!initialData?.trackerUsername);
+    const [showPassword, setShowPassword] = useState(false);
 
     const cancelUpload = (id: string) => {
         const upload = activeUploads.find(u => u.id === id);
@@ -139,8 +141,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
             imageUrls: formData.imageUrls,
             videoUrls: formData.videoUrls,
             createdAt: formData.createdAt,
-            trackerUsername: formData.trackerUsername,
-            trackerPassword: formData.trackerPassword,
+            trackerUsername: createTrackerLogin ? formData.trackerUsername : null,
+            trackerPassword: createTrackerLogin ? formData.trackerPassword : null,
         };
 
         try {
@@ -291,35 +293,59 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
 
                     <hr className="border-brand-border" />
  
-                    {/* Tracker Access Credentials */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">Tracker Access Credentials</h3>
-                        <p className="text-xs text-brand-text-muted">
-                            Create a custom username and password for this shipment. When used, the client can only access this shipment.
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-brand-text-muted">Tracker Username (Email/Identifier)</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="e.g. client_username or email" 
-                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" 
-                                    value={formData.trackerUsername} 
-                                    onChange={e => setFormData({ ...formData, trackerUsername: e.target.value })} 
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-brand-text-muted">Tracker Password</label>
-                                <input 
-                                    type="password" 
-                                    placeholder="Enter secure password" 
-                                    className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" 
-                                    value={formData.trackerPassword} 
-                                    onChange={e => setFormData({ ...formData, trackerPassword: e.target.value })} 
-                                />
+                    {/* Checkbox to enable Tracker Access Credentials */}
+                    <div className="flex items-center gap-2.5 py-2">
+                        <input
+                            type="checkbox"
+                            id="enableTrackerLogin"
+                            className="w-4 h-4 rounded border-brand-border bg-brand-bg text-blue-600 focus:ring-blue-500 focus:ring-offset-brand-surface cursor-pointer"
+                            checked={createTrackerLogin}
+                            onChange={(e) => setCreateTrackerLogin(e.target.checked)}
+                        />
+                        <label htmlFor="enableTrackerLogin" className="text-sm font-semibold text-brand-text cursor-pointer select-none">
+                            Enable Client Tracker Login Credentials
+                        </label>
+                    </div>
+
+                    {createTrackerLogin && (
+                        <div className="space-y-4 bg-brand-bg/20 p-5 rounded-2xl border border-brand-border/40">
+                            <h3 className="text-sm font-semibold text-blue-400 uppercase tracking-wider">Tracker Access Credentials</h3>
+                            <p className="text-xs text-brand-text-muted">
+                                Create a custom username and password for this shipment. When used, the client can only access this shipment.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-brand-text-muted">Tracker Username (Email/Identifier)</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. client_username or email" 
+                                        className="w-full bg-brand-surface border border-brand-border rounded-lg px-3 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" 
+                                        value={formData.trackerUsername} 
+                                        onChange={e => setFormData({ ...formData, trackerUsername: e.target.value })} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-brand-text-muted">Tracker Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showPassword ? "text" : "password"} 
+                                            placeholder="Enter secure password" 
+                                            className="w-full bg-brand-surface border border-brand-border rounded-lg pl-3 pr-10 py-2 text-brand-text focus:ring-1 focus:ring-blue-500 outline-none" 
+                                            value={formData.trackerPassword} 
+                                            onChange={e => setFormData({ ...formData, trackerPassword: e.target.value })} 
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-2.5 text-brand-text-muted hover:text-brand-text transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
  
                     <hr className="border-brand-border" />
 

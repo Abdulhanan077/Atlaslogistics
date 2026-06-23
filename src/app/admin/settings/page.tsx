@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Mail, Phone, Upload, Loader2, Save, Moon, Sun, Trash2, Coins, CreditCard, ToggleLeft, ToggleRight, Plus } from 'lucide-react';
+import { Building2, Mail, Phone, Upload, Loader2, Save, Moon, Sun, Trash2, Coins, CreditCard, ToggleLeft, ToggleRight, Plus, Eye, EyeOff, Key } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/components/ThemeProvider';
 import { uploadToR2 as upload } from '@/lib/upload-client';
 import { useSession } from 'next-auth/react';
+import { parseShipmentInfo } from '@/lib/utils';
 
 const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
     CREATED: {
@@ -51,6 +52,21 @@ export default function SettingsDashboard() {
     const [templatesMap, setTemplatesMap] = useState<Record<string, { subject: string; body: string }>>({});
     const [activeStatusTab, setActiveStatusTab] = useState('CREATED');
 
+    const [shipments, setShipments] = useState<any[]>([]);
+    const [loadingShipments, setLoadingShipments] = useState(true);
+
+    const [selectedShipmentId, setSelectedShipmentId] = useState('');
+    const [newTrackerUsername, setNewTrackerUsername] = useState('');
+    const [newTrackerPassword, setNewTrackerPassword] = useState('');
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [creatingLogin, setCreatingLogin] = useState(false);
+
+    const [editingShipmentId, setEditingShipmentId] = useState<string | null>(null);
+    const [editTrackerUsername, setEditTrackerUsername] = useState('');
+    const [editTrackerPassword, setEditTrackerPassword] = useState('');
+    const [showEditPassword, setShowEditPassword] = useState(false);
+    const [updatingLoginId, setUpdatingLoginId] = useState<string | null>(null);
+
     const [settings, setSettings] = useState({
         companyName: '',
         supportEmail: '',
@@ -82,79 +98,209 @@ export default function SettingsDashboard() {
     });
 
     useEffect(() => {
-        fetch('/api/settings')
-            .then(async (res) => {
-                if (!res.ok) throw new Error('Failed to load settings');
-                return res.json();
-            })
-            .then(data => {
-                if (data) {
-                    setSettings({
-                        companyName: data.companyName || '',
-                        supportEmail: data.supportEmail || '',
-                        chatNotificationEmail: data.chatNotificationEmail || '',
-                        supportPhone: data.supportPhone || '',
-                        logoUrl: data.logoUrl || '',
-                        theme: data.theme || 'dark',
-                        usdtTrc20Address: data.usdtTrc20Address || '',
-                        usdtTrc20Enabled: data.usdtTrc20Enabled !== undefined ? data.usdtTrc20Enabled : true,
-                        usdtBep20Address: data.usdtBep20Address || '',
-                        usdtBep20Enabled: data.usdtBep20Enabled !== undefined ? data.usdtBep20Enabled : true,
-                        btcAddress: data.btcAddress || '',
-                        btcEnabled: data.btcEnabled !== undefined ? data.btcEnabled : true,
-                        paypalEmail: data.paypalEmail || '',
-                        paypalEnabled: data.paypalEnabled || false,
-                        paypalName: data.paypalName || '',
-                        cashappTag: data.cashappTag || '',
-                        cashappEnabled: data.cashappEnabled || false,
-                        cashappName: data.cashappName || '',
-                        venmoTag: data.venmoTag || '',
-                        venmoEnabled: data.venmoEnabled || false,
-                        venmoName: data.venmoName || '',
-                        zelleEmail: data.zelleEmail || '',
-                        zelleEnabled: data.zelleEnabled || false,
-                        zelleName: data.zelleName || '',
-                        emailBrandColor: data.emailBrandColor || '#2563eb',
-                        emailHeaderBg: data.emailHeaderBg || '#0f172a',
-                        emailTemplates: data.emailTemplates || '{}'
-                    });
-                    
-                    if (data.emailTemplates) {
-                        try {
-                            setTemplatesMap(JSON.parse(data.emailTemplates));
-                        } catch (e) {
-                            console.error(e);
+        const loadData = async () => {
+            try {
+                const settingsRes = await fetch('/api/settings');
+                if (settingsRes.ok) {
+                    const data = await settingsRes.json();
+                    if (data) {
+                        setSettings({
+                            companyName: data.companyName || '',
+                            supportEmail: data.supportEmail || '',
+                            chatNotificationEmail: data.chatNotificationEmail || '',
+                            supportPhone: data.supportPhone || '',
+                            logoUrl: data.logoUrl || '',
+                            theme: data.theme || 'dark',
+                            usdtTrc20Address: data.usdtTrc20Address || '',
+                            usdtTrc20Enabled: data.usdtTrc20Enabled !== undefined ? data.usdtTrc20Enabled : true,
+                            usdtBep20Address: data.usdtBep20Address || '',
+                            usdtBep20Enabled: data.usdtBep20Enabled !== undefined ? data.usdtBep20Enabled : true,
+                            btcAddress: data.btcAddress || '',
+                            btcEnabled: data.btcEnabled !== undefined ? data.btcEnabled : true,
+                            paypalEmail: data.paypalEmail || '',
+                            paypalEnabled: data.paypalEnabled || false,
+                            paypalName: data.paypalName || '',
+                            cashappTag: data.cashappTag || '',
+                            cashappEnabled: data.cashappEnabled || false,
+                            cashappName: data.cashappName || '',
+                            venmoTag: data.venmoTag || '',
+                            venmoEnabled: data.venmoEnabled || false,
+                            venmoName: data.venmoName || '',
+                            zelleEmail: data.zelleEmail || '',
+                            zelleEnabled: data.zelleEnabled || false,
+                            zelleName: data.zelleName || '',
+                            emailBrandColor: data.emailBrandColor || '#2563eb',
+                            emailHeaderBg: data.emailHeaderBg || '#0f172a',
+                            emailTemplates: data.emailTemplates || '{}'
+                        });
+                        
+                        if (data.emailTemplates) {
+                            try {
+                                setTemplatesMap(JSON.parse(data.emailTemplates));
+                            } catch (e) {
+                                console.error(e);
+                            }
                         }
-                    }
 
-                    if (data.customCryptoMethods) {
-                        try {
-                            setCustomCrypto(JSON.parse(data.customCryptoMethods));
-                        } catch (e) {
-                            console.error(e);
+                        if (data.customCryptoMethods) {
+                            try {
+                                setCustomCrypto(JSON.parse(data.customCryptoMethods));
+                            } catch (e) {
+                                console.error(e);
+                            }
                         }
-                    }
-                    if (data.customStandardMethods) {
-                        try {
-                            setCustomStandard(JSON.parse(data.customStandardMethods));
-                        } catch (e) {
-                            console.error(e);
+                        if (data.customStandardMethods) {
+                            try {
+                                setCustomStandard(JSON.parse(data.customStandardMethods));
+                            } catch (e) {
+                                console.error(e);
+                            }
                         }
-                    }
 
-                    // Also update global theme if different
-                    if (data.theme && data.theme !== theme) {
-                        setTheme(data.theme);
+                        if (data.theme && data.theme !== theme) {
+                            setTheme(data.theme);
+                        }
                     }
                 }
-                setLoading(false);
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error(err);
                 toast.error('Failed to load settings');
+            } finally {
                 setLoading(false);
-            });
+            }
+
+            try {
+                const shipmentsRes = await fetch('/api/shipments');
+                if (shipmentsRes.ok) {
+                    const data = await shipmentsRes.json();
+                    if (Array.isArray(data)) {
+                        setShipments(data);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingShipments(false);
+            }
+        };
+
+        loadData();
     }, []);
+
+    const handleCreateTrackerLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedShipmentId) {
+            toast.error("Please select a shipment");
+            return;
+        }
+        if (!newTrackerUsername.trim() || !newTrackerPassword.trim()) {
+            toast.error("Username and password are required");
+            return;
+        }
+        setCreatingLogin(true);
+        try {
+            const res = await fetch(`/api/shipments/${selectedShipmentId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trackerUsername: newTrackerUsername.trim(),
+                    trackerPassword: newTrackerPassword.trim()
+                })
+            });
+            if (res.ok) {
+                toast.success("Tracker credentials created!");
+                setSelectedShipmentId('');
+                setNewTrackerUsername('');
+                setNewTrackerPassword('');
+                setShowNewPassword(false);
+                
+                // Refresh shipments list
+                const freshRes = await fetch('/api/shipments');
+                if (freshRes.ok) {
+                    const freshData = await freshRes.json();
+                    if (Array.isArray(freshData)) setShipments(freshData);
+                }
+            } else {
+                const text = await res.text().catch(() => 'Failed to create credentials');
+                toast.error(text);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Error creating credentials");
+        } finally {
+            setCreatingLogin(false);
+        }
+    };
+
+    const handleUpdateTrackerLogin = async (shipmentId: string) => {
+        if (!editTrackerUsername.trim()) {
+            toast.error("Username cannot be empty");
+            return;
+        }
+        setUpdatingLoginId(shipmentId);
+        try {
+            const res = await fetch(`/api/shipments/${shipmentId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trackerUsername: editTrackerUsername.trim(),
+                    trackerPassword: editTrackerPassword.trim() || undefined
+                })
+            });
+            if (res.ok) {
+                toast.success("Tracker credentials updated!");
+                setEditingShipmentId(null);
+                setEditTrackerUsername('');
+                setEditTrackerPassword('');
+                setShowEditPassword(false);
+                
+                // Refresh shipments list
+                const freshRes = await fetch('/api/shipments');
+                if (freshRes.ok) {
+                    const freshData = await freshRes.json();
+                    if (Array.isArray(freshData)) setShipments(freshData);
+                }
+            } else {
+                const text = await res.text().catch(() => 'Failed to update credentials');
+                toast.error(text);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Error updating credentials");
+        } finally {
+            setUpdatingLoginId(null);
+        }
+    };
+
+    const handleDeleteTrackerLogin = async (shipmentId: string) => {
+        if (!confirm("Are you sure you want to delete this tracker login? The client will lose dashboard access immediately.")) {
+            return;
+        }
+        const toastId = toast.loading("Deleting tracker credentials...");
+        try {
+            const res = await fetch(`/api/shipments/${shipmentId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trackerUsername: "" // triggers deletion in API
+                })
+            });
+            if (res.ok) {
+                toast.success("Tracker credentials deleted!", { id: toastId });
+                // Refresh shipments list
+                const freshRes = await fetch('/api/shipments');
+                if (freshRes.ok) {
+                    const freshData = await freshRes.json();
+                    if (Array.isArray(freshData)) setShipments(freshData);
+                }
+            } else {
+                toast.error("Failed to delete credentials", { id: toastId });
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Error deleting credentials", { id: toastId });
+        }
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1038,6 +1184,217 @@ export default function SettingsDashboard() {
                         </div>
                     </div>
                 )}
+
+                {/* Tracker Logins Manager */}
+                <div className="p-8 border-b border-brand-border/50">
+                    <h2 className="text-xl font-semibold text-brand-text mb-6 flex items-center gap-2">
+                        <Key className="w-5 h-5 text-blue-500" />
+                        Client Tracker Logins
+                    </h2>
+                    <p className="text-sm text-brand-text-muted mb-6">
+                        Manage custom login credentials for individual shipments. Clients can use these credentials to access their specific tracking details and updates.
+                    </p>
+
+                    <div className="space-y-8">
+                        {/* Create credentials for existing shipment */}
+                        <div className="bg-brand-bg/50 border border-brand-border/50 rounded-2xl p-6 space-y-4">
+                            <h3 className="text-sm font-semibold text-brand-text">Create Credentials for Existing Shipment</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-medium text-brand-text-muted">Select Shipment</label>
+                                    <select
+                                        value={selectedShipmentId}
+                                        onChange={e => setSelectedShipmentId(e.target.value)}
+                                        className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-10"
+                                    >
+                                        <option value="">-- Choose Shipment --</option>
+                                        {shipments
+                                            .filter(s => !s.trackerUsername)
+                                            .map(s => {
+                                                const receiver = parseShipmentInfo(s.receiverInfo);
+                                                return (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.trackingNumber} - {receiver.name || 'No Name'} ({s.destination || 'No Dest'})
+                                                    </option>
+                                                );
+                                            })
+                                        }
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-medium text-brand-text-muted">Tracker Username</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. client_username"
+                                        value={newTrackerUsername}
+                                        onChange={e => setNewTrackerUsername(e.target.value)}
+                                        className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-10"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-medium text-brand-text-muted">Tracker Password</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showNewPassword ? "text" : "password"}
+                                            placeholder="Enter password"
+                                            value={newTrackerPassword}
+                                            onChange={e => setNewTrackerPassword(e.target.value)}
+                                            className="w-full bg-brand-surface border border-brand-border text-brand-text rounded-xl pl-3 pr-9 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                            className="absolute right-2.5 top-3 text-brand-text-muted hover:text-brand-text transition-colors"
+                                        >
+                                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex justify-end pt-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCreateTrackerLogin}
+                                    disabled={creatingLogin || !selectedShipmentId || !newTrackerUsername || !newTrackerPassword}
+                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-blue-600/10 flex items-center gap-1.5"
+                                >
+                                    {creatingLogin && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                    Create Credentials
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* List of shipments with logins */}
+                        <div className="bg-brand-bg/50 border border-brand-border/50 rounded-2xl overflow-hidden">
+                            <div className="p-5 border-b border-brand-border/50">
+                                <h3 className="text-sm font-semibold text-brand-text">Active Shipment Logins</h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="bg-brand-surface text-brand-text-muted border-b border-brand-border/50 font-semibold">
+                                            <th className="px-4 py-3">Tracking #</th>
+                                            <th className="px-4 py-3">Receiver</th>
+                                            <th className="px-4 py-3">Username</th>
+                                            <th className="px-4 py-3">Password</th>
+                                            <th className="px-4 py-3 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-brand-border/40 text-brand-text">
+                                        {shipments.filter(s => s.trackerUsername).length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="px-4 py-8 text-center text-brand-text-muted/80">
+                                                    No shipments have login credentials set yet. Use the form above to add logins to existing shipments.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            shipments.filter(s => s.trackerUsername).map(s => {
+                                                const receiver = parseShipmentInfo(s.receiverInfo);
+                                                const isEditingRow = editingShipmentId === s.id;
+                                                return (
+                                                    <tr key={s.id} className="hover:bg-brand-surface/30 transition-colors">
+                                                        <td className="px-4 py-3 font-mono font-bold text-blue-400">
+                                                            <a href={`/admin/shipments/${s.id}`} className="hover:underline">
+                                                                {s.trackingNumber}
+                                                            </a>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="font-medium">{receiver.name || 'N/A'}</div>
+                                                            <div className="text-[10px] text-brand-text-muted">{s.destination || 'N/A'}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {isEditingRow ? (
+                                                                <input
+                                                                    type="text"
+                                                                    className="bg-brand-surface border border-brand-border text-brand-text rounded-lg px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500 w-36"
+                                                                    value={editTrackerUsername}
+                                                                    onChange={e => setEditTrackerUsername(e.target.value)}
+                                                                />
+                                                            ) : (
+                                                                <span className="font-semibold">{s.trackerUsername}</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {isEditingRow ? (
+                                                                <div className="relative inline-block w-40">
+                                                                    <input
+                                                                        type={showEditPassword ? "text" : "password"}
+                                                                        placeholder="Leave blank to keep same"
+                                                                        className="bg-brand-surface border border-brand-border text-brand-text rounded-lg pl-2 pr-8 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500 w-full"
+                                                                        value={editTrackerPassword}
+                                                                        onChange={e => setEditTrackerPassword(e.target.value)}
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setShowEditPassword(!showEditPassword)}
+                                                                        className="absolute right-2 top-1.5 text-brand-text-muted hover:text-brand-text"
+                                                                    >
+                                                                        {showEditPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-[10px] text-brand-text-muted italic bg-brand-surface border border-brand-border px-2 py-1 rounded">
+                                                                    •••••••• [secured]
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            {isEditingRow ? (
+                                                                <div className="flex gap-2 justify-end">
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={updatingLoginId === s.id}
+                                                                        onClick={() => handleUpdateTrackerLogin(s.id)}
+                                                                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-[10px] font-bold shadow-sm transition-all"
+                                                                    >
+                                                                        Save
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setEditingShipmentId(null);
+                                                                            setEditTrackerUsername('');
+                                                                            setEditTrackerPassword('');
+                                                                        }}
+                                                                        className="px-2.5 py-1 bg-brand-surface hover:bg-brand-border text-brand-text-muted rounded-lg text-[10px] font-bold border border-brand-border transition-all"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex gap-2 justify-end">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setEditingShipmentId(s.id);
+                                                                            setEditTrackerUsername(s.trackerUsername || '');
+                                                                            setEditTrackerPassword('');
+                                                                            setShowEditPassword(false);
+                                                                        }}
+                                                                        className="px-2.5 py-1 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-lg text-[10px] font-bold transition-all"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDeleteTrackerLogin(s.id)}
+                                                                        className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold transition-all"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Action Footbar */}
                 <div className="p-6 bg-brand-surface border-t border-brand-border/50 flex justify-end">

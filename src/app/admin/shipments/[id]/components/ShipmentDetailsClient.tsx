@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 // PDF components will be loaded dynamically to avoid ESM bundling issues
@@ -144,6 +144,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
 
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [descriptionValue, setDescriptionValue] = useState(shipment.productDescription || '');
+    const [showTrackerPassword, setShowTrackerPassword] = useState(false);
     const [savingDescription, setSavingDescription] = useState(false);
 
     useEffect(() => {
@@ -1574,13 +1575,22 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             </div>
                                             <div>
                                                 <label className="text-[10px] text-brand-text-muted block mb-0.5">Tracker Password (leave empty to keep unchanged)</label>
-                                                <input
-                                                    type="password"
-                                                    className="w-full bg-brand-surface border border-brand-border rounded px-2 py-1 text-xs text-brand-text"
-                                                    value={editData.trackerPassword}
-                                                    onChange={e => setEditData({ ...editData, trackerPassword: e.target.value })}
-                                                    placeholder="Change secure password"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type={showTrackerPassword ? "text" : "password"}
+                                                        className="w-full bg-brand-surface border border-brand-border rounded pl-2 pr-8 py-1 text-xs text-brand-text"
+                                                        value={editData.trackerPassword}
+                                                        onChange={e => setEditData({ ...editData, trackerPassword: e.target.value })}
+                                                        placeholder="Change secure password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowTrackerPassword(!showTrackerPassword)}
+                                                        className="absolute right-2 top-1.5 text-brand-text-muted hover:text-brand-text transition-colors"
+                                                    >
+                                                        {showTrackerPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                         <div>

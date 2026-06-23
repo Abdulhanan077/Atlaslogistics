@@ -53,18 +53,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
         if (trackerUsername !== undefined) {
             const trimmedUsername = trackerUsername ? trackerUsername.trim() : "";
-            if (trimmedUsername && trimmedUsername.toLowerCase() !== existingShipment.trackerUsername?.toLowerCase()) {
-                const existingUser = await prisma.user.findFirst({
-                    where: { email: { equals: trimmedUsername, mode: 'insensitive' } }
-                });
-                const existingShipmentWithUsername = await prisma.shipment.findFirst({
-                    where: { trackerUsername: { equals: trimmedUsername, mode: 'insensitive' } }
-                });
-                if (existingUser || existingShipmentWithUsername) {
-                    return new NextResponse("Username already taken", { status: 400 });
+            if (trimmedUsername) {
+                if (trimmedUsername.toLowerCase() !== existingShipment.trackerUsername?.toLowerCase()) {
+                    const existingUser = await prisma.user.findFirst({
+                        where: { email: { equals: trimmedUsername, mode: 'insensitive' } }
+                    });
+                    const existingShipmentWithUsername = await prisma.shipment.findFirst({
+                        where: { trackerUsername: { equals: trimmedUsername, mode: 'insensitive' } }
+                    });
+                    if (existingUser || existingShipmentWithUsername) {
+                        return new NextResponse("Username already taken", { status: 400 });
+                    }
                 }
+                updateData.trackerUsername = trimmedUsername;
+            } else {
+                updateData.trackerUsername = null;
+                updateData.trackerPassword = null;
             }
-            updateData.trackerUsername = trimmedUsername || null;
         }
 
         if (trackerPassword !== undefined && trackerPassword !== null && trackerPassword.trim() !== "") {
