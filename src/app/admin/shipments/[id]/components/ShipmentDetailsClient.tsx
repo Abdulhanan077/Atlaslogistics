@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Printer, MapPin, Loader2, Pencil, X, Check, FileText, Trash2, Mail, Search, RotateCcw, ExternalLink, Eye, EyeOff, Receipt } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 // PDF components will be loaded dynamically to avoid ESM bundling issues
@@ -282,7 +282,19 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     useEffect(() => {
         if (activeHoldEvent) {
             setHoldPanelFee(activeHoldEvent.holdFee !== undefined && activeHoldEvent.holdFee !== null ? activeHoldEvent.holdFee.toString() : (shipment.holdFee?.toString() || '0'));
-            setHoldPanelReason(activeHoldEvent.holdReason || shipment.holdReason || '');
+            
+            const rawReason = activeHoldEvent.holdReason || shipment.holdReason || '';
+            if (rawReason.startsWith('{"isCustoms"')) {
+                try {
+                    const parsed = JSON.parse(rawReason);
+                    setHoldPanelReason(parsed.reason || '');
+                } catch(e) {
+                    setHoldPanelReason(rawReason);
+                }
+            } else {
+                setHoldPanelReason(rawReason);
+            }
+            
             setHoldPanelHidden(shipment.holdHidden || false);
             setHoldPanelBaseCharge(activeHoldEvent.holdBaseCharge !== undefined && activeHoldEvent.holdBaseCharge !== null ? activeHoldEvent.holdBaseCharge.toString() : (shipment.holdBaseCharge !== undefined && shipment.holdBaseCharge !== null ? shipment.holdBaseCharge.toString() : '0'));
             setHoldPanelPaid(shipment.holdPaid !== undefined && shipment.holdPaid !== null ? shipment.holdPaid.toString() : '0');
@@ -294,6 +306,149 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             }
         }
     }, [shipment.holdFee, shipment.holdReason, shipment.holdHidden, shipment.holdBaseCharge, shipment.holdPaid, shipment.holdInstallments, activeHoldEvent]);
+
+    // Customs Document states
+    const [customsOurRef, setCustomsOurRef] = useState(`CBP/REF-${shipment.trackingNumber.substring(0, 8)}`);
+    const [customsYourRef, setCustomsYourRef] = useState('');
+    const [customsDate, setCustomsDate] = useState(new Date().toLocaleDateString('en-GB'));
+    const [customsPara1, setCustomsPara1] = useState("This office is writing to you regarding the Custom Inspection and Clearance protocol. The CBP Custom Clearance Unit has intercepted your incoming consignment for thorough inspection. The package has been flagged pending proper security clearance and surety clearing validation.");
+    const [customsPara2, setCustomsPara2] = useState("You are hereby notified that the policy of US Customs and Border Protection mandates that all incoming international packages must hold a valid corporate surety clearing tag or an approved clearance waiver. Your package is currently being held at our security facility and will not be released for final delivery until the outstanding custom clearance and administration duties are fully settled.");
+    const [customsSignatoryName, setCustomsSignatoryName] = useState("ANGELA. C");
+    const [customsSignatoryTitle, setCustomsSignatoryTitle] = useState("CUSTOMS BORDER PROTECTION - DEPUTY DIRECTOR");
+    const [customsTimeLimit, setCustomsTimeLimit] = useState("48 hours");
+    const [customsItems, setCustomsItems] = useState<{ name: string; amount: number }[]>([
+        { name: "Customs Brokerage Entry Processing Fee", amount: 245.00 },
+        { name: "Terminal Handling Charge", amount: 310.00 },
+        { name: "Merchandise Processing Fee", amount: 614.35 },
+        { name: "Single-Entry Customs Bond Fee", amount: 185.00 },
+        { name: "Intensive Examination Site Transfer Fee", amount: 275.00 },
+        { name: "Intensive Examination Handling Fee", amount: 395.00 },
+        { name: "Airport Security Surcharge", amount: 150.00 },
+        { name: "Insurance Liability Revalidation Fee", amount: 225.05 },
+        { name: "High-Value Cargo Storage Fee", amount: 160.00 },
+        { name: "Chain-of-Custody Integrity Verification Fee", amount: 295.00 },
+        { name: "Digital Manifest and EDI Transmission Fee", amount: 180.00 },
+        { name: "Port Security Oversight Fee", amount: 480.00 },
+        { name: "High-Risk Commodity Handling Fee", amount: 575.00 },
+        { name: "Armored Carrier Intake and Release Preparation Fee", amount: 400.00 },
+        { name: "Administrative Consolidation and Processing Fee", amount: 1637.60 }
+    ]);
+    const [customsStampDate, setCustomsStampDate] = useState(new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase());
+    const [customsStampClass, setCustomsStampClass] = useState('RELEASED');
+    const [customsCompanyStampDate, setCustomsCompanyStampDate] = useState(new Date().toLocaleDateString('en-GB'));
+    const [savingCustoms, setSavingCustoms] = useState(false);
+
+    useEffect(() => {
+        if (shipment.holdReason && shipment.holdReason.startsWith('{"isCustoms"')) {
+            try {
+                const parsed = JSON.parse(shipment.holdReason);
+                if (parsed.ourRef) setCustomsOurRef(parsed.ourRef);
+                if (parsed.yourRef) setCustomsYourRef(parsed.yourRef);
+                if (parsed.date) setCustomsDate(parsed.date);
+                if (parsed.paragraphs) {
+                    if (parsed.paragraphs[0]) setCustomsPara1(parsed.paragraphs[0]);
+                    if (parsed.paragraphs[1]) setCustomsPara2(parsed.paragraphs[1]);
+                }
+                if (parsed.signatoryName) setCustomsSignatoryName(parsed.signatoryName);
+                if (parsed.signatoryTitle) setCustomsSignatoryTitle(parsed.signatoryTitle);
+                if (parsed.timeLimit) setCustomsTimeLimit(parsed.timeLimit);
+                if (parsed.items) setCustomsItems(parsed.items);
+                if (parsed.stampDate) setCustomsStampDate(parsed.stampDate);
+                if (parsed.stampClass) setCustomsStampClass(parsed.stampClass);
+                if (parsed.companyStampDate) setCustomsCompanyStampDate(parsed.companyStampDate);
+            } catch (e) {
+                console.error("Failed to parse customsData JSON from holdReason", e);
+            }
+        }
+    }, [shipment.holdReason]);
+
+    const handleSaveCustomsSettings = async () => {
+        setSavingCustoms(true);
+        const toastId = toast.loading("Saving customs documentation settings...");
+        try {
+            const dataObj = {
+                isCustoms: true,
+                ourRef: customsOurRef,
+                yourRef: customsYourRef,
+                date: customsDate,
+                reason: customsPara1.substring(0, 80) + '...',
+                paragraphs: [customsPara1, customsPara2],
+                signatoryName: customsSignatoryName,
+                signatoryTitle: customsSignatoryTitle,
+                timeLimit: customsTimeLimit,
+                items: customsItems,
+                stampDate: customsStampDate,
+                stampClass: customsStampClass,
+                companyStampDate: customsCompanyStampDate
+            };
+
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    holdReason: JSON.stringify(dataObj)
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Customs documentation settings saved!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to save customs settings", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error saving customs settings", { id: toastId });
+        } finally {
+            setSavingCustoms(false);
+        }
+    };
+
+    const handleClearCustomsSettings = async () => {
+        setSavingCustoms(true);
+        const toastId = toast.loading("Clearing customs documentation...");
+        try {
+            const res = await fetch(`/api/shipments/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    holdReason: ''
+                })
+            });
+
+            if (res.ok) {
+                toast.success("Customs documentation cleared successfully!", { id: toastId });
+                router.refresh();
+            } else {
+                toast.error("Failed to clear customs settings", { id: toastId });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Error clearing customs settings", { id: toastId });
+        } finally {
+            setSavingCustoms(false);
+        }
+    };
+
+    const handleAddCustomsFeeItem = () => {
+        setCustomsItems(prev => [...prev, { name: 'New Customs Clearance Fee', amount: 500 }]);
+    };
+
+    const handleRemoveCustomsFeeItem = (index: number) => {
+        setCustomsItems(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleCustomsFeeItemChange = (index: number, field: 'name' | 'amount', value: string) => {
+        setCustomsItems(prev => prev.map((item, i) => {
+            if (i === index) {
+                return {
+                    ...item,
+                    [field]: field === 'amount' ? (parseFloat(value) || 0) : value
+                };
+            }
+            return item;
+        }));
+    };
 
     const [showReleaseForm, setShowReleaseForm] = useState(false);
     const [releaseStatus, setReleaseStatus] = useState('IN_TRANSIT');
@@ -363,6 +518,16 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
         setUpdating(true);
         const toastId = toast.loading("Saving hold settings...");
         try {
+            // Check if existing holdReason is customs JSON, merge it, otherwise write plain text
+            let finalReason = holdPanelReason;
+            const rawHoldReason = shipment.holdReason || '';
+            if (rawHoldReason.startsWith('{"isCustoms"')) {
+                try {
+                    const parsed = JSON.parse(rawHoldReason);
+                    finalReason = JSON.stringify({ ...parsed, reason: holdPanelReason });
+                } catch(e) {}
+            }
+
             // 1. Update the latest event
             const eventRes = await fetch(`/api/shipments/${shipment.id}/event/${activeHoldEvent.id}`, {
                 method: 'PATCH',
@@ -372,7 +537,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     location: activeHoldEvent.location || '',
                     description: activeHoldEvent.description || '',
                     holdFee: parseFloat(holdPanelFee) || 0,
-                    holdReason: holdPanelReason,
+                    holdReason: finalReason,
                     holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0,
                     timestamp: activeHoldEvent.timestamp
                 })
@@ -381,7 +546,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
             // 2. Update the shipment (including visibility, base charge and amount paid)
             const shipmentPayload: any = {
                 holdFee: parseFloat(holdPanelFee) || 0,
-                holdReason: holdPanelReason,
+                holdReason: finalReason,
                 holdHidden: holdPanelHidden,
                 holdBaseCharge: parseFloat(holdPanelBaseCharge) || 0
             };
@@ -931,6 +1096,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
                         Download Waybill
                     </a>
+                    <a
+                        href={`/api/shipments/${shipment.id}/receipt`}
+                        download={`RECEIPT-${shipment.trackingNumber}.pdf`}
+                        className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-all shadow-lg shadow-amber-600/20 text-sm font-medium whitespace-nowrap"
+                    >
+                        <Receipt className="w-4 h-4 mr-2 flex-shrink-0" />
+                        Download Receipt
+                    </a>
                     <button
                         onClick={() => window.print()}
                         className="flex items-center px-4 py-2 bg-brand-surface hover:bg-brand-border/20 text-brand-text rounded-xl transition-all border border-brand-border text-sm font-medium whitespace-nowrap"
@@ -1305,6 +1478,237 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 )}
                             </div>
                         )}
+
+                        {/* Customs Documentation Panel */}
+                        {mounted && (
+                            <div className="bg-gradient-to-br from-red-50 to-slate-50 border border-red-200 rounded-2xl p-5 shadow-lg space-y-4">
+                                <div className="flex items-center justify-between pb-3 border-b border-red-200">
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-2.5 w-2.5 relative">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                        </span>
+                                        <h3 className="font-bold text-red-950 text-sm tracking-tight">Customs Clearance Document</h3>
+                                    </div>
+                                    <a
+                                        href={`/api/shipments/${shipment.id}/customs-doc`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1 text-red-700 hover:text-red-900 transition-all font-semibold text-xs"
+                                        title="Download Customs Clearance PDF"
+                                    >
+                                        Download PDF
+                                    </a>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {/* References */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                Our Ref
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={customsOurRef}
+                                                onChange={(e) => setCustomsOurRef(e.target.value)}
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                Your Ref
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={customsYourRef}
+                                                onChange={(e) => setCustomsYourRef(e.target.value)}
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                Doc Date
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={customsDate}
+                                                onChange={(e) => setCustomsDate(e.target.value)}
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                Time Limit
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={customsTimeLimit}
+                                                onChange={(e) => setCustomsTimeLimit(e.target.value)}
+                                                placeholder="e.g. 48 hours"
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Signatory Details */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                Signatory Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={customsSignatoryName}
+                                                onChange={(e) => setCustomsSignatoryName(e.target.value)}
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                Signatory Title
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={customsSignatoryTitle}
+                                                onChange={(e) => setCustomsSignatoryTitle(e.target.value)}
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Paragraphs */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                            Paragraph 1 (Inspection Notice)
+                                        </label>
+                                        <textarea
+                                            rows={3}
+                                            value={customsPara1}
+                                            onChange={(e) => setCustomsPara1(e.target.value)}
+                                            className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400 resize-none"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                            Paragraph 2 (Waiver & Hold Policy)
+                                        </label>
+                                        <textarea
+                                            rows={3}
+                                            value={customsPara2}
+                                            onChange={(e) => setCustomsPara2(e.target.value)}
+                                            className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-400 resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Itemized custom fees */}
+                                    <div className="space-y-2 border-t border-slate-200/50 pt-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                                                Customs Charges & Duties
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={handleAddCustomsFeeItem}
+                                                className="text-[10px] font-bold text-red-600 hover:text-red-800"
+                                            >
+                                                + Add Fee
+                                            </button>
+                                        </div>
+                                        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                                            {customsItems.map((item, idx) => (
+                                                <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                                                    <input
+                                                        type="text"
+                                                        value={item.name}
+                                                        onChange={(e) => handleCustomsFeeItemChange(idx, 'name', e.target.value)}
+                                                        placeholder="Fee description..."
+                                                        className="flex-1 bg-transparent text-slate-800 text-[11px] font-medium focus:outline-none"
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        value={item.amount}
+                                                        onChange={(e) => handleCustomsFeeItemChange(idx, 'amount', e.target.value)}
+                                                        className="w-16 bg-transparent text-slate-900 text-[11px] font-bold text-right focus:outline-none border-l border-slate-100 pl-1"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveCustomsFeeItem(idx)}
+                                                        className="text-slate-400 hover:text-red-600 p-0.5"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Rubber Stamps Section */}
+                                    <div className="border-t border-slate-200/50 pt-2 space-y-2">
+                                        <span className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+                                            Custom Rubber Stamps
+                                        </span>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[9px] font-bold text-slate-600 mb-1">CBP Stamp Date</label>
+                                                <input
+                                                    type="text"
+                                                    value={customsStampDate}
+                                                    onChange={(e) => setCustomsStampDate(e.target.value)}
+                                                    placeholder="e.g. OCT 17 2015"
+                                                    className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-red-400"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] font-bold text-slate-600 mb-1">CBP Stamp Class</label>
+                                                <input
+                                                    type="text"
+                                                    value={customsStampClass}
+                                                    onChange={(e) => setCustomsStampClass(e.target.value)}
+                                                    placeholder="e.g. RELEASED"
+                                                    className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-red-400"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[9px] font-bold text-slate-600 mb-1">Company Stamp Date</label>
+                                            <input
+                                                type="text"
+                                                value={customsCompanyStampDate}
+                                                onChange={(e) => setCustomsCompanyStampDate(e.target.value)}
+                                                placeholder="e.g. 28/06/2026"
+                                                className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-2.5 py-1.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-red-400"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Save & Clear Buttons */}
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveCustomsSettings}
+                                            disabled={savingCustoms}
+                                            className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-red-600/10"
+                                        >
+                                            {savingCustoms ? 'Saving...' : 'Save Settings'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleClearCustomsSettings}
+                                            disabled={savingCustoms}
+                                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+                                            title="Clear customs status and warning letter"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -1347,7 +1751,19 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                             <p className="font-bold flex items-center gap-1.5">
                                                 ⚠️ Hold Charge: ${shipment.holdFee || 0}
                                             </p>
-                                            {shipment.holdReason && <p className="text-xs mt-1 text-brand-text-muted">{shipment.holdReason}</p>}
+                                            {shipment.holdReason && (
+                                                <p className="text-xs mt-1 text-brand-text-muted">
+                                                    {shipment.holdReason.startsWith('{"isCustoms"') 
+                                                        ? (() => {
+                                                            try {
+                                                                return JSON.parse(shipment.holdReason).reason || '';
+                                                            } catch (e) {
+                                                                return shipment.holdReason;
+                                                            }
+                                                        })()
+                                                        : shipment.holdReason}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                     <button

@@ -379,13 +379,6 @@ export default function PaymentPageClient({ shipment, settings }: PaymentPageCli
                                     <p className="font-bold text-slate-850 mt-1">{shipment.destination}</p>
                                 </div>
                             </div>
-                            
-                            {shipment.holdReason && (
-                                <div className="border border-dashed border-orange-200 bg-orange-50/50 rounded-2xl p-4 text-xs text-orange-850">
-                                    <span className="font-bold block mb-1">Reason for Hold:</span>
-                                    {shipment.holdReason}
-                                </div>
-                            )}
                         </div>
 
                         {/* Hold Ledger Summary */}

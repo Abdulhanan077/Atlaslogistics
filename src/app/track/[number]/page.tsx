@@ -268,6 +268,47 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
 
             <main className="relative z-10 max-w-[1400px] mx-auto px-4 lg:px-8 py-8 lg:py-12 space-y-8">
 
+                {/* Customs Clearance Warning Banner */}
+                {shipment.customsData && shipment.customsData !== '{}' && (() => {
+                    let customs = { ourRef: '', date: '', timeLimit: '48 hours' };
+                    try {
+                        customs = JSON.parse(shipment.customsData);
+                    } catch (e) {}
+
+                    return (
+                        <div className="relative z-10 overflow-hidden rounded-[2rem] border-2 border-[#b91c1c] bg-[#fef2f2] p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            {/* Glow effect */}
+                            <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#b91c1c]/5 blur-[50px] rounded-full pointer-events-none" />
+                            
+                            <div className="flex gap-4 items-start flex-1 w-full">
+                                <div className="space-y-3 w-full">
+                                    <h2 className="text-xl font-black text-[#991b1b] tracking-tight flex items-center gap-2">
+                                        ⚠️ GOVERNMENT NOTICE: CUSTOMS CLEARANCE REQUIRED
+                                    </h2>
+                                    <p className="text-[#7f1d1d] text-sm leading-relaxed max-w-2xl">
+                                        The United States Customs and Border Protection (CBP) has intercepted your package due to missing clearance tags. You must resolve the clearance fee duties to release the consignment.
+                                    </p>
+                                    <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-[#7f1d1d] font-bold">
+                                        <span>Reference: {customs.ourRef || 'N/A'}</span>
+                                        {customs.timeLimit && <span className="text-[#b91c1c]">Deadline: {customs.timeLimit}</span>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                                <a
+                                    href={`/api/shipments/${shipment.id}/customs-doc`}
+                                    download
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-[#b91c1c] hover:bg-[#991b1b] text-white font-bold transition-all shadow-[0_0_20px_rgba(185,28,28,0.2)] hover:scale-105"
+                                >
+                                    <Download className="w-5 h-5" />
+                                    Download Customs Document
+                                </a>
+                            </div>
+                        </div>
+                    );
+                })()}
+
                 {/* Hold / Outstanding Fee Warning Banner */}
                 {((shipment.holdFee && shipment.holdFee > 0) || shipment.status === 'ON_HOLD') && !shipment.holdHidden && (() => {
                     const activeHoldEvent = shipment.events.find((e: any) => e.status === 'ON_HOLD');
@@ -277,7 +318,16 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                     const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
                     const dailyFee = activeHoldEvent?.holdFee || shipment.holdFee || 0;
                     const totalAccumulatedFee = diffDays * dailyFee;
-                    const holdReason = activeHoldEvent?.holdReason || shipment.holdReason || "";
+                    const rawHoldReason = activeHoldEvent?.holdReason || shipment.holdReason || "";
+                    const holdReason = rawHoldReason.startsWith('{"isCustoms"')
+                        ? (() => {
+                            try {
+                                return JSON.parse(rawHoldReason).reason || "";
+                            } catch (e) {
+                                return rawHoldReason;
+                            }
+                          })()
+                        : rawHoldReason;
                     
                     const holdBaseCharge = shipment.holdBaseCharge || 0;
                     const holdPaid = shipment.holdPaid || 0;
@@ -297,12 +347,6 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     <p className="text-[#7c2d12] text-sm leading-relaxed max-w-2xl">
                                         Your package is currently on hold. Please note that a daily storage charge of <span className="font-bold">${dailyFee}</span> will be applied for each day the package remains on hold.
                                     </p>
-                                    {holdReason && (
-                                        <div className="border border-dashed border-[#ea580c] rounded-xl p-4 bg-orange-50/50 text-[#7c2d12] text-xs">
-                                            <span className="font-bold block mb-1">Reason:</span>
-                                            {holdReason}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
@@ -344,6 +388,14 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         </div>
                                     </div>
                                     <PayFeesButton trackingNumber={shipment.trackingNumber} />
+                                    <a
+                                        href={`/api/shipments/${shipment.id}/receipt`}
+                                        download
+                                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#ea580c]/30 hover:bg-[#ea580c]/5 text-[#c2410c] text-xs font-bold transition-all text-center bg-white"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                        Download Official Receipt
+                                    </a>
                                 </div>
                             ) : shipment.holdFee && shipment.holdFee > 0 ? (
                                 <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/70 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl shadow-sm">
@@ -370,6 +422,14 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                             </div>
                                         </div>
                                     </div>
+                                    <a
+                                        href={`/api/shipments/${shipment.id}/receipt`}
+                                        download
+                                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#ea580c]/30 hover:bg-[#ea580c]/5 text-[#c2410c] text-xs font-bold transition-all text-center bg-white"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                        Download Official Receipt
+                                    </a>
                                 </div>
                             ) : (
                                 <div className="shrink-0 w-full md:w-auto bg-white/45 backdrop-blur-md border border-[#ea580c]/30 p-4 rounded-2xl text-center md:text-right">
@@ -420,6 +480,18 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         <Download className="w-4 h-4" />
                                         Download Waybill
                                     </a>
+                                    {shipment.customsData && shipment.customsData !== '{}' && (
+                                        <a href={`/api/shipments/${shipment.id}/customs-doc`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold transition-all hover:scale-105 shadow-sm">
+                                            <Download className="w-4 h-4" />
+                                            Download Customs Letter
+                                        </a>
+                                    )}
+                                    {((shipment.holdFee && shipment.holdFee > 0) || (shipment.holdBaseCharge && shipment.holdBaseCharge > 0) || (shipment.holdPaid && shipment.holdPaid > 0) || shipment.status === 'ON_HOLD') && (
+                                        <a href={`/api/shipments/${shipment.id}/receipt`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold transition-all hover:scale-105 shadow-sm">
+                                            <Download className="w-4 h-4" />
+                                            Download Receipt
+                                        </a>
+                                    )}
                                 </div>
                             </div>
 
@@ -719,7 +791,6 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                     const isLatest = index === 0;
                                     const showWarningBox = event.status === 'ON_HOLD' && !shipment.holdHidden && isLatest;
                                     const dailyFee = event.holdFee || shipment.holdFee || 0;
-                                    const holdReason = event.holdReason || shipment.holdReason || "";
                                     
                                     return (
                                         <div key={event.id} className="relative group">
@@ -755,12 +826,6 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                                         <p className="text-[#7c2d12] text-sm leading-relaxed">
                                                             Your package is currently on hold. Please note that a daily storage charge of <span className="font-bold">${dailyFee}</span> will be applied for each day the package remains on hold.
                                                         </p>
-                                                        {holdReason && (
-                                                            <div className="border border-dashed border-[#ea580c] rounded-xl p-3 bg-orange-50/50 text-[#7c2d12] text-xs">
-                                                                <span className="font-bold block mb-1">Reason:</span>
-                                                                {holdReason}
-                                                            </div>
-                                                        )}
                                                         {event.description && (
                                                             <p className="text-slate-600 text-sm leading-relaxed bg-white/70 p-3 rounded-xl border border-orange-200 mt-2">
                                                                 {event.description}
