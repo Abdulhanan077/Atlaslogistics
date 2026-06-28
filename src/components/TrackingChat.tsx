@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, X, Loader2, User, Phone } from 'lucide-react';
+import { Send, MessageCircle, X, Loader2, User, Phone, Paperclip, FileText, ExternalLink } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -18,6 +18,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [activeImage, setActiveImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -57,7 +58,17 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
             const res = await fetch(`/api/shipments/${shipmentId}/messages`);
             if (res.ok) {
                 const data = await res.json();
-                setMessages(data);
+                setMessages(prev => {
+                    if (prev.length === data.length) {
+                        const isSame = prev.every((msg, idx) => 
+                            msg.id === data[idx].id && 
+                            msg.content === data[idx].content && 
+                            msg.imageUrl === data[idx].imageUrl
+                        );
+                        if (isSame) return prev;
+                    }
+                    return data;
+                });
             }
         } catch (e) {
             console.error("Failed to fetch messages", e);
@@ -183,10 +194,37 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                             : 'bg-white text-slate-700 rounded-tl-none border border-slate-200'
                                             }`}
                                     >
-                                        {msg.imageUrl && (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={msg.imageUrl} alt="Attached" className="max-w-full rounded-xl mb-2 border border-slate-200" />
-                                        )}
+                                        {msg.imageUrl && (() => {
+                                            const isPdf = msg.imageUrl.toLowerCase().split('?')[0].endsWith('.pdf');
+                                            if (isPdf) {
+                                                const fileName = decodeURIComponent(msg.imageUrl.split('/').pop() || 'document.pdf');
+                                                return (
+                                                    <a 
+                                                        href={msg.imageUrl} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer" 
+                                                        className="flex items-center gap-3 bg-slate-100 hover:bg-slate-200/80 p-3 rounded-xl border border-slate-350 transition-colors mb-2 text-slate-700 font-medium group cursor-pointer"
+                                                    >
+                                                        <FileText className="w-8 h-8 text-red-500 shrink-0" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs truncate font-bold text-slate-800">{fileName}</p>
+                                                            <p className="text-[10px] text-slate-400">PDF Document • Open</p>
+                                                        </div>
+                                                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                                                    </a>
+                                                );
+                                            } else {
+                                                return (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img 
+                                                        src={msg.imageUrl} 
+                                                        alt="Attached" 
+                                                        className="max-w-full rounded-xl mb-2 border border-slate-200 cursor-zoom-in hover:opacity-90 active:scale-[0.98] transition-all" 
+                                                        onClick={() => setActiveImage(msg.imageUrl || null)}
+                                                    />
+                                                );
+                                            }
+                                        })()}
                                         {msg.content && <p>{msg.content}</p>}
                                         <p className={`text-[10px] mt-1 ${msg.sender === 'CLIENT' ? 'text-blue-200' : 'text-slate-400'}`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -202,7 +240,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                         <div className="flex items-end gap-3 bg-slate-50 border border-slate-200 rounded-[1.5rem] p-2 pr-2 focus-within:border-blue-300 transition-all shadow-inner">
                             <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,application/pdf"
                                 className="hidden"
                                 ref={fileInputRef}
                                 onChange={handleImageUpload}
@@ -212,9 +250,9 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={sending || uploadingImage}
                                 className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-white rounded-full transition-all disabled:opacity-50 shrink-0"
-                                title="Attach Picture"
+                                title="Attach File (Image or PDF)"
                             >
-                                {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-5 h-5" />}
+                                {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                             </button>
                             
                             <textarea
@@ -236,6 +274,30 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                             </button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {/* Image Preview Modal Overlay */}
+            {activeImage && (
+                <div 
+                    className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 md:p-10 cursor-zoom-out"
+                    onClick={() => setActiveImage(null)}
+                >
+                    <button 
+                        onClick={() => setActiveImage(null)}
+                        className="absolute top-4 right-4 text-white/80 hover:text-white p-2.5 rounded-full bg-slate-900/50 hover:bg-slate-900/80 transition-all shadow-md z-[100000]"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <div className="relative max-w-4xl max-h-[90vh] flex items-center justify-center overflow-hidden rounded-2xl shadow-2xl bg-black/20">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                            src={activeImage} 
+                            alt="Full Screen Preview" 
+                            className="max-w-full max-h-[90vh] object-contain rounded-2xl select-none"
+                            onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking the image itself
+                        />
+                    </div>
                 </div>
             )}
         </>

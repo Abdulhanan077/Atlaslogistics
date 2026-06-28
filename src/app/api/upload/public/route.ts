@@ -24,6 +24,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             Key: key,
             Body: Buffer.from(body),
             ContentType: contentType,
+            CacheControl: 'public, max-age=31536000, immutable',
         });
 
         await r2Client.send(command);

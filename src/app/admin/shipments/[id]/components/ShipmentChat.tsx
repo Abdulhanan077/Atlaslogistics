@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check, Paperclip } from 'lucide-react';
+import { Send, MessageCircle, RefreshCw, Trash2, Edit2, X, Check, Paperclip, FileText, ExternalLink } from 'lucide-react';
 import { uploadToR2 as upload } from '@/lib/upload-client';
 
 interface Message {
@@ -17,6 +17,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [activeImage, setActiveImage] = useState<string | null>(null);
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingContent, setEditingContent] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +49,17 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
             const res = await fetch(`/api/shipments/${shipmentId}/messages`);
             if (res.ok) {
                 const data = await res.json();
-                setMessages(data);
+                setMessages(prev => {
+                    if (prev.length === data.length) {
+                        const isSame = prev.every((msg, idx) => 
+                            msg.id === data[idx].id && 
+                            msg.content === data[idx].content && 
+                            msg.imageUrl === data[idx].imageUrl
+                        );
+                        if (isSame) return prev;
+                    }
+                    return data;
+                });
 
                 // Mark as read if latest message is from client
                 if (data.length > 0) {
@@ -229,10 +240,37 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                                             : 'bg-brand-surface text-brand-text rounded-tl-none border border-brand-border'
                                             }`}
                                     >
-                                        {msg.imageUrl && (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={msg.imageUrl} alt="Attachment" className="max-w-full rounded-xl mb-2 border border-blue-500/50" />
-                                        )}
+                                        {msg.imageUrl && (() => {
+                                            const isPdf = msg.imageUrl.toLowerCase().split('?')[0].endsWith('.pdf');
+                                            if (isPdf) {
+                                                const fileName = decodeURIComponent(msg.imageUrl.split('/').pop() || 'document.pdf');
+                                                return (
+                                                    <a 
+                                                        href={msg.imageUrl} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer" 
+                                                        className="flex items-center gap-3 bg-brand-bg hover:bg-slate-800 p-3 rounded-xl border border-brand-border transition-colors mb-2 text-brand-text font-medium group cursor-pointer"
+                                                    >
+                                                        <FileText className="w-8 h-8 text-red-500 shrink-0" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs truncate font-bold text-brand-text">{fileName}</p>
+                                                            <p className="text-[10px] text-slate-500">PDF Document • Open</p>
+                                                        </div>
+                                                        <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors shrink-0" />
+                                                    </a>
+                                                );
+                                            } else {
+                                                return (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img 
+                                                        src={msg.imageUrl} 
+                                                        alt="Attachment" 
+                                                        className="max-w-full rounded-xl mb-2 border border-blue-500/50 cursor-zoom-in hover:opacity-90 active:scale-[0.98] transition-all" 
+                                                        onClick={() => setActiveImage(msg.imageUrl || null)}
+                                                    />
+                                                );
+                                            }
+                                        })()}
                                         {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
                                     </div>
                                 )}
@@ -254,7 +292,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                 <div className="flex items-end gap-3 bg-brand-bg/50 border border-brand-border rounded-[1.5rem] p-2 pr-2 focus-within:border-blue-500/50 transition-all shadow-inner">
                     <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,application/pdf"
                         className="hidden"
                         ref={fileInputRef}
                         onChange={handleImageUpload}
@@ -288,6 +326,30 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                     </button>
                 </div>
             </form>
+
+            {/* Image Preview Modal Overlay */}
+            {activeImage && (
+                <div 
+                    className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 md:p-10 cursor-zoom-out"
+                    onClick={() => setActiveImage(null)}
+                >
+                    <button 
+                        onClick={() => setActiveImage(null)}
+                        className="absolute top-4 right-4 text-white/80 hover:text-white p-2.5 rounded-full bg-slate-900/50 hover:bg-slate-900/80 transition-all shadow-md z-[100000]"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <div className="relative max-w-4xl max-h-[90vh] flex items-center justify-center overflow-hidden rounded-2xl shadow-2xl bg-black/20">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                            src={activeImage} 
+                            alt="Full Screen Preview" 
+                            className="max-w-full max-h-[90vh] object-contain rounded-2xl select-none"
+                            onClick={(e) => e.stopPropagation()} // Prevent closing modal when clicking the image itself
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
