@@ -230,8 +230,8 @@ export default function ReviewsPage() {
             {reviews.map((item) => (
               <div key={item.id} className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 shadow-md space-y-6 hover:border-slate-300 transition-all">
                 {/* Header info */}
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex items-center gap-4">
+                <div className="flex justify-between items-start gap-4 min-w-0">
+                  <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md shrink-0">
                       <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
                     </div>
@@ -243,7 +243,7 @@ export default function ReviewsPage() {
                     </div>
                   </div>
                   {/* Stars */}
-                  <div className="flex gap-0.5">
+                  <div className="flex gap-0.5 shrink-0">
                     {[...Array(5)].map((_, idx) => (
                       <Star
                         key={idx}
