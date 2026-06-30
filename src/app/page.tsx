@@ -8,25 +8,20 @@ import {
   Star, Zap, Activity, Box, BarChart3, Shield, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { testimonials } from '@/lib/testimonials';
+import { toast } from 'react-hot-toast';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 
 export default function Home() {
   const [trackingId, setTrackingId] = useState('');
   const [companyName, setCompanyName] = useState('Atlas Logistics');
   const [isFocused, setIsFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [visibleReviews, setVisibleReviews] = useState(8);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Failed to load settings');
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.companyName) setCompanyName(data.companyName);
-      })
-      .catch((err) => console.error('Failed to load settings', err));
-  }, []);
+  // Reusable Navbar & Footer handle these states now
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,25 +40,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(#00000008_1px,transparent_1px)] [background-size:40px_40px]" />
       </div>
 
-      {/* Floating Modern Navbar */}
-      <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-5xl">
-        <div className="bg-white/80 backdrop-blur-3xl border border-slate-200 rounded-2xl md:rounded-full px-4 md:px-10 h-14 md:h-20 flex items-center justify-center md:justify-between shadow-xl">
-            <Link href="/" className="flex items-center gap-2 md:gap-3 group shrink-0">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
-                    <Package className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                </div>
-                <span className="text-slate-900 font-black text-lg md:text-xl tracking-tighter whitespace-nowrap">{companyName}</span>
-            </Link>
-            
-            <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-slate-500">
-                <a href="#how-it-works" className="hover:text-blue-600 transition-colors">Process</a>
-                <a href="#infrastructure" className="hover:text-blue-600 transition-colors">Network</a>
-                <a href="#stats" className="hover:text-blue-600 transition-colors">Global</a>
-            </div>
-
-            <div className="hidden md:block w-8 md:w-10"></div>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="relative z-10 w-full flex flex-col pt-24">
         
@@ -109,7 +86,7 @@ export default function Home() {
             </div>
 
             {/* Right Column: Search Card */}
-            <div className="lg:col-span-5 relative">
+            <div id="tracking-section" className="lg:col-span-5 relative scroll-mt-24">
                {/* Background Glow */}
                <div className="absolute -inset-10 bg-blue-500/10 blur-[100px] rounded-full animate-pulse pointer-events-none" />
                
@@ -299,61 +276,79 @@ export default function Home() {
             </div>
         </section>
 
+        {/* CLIENT TESTIMONIALS */}
+        <section id="testimonials" className="py-24 px-4 lg:px-8 max-w-[1400px] mx-auto border-t border-slate-200/60">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16">
+                <div className="max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 mb-4">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                        <span className="text-[10px] font-black tracking-[0.2em] text-blue-600 uppercase">Reviews</span>
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter">Trusted Worldwide.</h2>
+                    <p className="text-slate-600 text-lg">See how leading global companies leverage our high-precision network and automated customs handling to keep supply chains moving.</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {testimonials.slice(0, visibleReviews).map((item, i) => (
+                  <div key={i} className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl hover:border-blue-200 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                     <div>
+                        {/* Rating Stars */}
+                        <div className="flex gap-1 mb-6">
+                           {[...Array(item.rating)].map((_, idx) => (
+                             <Star key={idx} className="w-5 h-5 fill-amber-400 text-amber-400" />
+                           ))}
+                        </div>
+                        
+                        {/* Quote */}
+                        <p className="text-slate-600 text-sm leading-relaxed italic mb-8">
+                           {item.quote}
+                        </p>
+                     </div>
+
+                     {/* Profile Info */}
+                     <div className="flex items-center gap-4 border-t border-slate-100 pt-6">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md shrink-0">
+                           <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="min-w-0">
+                           <h4 className="text-slate-900 font-black text-sm tracking-tight truncate">{item.name}</h4>
+                           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider truncate">{item.role}</p>
+                           <p className="text-blue-600 text-[10px] font-black uppercase tracking-wider truncate">{item.company}</p>
+                        </div>
+                     </div>
+                  </div>
+                ))}
+            </div>
+
+            {visibleReviews < testimonials.length ? (
+                <div className="mt-16 text-center">
+                    <button
+                        onClick={() => setVisibleReviews(prev => Math.min(prev + 12, testimonials.length))}
+                        className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-[0_0_30px_rgba(37,99,235,0.2)] text-white rounded-2xl font-black text-sm tracking-tight transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                    >
+                        Load More Reviews (+{testimonials.length - visibleReviews} remaining)
+                        <ArrowRight className="w-4 h-4" />
+                    </button>
+                </div>
+            ) : (
+                <div className="mt-16 text-center">
+                    <button
+                        onClick={() => setVisibleReviews(8)}
+                        className="px-8 py-4 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl font-black text-sm tracking-tight transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                    >
+                        Show Fewer Reviews
+                    </button>
+                </div>
+            )}
+        </section>
+
       </main>
 
-      {/* Modern Footer */}
-      <footer className="w-full border-t border-slate-200 bg-white pt-24 pb-12 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-16 mb-24">
-                <div className="md:col-span-4 space-y-8">
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                            <Package className="w-6 h-6 text-white" />
-                        </div>
-                        <span className="text-slate-900 font-black text-2xl tracking-tighter">{companyName}</span>
-                    </Link>
-                    <p className="text-slate-500 leading-relaxed text-sm">
-                        Leading the transition to cryptographic logistics and real-time physical asset verification.
-                    </p>
-                </div>
-                
-                <div className="md:col-span-8 grid grid-cols-2 md:grid-cols-3 gap-12">
-                   <div className="space-y-6">
-                      <h5 className="text-slate-900 font-black text-xs uppercase tracking-[0.2em]">Platform</h5>
-                      <ul className="space-y-4 text-sm text-slate-500">
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Tracking</a></li>
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">API Access</a></li>
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Security</a></li>
-                      </ul>
-                   </div>
-                   <div className="space-y-6">
-                      <h5 className="text-slate-900 font-black text-xs uppercase tracking-[0.2em]">Company</h5>
-                      <ul className="space-y-4 text-sm text-slate-500">
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Global Hubs</a></li>
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Sustainability</a></li>
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Careers</a></li>
-                      </ul>
-                   </div>
-                   <div className="space-y-6">
-                      <h5 className="text-slate-900 font-black text-xs uppercase tracking-[0.2em]">Contact</h5>
-                      <ul className="space-y-4 text-sm text-slate-500">
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Enterprise Sales</a></li>
-                        <li><a href="#" className="hover:text-blue-600 transition-colors">Support Center</a></li>
-                      </ul>
-                   </div>
-                </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-slate-100 gap-6 text-xs text-slate-500 font-bold uppercase tracking-widest">
-                <p><Link href="/login" className="hover:text-blue-600 transition-colors cursor-default" title="System Management">&copy;</Link> {new Date().getFullYear()} {companyName}. All Rights Reserved.</p>
-                <div className="flex gap-8">
-                    <a href="#" className="hover:text-slate-900 transition-colors">Privacy</a>
-                    <a href="#" className="hover:text-slate-900 transition-colors">Terms</a>
-                    <a href="#" className="hover:text-slate-900 transition-colors">Cookies</a>
-                </div>
-            </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Decorative Elements */}
       <style dangerouslySetInnerHTML={{__html: `

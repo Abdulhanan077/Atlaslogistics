@@ -1097,6 +1097,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         Download Waybill
                     </a>
                     <a
+                        href={`/api/shipments/${shipment.id}/consignment-agreement`}
+                        download={`AGREEMENT-${shipment.trackingNumber}.pdf`}
+                        className="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-lg shadow-emerald-600/20 text-sm font-medium whitespace-nowrap"
+                    >
+                        <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                        Download Agreement
+                    </a>
+                    <a
                         href={`/api/shipments/${shipment.id}/receipt`}
                         download={`RECEIPT-${shipment.trackingNumber}.pdf`}
                         className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition-all shadow-lg shadow-amber-600/20 text-sm font-medium whitespace-nowrap"
