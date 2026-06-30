@@ -12,6 +12,34 @@ interface Message {
     createdAt: string;
 }
 
+const renderMessageContent = (content: string, isBubbleBlue: boolean) => {
+    if (!content) return null;
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    if (parts.length === 1) return content;
+
+    return parts.map((part, index) => {
+        const isUrl = part.startsWith('http://') || part.startsWith('https://') || part.startsWith('www.');
+        if (isUrl) {
+            const href = part.startsWith('http') ? part : `https://${part}`;
+            return (
+                <a
+                    key={index}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`underline break-all font-semibold hover:opacity-90 ${
+                        isBubbleBlue ? 'text-white' : 'text-blue-600'
+                    }`}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return part;
+    });
+};
+
 export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -271,7 +299,7 @@ export default function ShipmentChat({ shipmentId }: { shipmentId: string }) {
                                                 );
                                             }
                                         })()}
-                                        {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
+                                        {msg.content && <p className="whitespace-pre-wrap">{renderMessageContent(msg.content, msg.sender === 'ADMIN')}</p>}
                                     </div>
                                 )}
                                 <p className={`text-[10px] mt-1 px-1 ${msg.sender === 'ADMIN' ? 'text-right text-slate-500' : 'text-slate-500'

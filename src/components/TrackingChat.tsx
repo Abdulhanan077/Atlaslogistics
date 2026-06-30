@@ -11,6 +11,34 @@ interface Message {
     createdAt: string;
 }
 
+const renderMessageContent = (content: string, isBubbleBlue: boolean) => {
+    if (!content) return null;
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    if (parts.length === 1) return content;
+
+    return parts.map((part, index) => {
+        const isUrl = part.startsWith('http://') || part.startsWith('https://') || part.startsWith('www.');
+        if (isUrl) {
+            const href = part.startsWith('http') ? part : `https://${part}`;
+            return (
+                <a
+                    key={index}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`underline break-all font-semibold hover:opacity-90 ${
+                        isBubbleBlue ? 'text-white' : 'text-blue-600'
+                    }`}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return part;
+    });
+};
+
 export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -225,7 +253,7 @@ export default function TrackingChat({ shipmentId }: { shipmentId: string }) {
                                                 );
                                             }
                                         })()}
-                                        {msg.content && <p>{msg.content}</p>}
+                                        {msg.content && <p className="whitespace-pre-wrap">{renderMessageContent(msg.content, msg.sender === 'CLIENT')}</p>}
                                         <p className={`text-[10px] mt-1 ${msg.sender === 'CLIENT' ? 'text-blue-200' : 'text-slate-400'}`}>
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
