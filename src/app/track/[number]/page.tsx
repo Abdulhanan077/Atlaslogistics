@@ -480,10 +480,6 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                         <Download className="w-4 h-4" />
                                         Download Waybill
                                     </a>
-                                    <a href={`/api/shipments/${shipment.id}/consignment-agreement`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold transition-all hover:scale-105 shadow-sm">
-                                        <Download className="w-4 h-4" />
-                                        Download Consignment Agreement
-                                    </a>
                                     {shipment.customsData && shipment.customsData !== '{}' && (
                                         <a href={`/api/shipments/${shipment.id}/customs-doc`} download className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold transition-all hover:scale-105 shadow-sm">
                                             <Download className="w-4 h-4" />
