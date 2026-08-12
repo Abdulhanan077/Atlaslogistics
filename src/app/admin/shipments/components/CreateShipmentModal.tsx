@@ -124,7 +124,8 @@ export default function CreateShipmentModal({ onClose, initialData }: { onClose:
                 address: formData.senderAddress,
                 vehicleType: formData.vehicleType,
                 originLat: formData.originLat,
-                originLng: formData.originLng
+                originLng: formData.originLng,
+                waybillDetails: sender?.waybillDetails
             }),
             receiverInfo: JSON.stringify({
                 name: formData.receiverName,

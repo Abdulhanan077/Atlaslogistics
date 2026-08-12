@@ -13,6 +13,8 @@ import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import { parseShipmentInfo } from '@/lib/utils';
 import { geocodeAddress, reverseGeocode } from '@/lib/geocoding';
 import { uploadToR2 as upload } from '@/lib/upload-client';
+import WaybillEditModal from '@/components/admin/WaybillEditModal';
+import { getWaybillDetails } from '@/lib/waybill';
 
 // PDF rendering is now handled server-side to avoid client-side bundling issues
 const ShippingLabel = null;
@@ -140,6 +142,8 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
     const [geocoding, setGeocoding] = useState<string | null>(null);
     const [activeUploads, setActiveUploads] = useState<ActiveUpload[]>([]);
     const [overrideHold, setOverrideHold] = useState(false);
+    const [showWaybillModal, setShowWaybillModal] = useState(false);
+    const wb = getWaybillDetails(shipment);
     const isLocked = shipment.status === 'ON_HOLD' && !shipment.holdHidden && !overrideHold;
 
     const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -1096,6 +1100,14 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                         <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
                         Download Waybill
                     </a>
+                    <button
+                        type="button"
+                        onClick={() => setShowWaybillModal(true)}
+                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-600/20 text-sm font-medium whitespace-nowrap"
+                    >
+                        <Pencil className="w-4 h-4 mr-2 flex-shrink-0" />
+                        Configure AWB Form
+                    </button>
                     <a
                         href={`/api/shipments/${shipment.id}/consignment-agreement`}
                         download={`AGREEMENT-${shipment.trackingNumber}.pdf`}
@@ -1486,6 +1498,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                                 )}
                             </div>
                         )}
+
 
                         {/* Customs Documentation Panel */}
                         {mounted && (
@@ -2698,7 +2711,7 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                     </div>
 
                     {/* Update Event Form */}
-                    <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl sticky top-6">
+                    <div className="bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-xl">
                         <h3 className="text-lg font-bold text-brand-text mb-4">Add Tracking Event</h3>
                         
                         {shipment.status === 'ON_HOLD' && !shipment.holdHidden && (
@@ -2872,8 +2885,87 @@ export default function ShipmentDetailsClient({ shipment, settings }: { shipment
                             </fieldset>
                         </form>
                     </div>
+
+                    {/* Air Waybill (AWB) Specification Panel */}
+                    {mounted && (
+                        <div className="bg-gradient-to-br from-blue-900/30 to-slate-900 border border-blue-500/30 rounded-2xl p-5 shadow-lg space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-blue-500/20">
+                                <div className="flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-blue-400" />
+                                    <h3 className="font-bold text-white text-sm tracking-tight">International Air Waybill (AWB)</h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowWaybillModal(true)}
+                                    className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all shadow-md flex items-center gap-1"
+                                >
+                                    <Pencil className="w-3 h-3" />
+                                    Configure AWB Form
+                                </button>
+                            </div>
+
+                            <div className="space-y-2 text-xs">
+                                <div className="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                                    <span className="text-slate-400">AWB Reference:</span>
+                                    <span className="font-mono font-bold text-blue-400">{wb.awbPrefix} - {wb.departureCode} - {wb.awbNumber}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">Departure</span>
+                                        <span className="font-medium text-white">{wb.airportOfDeparture}</span>
+                                    </div>
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">Destination</span>
+                                        <span className="font-medium text-white">{wb.airportOfDestination}</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-slate-300">
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">PKGS / Weight</span>
+                                        <span className="font-medium text-white">{wb.pkgs} PKGS / {wb.weight}</span>
+                                    </div>
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">Commodity/HS</span>
+                                        <span className="font-medium text-white">{wb.hsCode} ({wb.commodity})</span>
+                                    </div>
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">Declared Value</span>
+                                        <span className="font-medium text-white">{wb.declaredCustomsValue}</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 font-mono">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">Shipper Email</span>
+                                        <span className="font-medium text-blue-400 text-[11px] truncate block">{wb.shipperEmail}</span>
+                                    </div>
+                                    <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-800/60 font-mono">
+                                        <span className="block text-[10px] text-slate-500 uppercase font-bold">Consignee Email</span>
+                                        <span className="font-medium text-blue-400 text-[11px] truncate block">{wb.consigneeEmail}</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center pt-1 text-[11px]">
+                                    <a
+                                        href={`/api/shipments/${shipment.id}/label`}
+                                        download={`WAYBILL-${wb.awbNumber}.pdf`}
+                                        className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
+                                    >
+                                        <FileText className="w-3.5 h-3.5" />
+                                        Download AWB PDF
+                                    </a>
+                                    <span className="text-slate-500 font-mono">Carrier: {wb.companyEmail}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+            {showWaybillModal && (
+                <WaybillEditModal
+                    shipment={shipment}
+                    onClose={() => setShowWaybillModal(false)}
+                    onSaveSuccess={() => router.refresh()}
+                />
+            )}
         </div>
     );
 }

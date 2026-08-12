@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import path from 'path';
 import fs from 'fs';
 
@@ -24,6 +24,34 @@ const getLocalImagePath = (fileName: string) => {
     }
     return '';
 };
+
+const getLocalImageAsBase64 = (fileName: string): string => {
+    try {
+        const localPath = getLocalImagePath(fileName);
+        if (localPath && fs.existsSync(localPath)) {
+            const buffer = fs.readFileSync(localPath);
+            const ext = path.extname(localPath).substring(1);
+            return `data:image/${ext === 'svg' ? 'svg+xml' : ext};base64,${buffer.toString('base64')}`;
+        }
+    } catch (e) {
+        console.error(`Failed to convert local image to base64: ${fileName}`, e);
+    }
+    return '';
+};
+
+// Robust local font file path resolution
+let fontPath = path.join(process.cwd(), 'public', 'fonts', 'DancingScript-Regular.ttf');
+if (!fs.existsSync(fontPath)) {
+    fontPath = path.join(process.cwd(), 'Atlaslogistics-main', 'public', 'fonts', 'DancingScript-Regular.ttf');
+}
+if (!fs.existsSync(fontPath)) {
+    fontPath = path.join('c:\\Users\\Admin\\Desktop\\Atlaslogistics-main\\Atlaslogistics-main\\public\\fonts', 'DancingScript-Regular.ttf');
+}
+
+Font.register({
+    family: 'DancingScript',
+    src: fontPath
+});
 
 const colors = {
     slateDark: '#0f172a',     // Slate slate
@@ -227,16 +255,16 @@ const styles = StyleSheet.create({
         marginTop: 1,
     },
 
-    // Teal Corporate Approval Stamp Overlay
+    // Teal Corporate Approval Stamp Overlay (borderless and realistically placed right above the signature line)
     tealStampContainer: {
         position: 'absolute',
-        bottom: 12,
-        left: -12,
+        bottom: 23,
+        left: 34,
         width: 95,
-        height: 50,
+        height: 40,
         zIndex: 50,
-        transform: 'rotate(-6deg)',
-        opacity: 0.9,
+        transform: 'rotate(-10deg)',
+        opacity: 0.85,
     },
     stampFrame: {
         position: 'absolute',
@@ -265,9 +293,17 @@ const styles = StyleSheet.create({
     },
     companyStampDate: {
         color: '#dc2626',
-        fontSize: 6.5,
+        fontSize: 5.5,
         fontFamily: 'Helvetica-Bold',
         marginVertical: 0.1,
+        textAlign: 'center',
+    },
+    signatureText: {
+        fontFamily: 'DancingScript',
+        fontSize: 16,
+        color: '#0b3c5d',
+        marginBottom: -8,
+        textAlign: 'center',
     }
 });
 
@@ -318,16 +354,58 @@ const ConsignmentAgreementPDF: React.FC<ConsignmentAgreementPDFProps> = ({ shipm
     }
 
     const consignmentRef = generateConsignmentRef(shipment.origin, shipment.destination, shipment.trackingNumber);
-    const dateStr = new Date(shipment.createdAt).toLocaleDateString('en-GB');
+    const dateStr = new Date(shipment.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-    // Resolve fallback company logo from local disk if remote base64 resolution fails
-    const fallbackLogoPath = origin ? `${origin}/images/cbp_right_seal.png` : getLocalImagePath('cbp_right_seal.png');
+    // Helper to extract declared value and quantity from product description
+    const extractDeclaredValue = (desc: string) => {
+        if (!desc) return '125,000.00';
+        const match = desc.match(/(?:declared value of|value of)\s+(?:USD\s+)?\$?([0-9,]+(?:\.[0-9]{2})?)/i);
+        if (match && match[1]) {
+            return match[1];
+        }
+        const matches = desc.match(/\$[0-9,]+(?:\.[0-9]{2})?/g);
+        if (matches) {
+            let best = matches[0];
+            for (const m of matches) {
+                if (m.replace(/[^0-9]/g, '').length > best.replace(/[^0-9]/g, '').length) {
+                    best = m;
+                }
+            }
+            return best.replace('$', '');
+        }
+        return '125,000.00';
+    };
+
+    const extractQuantity = (desc: string) => {
+        if (!desc) return '15 Freight Pallets (6,800 kg)';
+        const regex = /([0-9,]+\s*(?:kilograms|kg|grams|g|pallets|tons|lbs|items|units|pieces|crates|boxes|drums)(?:\s+of\s+[^,.\n]+)?)/i;
+        const match = desc.match(regex);
+        if (match && match[1]) {
+            return match[1].trim();
+        }
+        return '15 Freight Pallets (6,800 kg)';
+    };
+
+    const descText = shipment.productDescription || '';
+    const declaredValStr = extractDeclaredValue(descText);
+    const cargoQtyStr = extractQuantity(descText);
+    
+    // Compute dynamic storage rate
+    const dailyHoldFee = shipment.holdFee || 0;
+    const weeklyStorageFee = dailyHoldFee > 0 ? dailyHoldFee * 7 : 450;
+    const storageRateText = `$${weeklyStorageFee.toFixed(2)} USD per week (computed at a daily storage rate of $${dailyHoldFee.toFixed(2)} USD)`;
+    
+    // Assessed brokerage base charge
+    const assessedBaseCharge = shipment.holdBaseCharge || 6127.00;
+
+    // Resolve fallback company logo as base64 from disk
+    const fallbackLogoPath = getLocalImageAsBase64('cbp_right_seal.png');
     
     // Choose the logo to display as watermark (prioritize base64 generated server-side)
     const watermarkSrc = companyLogoBase64 || fallbackLogoPath;
 
-    // Stamp Image Frames (photorealistic overlays)
-    const companyRectFramePath = origin ? `${origin}/images/company_rect_stamp_frame.png` : getLocalImagePath('company_rect_stamp_frame.png');
+    // Resolve stamp frame as base64 from disk
+    const companyRectFramePath = getLocalImageAsBase64('company_rect_stamp_frame.png');
 
     return (
         <Document title={`CONSIGNMENT-AGREEMENT-${shipment.trackingNumber}`}>
@@ -420,21 +498,48 @@ const ConsignmentAgreementPDF: React.FC<ConsignmentAgreementPDFProps> = ({ shipm
                 <Text style={styles.termsHeader}>Standard Clauses & Terms of Carriage</Text>
                 
                 <Text style={styles.clauseText}>
-                    <Text style={{fontFamily:'Times-Bold'}}>Section 1: Carrier Warranties.</Text> The Carrier agrees to transport the consignment specified in this agreement securely from the point of origin to the designated destination. The Carrier undertakes to maintain safety custody logs, specialized environmental controls (where required for precious cargo), and continuous trackable status reporting during all phases of carriage.
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 1: Agency and Customs Clearance Authorization.</Text> The Consignor hereby appoints the Consignee as its agent for the sole purpose of customs brokerage and clearance of the Goods at the designated Port of Entry, namely {shipment.destination || 'N/A'}. The Consignee accepts such appointment and agrees to act on behalf of the Consignor in preparing, filing, and executing all customs entry declarations, duty payment schedules, and compliance documentation required by U.S. Customs and Border Protection (CBP) and related federal regulatory agencies. The Consignor warrants that it shall execute a Customs Power of Attorney (POA) in favor of the Consignee to facilitate such operations, and that all supporting commercial invoices, packing lists, and bills of lading are true, correct, and complete.
                 </Text>
 
                 <Text style={styles.clauseText}>
-                    <Text style={{fontFamily:'Times-Bold'}}>Section 2: Shipper Representations.</Text> The Shipper warrants that all details provided regarding the consignment contents, weights, and declarations are accurate and in full compliance with international maritime, air, and border safety protocols. The shipper accepts full civil and legal responsibility for any declarations and clearing fees assessed during transit.
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 2: Consignment, Custody, and Warehouse Storage.</Text> Upon customs clearance and release of the Goods, the Consignee shall take physical custody of the Goods. The Consignee agrees to store, protect, and warehouse the consignment at its designated secure facility or bonded warehouse. The Goods shall remain the exclusive property of the Consignor until sold or otherwise disposed of, and the Consignee shall hold the Goods as bailee only. The Consignee shall exercise the reasonable degree of care, diligence, and security precautions that a professional warehouseman would execute under identical circumstances, but shall not be liable for losses arising from acts of God, force majeure, or inherent vice of the Goods. The Consignee shall keep the Goods clearly segregated from the property of third parties.
                 </Text>
 
                 <Text style={styles.clauseText}>
-                    <Text style={{fontFamily:'Times-Bold'}}>Section 3: Carriage Guarantee.</Text> This agreement serves as the initial, binding carriage contract of Atlas Logistics. Both shipper and carrier accept all liability, standard carriage limits, insurance coverages, and logistics parameters detailed herein. Release for final delivery will be executed in accordance with active logistics terms.
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 3: Valuation, Customs Compliance, and Indemnification.</Text> The customs declared value of the consigned Goods subject to this Agreement is established as ${declaredValStr ? `$${declaredValStr} USD` : '$125,000.00 USD'}. The Consignor warrants that this valuation represents the true transaction value of the imported merchandise and complies in full with CBP valuation regulations (19 U.S.C. § 1401a). The Consignor agrees to defend, indemnify, and hold harmless the Consignee, its officers, and employees from any administrative penalties, fines, additional duties, or legal actions arising from valuation discrepancies, classification errors, or customs audits associated with the Goods.
+                </Text>
+
+                <Text style={styles.clauseText}>
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 4: Specifications of Consigned Cargo.</Text> The consignment subject to this Agreement is detailed as: {shipment.productDescription || 'Declared Merchandise Cargo'} (Quantity/Volume: {cargoQtyStr}).
+                </Text>
+
+                <Text style={styles.clauseText}>
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 5: Tariffs, Compensation, and Payment Terms.</Text> In consideration of the customs brokerage, warehousing, and logistics services rendered by the Consignee under this Agreement, the Consignor agrees to pay the Consignee: Customs Brokerage Service Fee (5.5% of declared customs value, or flat assessed charge of ${assessedBaseCharge ? `$${assessedBaseCharge.toLocaleString('en-US', {minimumFractionDigits: 2})} USD` : '$6,127.00 USD'}) and Storage Tariff Rate ({storageRateText}). All accrued invoices, customs duties, taxes, advances, and brokerage fees shall be paid by the Consignor in accordance with the payment terms of Net 15 days upon customs clearance. Any balance remaining unpaid after the due date shall bear interest at a rate of 1.5% per month, or the maximum rate permitted by law, whichever is lower.
+                </Text>
+
+                <Text style={styles.clauseText}>
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 6: Risk of Loss, Insurance, and Limitation of Liability.</Text> Title to the consigned Goods shall remain solely with the Consignor at all times. Risk of loss, damage, or destruction of the Goods due to fire, theft, customs seizure, or other casualty shall remain with the Consignor. The Consignor shall, at its own expense, secure and maintain a primary marine and inland cargo insurance policy for the full insurable value of the Goods. The Consignee shall only be liable for physical damage to or loss of the Goods resulting directly from the Consignee's proven gross negligence or willful misconduct, and such liability shall be limited to $500.00 USD per shipment or the actual depreciated value, whichever is less, unless a higher value is declared and additional insurance charges are paid.
+                </Text>
+
+                <Text style={styles.clauseText}>
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 7: Governing Law and Venue Jurisdiction.</Text> This Agreement, its construction, validity, interpretation, and performance, shall be governed by, construed, and enforced in accordance with the laws of the State of New York, without reference to its choice of law rules or conflict of law principles. Any legal action, suit, or proceeding arising out of or related to this Agreement shall be brought exclusively in the state or federal courts located in the designated State, and each party irrevocably submits to the personal jurisdiction and venue of such courts.
+                </Text>
+
+                <Text style={styles.clauseText}>
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 8: Delivery Performance and Release Deadline.</Text> Upon securing official customs release from U.S. Customs hold, the Consignee shall execute final shipping dispatch and delivery of the cargo to the Consignor's designated recipient Within 10 business days of customs release. If delivery is delayed due to force majeure events, customs audits, or consignor-caused manifest holds, the performance deadline shall be extended accordingly.
+                </Text>
+
+                <Text style={styles.clauseText}>
+                    <Text style={{fontFamily:'Times-Bold'}}>Section 9: Miscellaneous Legal Provisions.</Text> Entire Agreement: This Agreement constitutes the entire contract between the parties concerning the subject matter and supersedes all prior proposals, negotiations, and agreements. Severability: If any provision of this Agreement is held to be invalid or unenforceable, the remaining provisions shall continue in full force and effect. Force Majeure: Neither party shall be liable for delays or failure to perform obligations under this Agreement due to acts of God, strikes, natural disasters, war, government regulations, customs strikes, or other causes beyond its reasonable control.
                 </Text>
 
                 {/* Bottom Row containing Stamps and Signatures */}
-                <View style={styles.bottomRow}>
+                <View style={styles.bottomRow} wrap={false}>
                     {/* Left: Shipper Signature (dotted line for manual signature) */}
                     <View style={styles.signBlock}>
+                        {senderName && senderName !== 'N/A' && (
+                            <Text style={styles.signatureText}>{senderName}</Text>
+                        )}
                         <Text style={styles.dottedLine}>....................................................</Text>
                         <Text style={styles.signTitle}>Shipper Signature</Text>
                         <Text style={styles.signLabel}>Consignor Authorised signee</Text>
@@ -451,9 +556,6 @@ const ConsignmentAgreementPDF: React.FC<ConsignmentAgreementPDFProps> = ({ shipm
                     <View style={styles.signBlock}>
                         {/* Teal Approval Stamp overlapping the signature block */}
                         <View style={styles.tealStampContainer}>
-                            {companyRectFramePath ? (
-                                <Image src={companyRectFramePath} style={styles.stampFrame} />
-                            ) : null}
                             <View style={styles.companyStampContent}>
                                 <Text style={styles.companyStampText}>{settings?.companyName || 'ATLAS LOGISTICS'}</Text>
                                 <Text style={[styles.companyStampText, { fontSize: 4.5, fontFamily: 'Helvetica' }]}>SECURITY DIVISION</Text>
