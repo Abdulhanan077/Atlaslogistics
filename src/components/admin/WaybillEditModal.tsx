@@ -49,6 +49,11 @@ export default function WaybillEditModal({ shipment, onClose, onSaveSuccess }: W
         toast.success('Reset form to official Air Waybill demo template!');
     };
 
+    const handleResetToOriginal = () => {
+        setFormData({ ...initialWb });
+        toast.success('Restored form back to original shipment details!');
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -103,13 +108,23 @@ export default function WaybillEditModal({ shipment, onClose, onSaveSuccess }: W
                         <button
                             type="button"
                             onClick={handleResetToDemo}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all border border-slate-700"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium rounded-lg transition-all border border-amber-500/30"
                             title="Fill sample demo values"
                         >
                             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                             Load Demo Defaults
                         </button>
                         <button
+                            type="button"
+                            onClick={handleResetToOriginal}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all border border-slate-700"
+                            title="Revert form back to original shipment details"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
+                            Restore Original
+                        </button>
+                        <button
+                            type="button"
                             onClick={onClose}
                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
                         >
