@@ -12,6 +12,7 @@ import { testimonials } from '@/lib/testimonials';
 import { toast } from 'react-hot-toast';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import LandingChat from '@/components/LandingChat';
 
 export default function Home() {
   const [trackingId, setTrackingId] = useState('');
@@ -349,6 +350,7 @@ export default function Home() {
       </main>
 
       <Footer />
+      <LandingChat />
 
       {/* Decorative Elements */}
       <style dangerouslySetInnerHTML={{__html: `

@@ -6,6 +6,7 @@ import Link from 'next/link';
 
 export function Footer() {
   const [companyName, setCompanyName] = useState('Atlas Logistics');
+  const [supportEmail, setSupportEmail] = useState('support@atlaslogistics.site');
 
   useEffect(() => {
     fetch('/api/settings')
@@ -15,6 +16,7 @@ export function Footer() {
       })
       .then((data) => {
         if (data?.companyName) setCompanyName(data.companyName);
+        if (data?.supportEmail) setSupportEmail(data.supportEmail);
       })
       .catch((err) => console.error('Failed to load settings', err));
   }, []);
@@ -55,6 +57,7 @@ export function Footer() {
                  <div className="space-y-6">
                     <h5 className="text-slate-900 font-black text-xs uppercase tracking-[0.2em]">Contact</h5>
                     <ul className="space-y-4 text-sm text-slate-500">
+                      <li><a href={`mailto:${supportEmail}`} className="hover:text-blue-600 font-medium transition-colors text-slate-700 font-mono text-xs">{supportEmail}</a></li>
                       <li><Link href="/enterprise-sales" className="hover:text-blue-600 transition-colors">Enterprise Sales</Link></li>
                       <li><Link href="/support" className="hover:text-blue-600 transition-colors">Support Center</Link></li>
                     </ul>
