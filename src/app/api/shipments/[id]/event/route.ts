@@ -96,7 +96,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 data: {
                     status: latestEvent.status,
                     holdFee: latestEvent.status === 'ON_HOLD' ? latestEvent.holdFee : 0,
-                    holdBaseCharge: latestEvent.status === 'ON_HOLD' ? latestEvent.holdBaseCharge : 0,
+                    holdBaseCharge: latestEvent.status === 'ON_HOLD' ? latestEvent.holdBaseCharge : shipment.holdBaseCharge,
                     holdReason: latestEvent.status === 'ON_HOLD' ? latestEvent.holdReason : null,
                     holdPaid: holdPaid
                 }

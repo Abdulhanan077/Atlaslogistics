@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
 
 import Link from "next/link"
-import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck, AlertTriangle, Coins } from "lucide-react"
+import { MapPin, Package, Clock, ArrowLeft, Building2, Calendar, Truck, CheckCircle2, Navigation, Download, ShieldCheck, AlertTriangle, Coins, Check } from "lucide-react"
 import TrackingMapWrapper from '@/components/TrackingMapWrapper';
 import TrackingChat from "@/components/TrackingChat";
 import PayFeesButton from "@/components/PayFeesButton";
@@ -310,7 +310,7 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                 })()}
 
                 {/* Hold / Outstanding Fee Warning Banner */}
-                {((shipment.holdFee && shipment.holdFee > 0) || shipment.status === 'ON_HOLD') && !shipment.holdHidden && (() => {
+                {((shipment.holdFee && shipment.holdFee > 0) || (shipment.holdBaseCharge && shipment.holdBaseCharge > 0) || (shipment.holdPaid && shipment.holdPaid > 0) || shipment.status === 'ON_HOLD' || shipment.events.some((e: any) => e.status === 'ON_HOLD')) && !shipment.holdHidden && (() => {
                     const activeHoldEvent = shipment.events.find((e: any) => e.status === 'ON_HOLD');
                     const holdStart = activeHoldEvent ? new Date(activeHoldEvent.timestamp) : new Date(shipment.createdAt);
                     const now = new Date();
@@ -329,10 +329,79 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                           })()
                         : rawHoldReason;
                     
-                    const holdBaseCharge = shipment.holdBaseCharge || 0;
+                    const holdBaseCharge = shipment.holdBaseCharge || activeHoldEvent?.holdBaseCharge || 0;
                     const holdPaid = shipment.holdPaid || 0;
-                    const totalDue = holdBaseCharge + totalAccumulatedFee;
+                    const totalDue = holdBaseCharge + (shipment.status === 'ON_HOLD' ? totalAccumulatedFee : 0);
                     const remainingBalance = totalDue - holdPaid;
+
+                    const isHoldCleared = shipment.status !== 'ON_HOLD' || remainingBalance <= 0;
+
+                    if (isHoldCleared) {
+                        const paidDisplay = holdPaid > 0 ? holdPaid : (holdBaseCharge > 0 ? holdBaseCharge : 0);
+                        return (
+                            <div className="relative z-10 overflow-hidden rounded-[2rem] border-2 border-emerald-500 bg-emerald-50/90 p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                {/* Glow effect */}
+                                <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 blur-[50px] rounded-full pointer-events-none" />
+                                
+                                <div className="flex gap-4 items-start flex-1 w-full">
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0 shadow-sm">
+                                        <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+                                    </div>
+                                    <div className="space-y-2 w-full">
+                                        <h2 className="text-xl font-black text-emerald-950 tracking-tight flex items-center gap-2">
+                                            HOLD STATUS: CLEARED & RELEASED
+                                        </h2>
+                                        <p className="text-emerald-800 text-sm leading-relaxed max-w-2xl">
+                                            The hold on your package has been successfully cleared. Your shipment has been released and is currently in <span className="font-bold uppercase text-emerald-950">{shipment.status.replace(/_/g, ' ')}</span> status.
+                                        </p>
+                                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-emerald-700 font-bold pt-1">
+                                            <span>Hold Clearance: <span className="text-emerald-900">VERIFIED & COMPLETED</span></span>
+                                            <span>Current Status: <span className="text-emerald-900 uppercase">{shipment.status.replace(/_/g, ' ')}</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/80 backdrop-blur-md border border-emerald-500/30 p-5 rounded-2xl shadow-sm">
+                                    <div className="text-left space-y-2">
+                                        <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
+                                            <p className="text-xs font-bold text-emerald-900 uppercase tracking-widest">
+                                                Hold Payment Ledger
+                                            </p>
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
+                                                <Check className="w-3 h-3" /> CLEARED
+                                            </span>
+                                        </div>
+                                        <div className="space-y-1.5 text-xs text-slate-700">
+                                            <div className="flex justify-between">
+                                                <span className="opacity-80">Base Hold Charge:</span>
+                                                <span className="font-semibold text-slate-900">${holdBaseCharge.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between font-bold border-t border-dashed border-emerald-200 pt-1.5 mt-1 text-slate-900">
+                                                <span>Total Amount Due:</span>
+                                                <span>${totalDue.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-emerald-700 font-semibold">
+                                                <span>Amount Paid:</span>
+                                                <span>-${paidDisplay.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between font-black border-t border-emerald-300/60 pt-2 mt-1 text-sm text-slate-900">
+                                                <span className="text-emerald-800">Remaining Balance:</span>
+                                                <span className="text-emerald-600 font-bold">$0.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`/api/shipments/${shipment.id}/receipt`}
+                                        download
+                                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-300 hover:bg-emerald-50 text-emerald-800 text-xs font-bold transition-all text-center bg-white shadow-sm"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                        Download Official Receipt
+                                    </a>
+                                </div>
+                            </div>
+                        );
+                    }
 
                     return (
                         <div className="relative z-10 overflow-hidden rounded-[2rem] border-2 border-[#ea580c] bg-[#fff7ed] p-8 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -350,93 +419,52 @@ export default async function TrackingResultPage({ params }: { params: Promise<{
                                 </div>
                             </div>
 
-                            {shipment.status === 'ON_HOLD' ? (
-                                <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/70 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl shadow-sm">
-                                    <div className="text-left space-y-2">
-                                        <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest border-b border-[#ea580c]/20 pb-2">
-                                            Hold Payment Ledger
-                                        </p>
-                                        <div className="space-y-1.5 text-xs text-[#7c2d12]">
-                                            <div className="flex justify-between">
-                                                <span className="opacity-80">Base Hold Charge:</span>
-                                                <span className="font-semibold text-slate-900">${holdBaseCharge.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="opacity-80">Daily Storage Rate:</span>
-                                                <span className="font-semibold text-slate-900">${dailyFee.toFixed(2)} / day</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="opacity-80">Days Elapsed:</span>
-                                                <span className="font-semibold text-slate-900">{diffDays} {diffDays === 1 ? 'day' : 'days'}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="opacity-80">Storage Accrued:</span>
-                                                <span className="font-semibold text-slate-900">+${totalAccumulatedFee.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between font-bold border-t border-dashed border-[#ea580c]/20 pt-1.5 mt-1 text-slate-900">
-                                                <span>Total Amount Due:</span>
-                                                <span>${totalDue.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-emerald-800 font-semibold">
-                                                <span>Amount Paid:</span>
-                                                <span>-${holdPaid.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between font-black border-t border-[#ea580c]/30 pt-2 mt-1 text-sm text-slate-900">
-                                                <span className="text-[#c2410c]">Remaining Balance:</span>
-                                                <span className="text-[#ea580c]">${remainingBalance.toFixed(2)}</span>
-                                            </div>
+                            <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/70 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl shadow-sm">
+                                <div className="text-left space-y-2">
+                                    <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest border-b border-[#ea580c]/20 pb-2">
+                                        Hold Payment Ledger
+                                    </p>
+                                    <div className="space-y-1.5 text-xs text-[#7c2d12]">
+                                        <div className="flex justify-between">
+                                            <span className="opacity-80">Base Hold Charge:</span>
+                                            <span className="font-semibold text-slate-900">${holdBaseCharge.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="opacity-80">Daily Storage Rate:</span>
+                                            <span className="font-semibold text-slate-900">${dailyFee.toFixed(2)} / day</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="opacity-80">Days Elapsed:</span>
+                                            <span className="font-semibold text-slate-900">{diffDays} {diffDays === 1 ? 'day' : 'days'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="opacity-80">Storage Accrued:</span>
+                                            <span className="font-semibold text-slate-900">+${totalAccumulatedFee.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold border-t border-dashed border-[#ea580c]/20 pt-1.5 mt-1 text-slate-900">
+                                            <span>Total Amount Due:</span>
+                                            <span>${totalDue.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-emerald-800 font-semibold">
+                                            <span>Amount Paid:</span>
+                                            <span>-${holdPaid.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-black border-t border-[#ea580c]/30 pt-2 mt-1 text-sm text-slate-900">
+                                            <span className="text-[#c2410c]">Remaining Balance:</span>
+                                            <span className="text-[#ea580c]">${remainingBalance.toFixed(2)}</span>
                                         </div>
                                     </div>
-                                    <PayFeesButton trackingNumber={shipment.trackingNumber} />
-                                    <a
-                                        href={`/api/shipments/${shipment.id}/receipt`}
-                                        download
-                                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#ea580c]/30 hover:bg-[#ea580c]/5 text-[#c2410c] text-xs font-bold transition-all text-center bg-white"
-                                    >
-                                        <Download className="w-3.5 h-3.5" />
-                                        Download Official Receipt
-                                    </a>
                                 </div>
-                            ) : shipment.holdFee && shipment.holdFee > 0 ? (
-                                <div className="shrink-0 w-full md:w-80 flex flex-col items-stretch gap-4 bg-white/70 backdrop-blur-md border border-[#ea580c]/30 p-5 rounded-2xl shadow-sm">
-                                    <div className="text-left space-y-2">
-                                        <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest border-b border-[#ea580c]/20 pb-2">
-                                            Hold Payment Ledger
-                                        </p>
-                                        <div className="space-y-1.5 text-xs text-[#7c2d12]">
-                                            <div className="flex justify-between">
-                                                <span className="opacity-80">Base Hold Charge:</span>
-                                                <span className="font-semibold text-slate-900">${holdBaseCharge.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between font-bold border-t border-dashed border-[#ea580c]/20 pt-1.5 mt-1 text-slate-900">
-                                                <span>Total Amount Due:</span>
-                                                <span>${holdBaseCharge.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-emerald-800 font-semibold">
-                                                <span>Amount Paid:</span>
-                                                <span>-${holdPaid.toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between font-black border-t border-[#ea580c]/30 pt-2 mt-1 text-sm text-slate-900">
-                                                <span className="text-[#c2410c]">Remaining Balance:</span>
-                                                <span className="text-[#ea580c]">${(holdBaseCharge - holdPaid).toFixed(2)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <a
-                                        href={`/api/shipments/${shipment.id}/receipt`}
-                                        download
-                                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#ea580c]/30 hover:bg-[#ea580c]/5 text-[#c2410c] text-xs font-bold transition-all text-center bg-white"
-                                    >
-                                        <Download className="w-3.5 h-3.5" />
-                                        Download Official Receipt
-                                    </a>
-                                </div>
-                            ) : (
-                                <div className="shrink-0 w-full md:w-auto bg-white/45 backdrop-blur-md border border-[#ea580c]/30 p-4 rounded-2xl text-center md:text-right">
-                                    <p className="text-xs font-bold text-[#c2410c] uppercase tracking-widest">Status</p>
-                                    <p className="text-lg font-black text-[#c2410c] tracking-tight mt-0.5 uppercase">AWAITING RESOLUTION</p>
-                                </div>
-                            )}
+                                <PayFeesButton trackingNumber={shipment.trackingNumber} />
+                                <a
+                                    href={`/api/shipments/${shipment.id}/receipt`}
+                                    download
+                                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#ea580c]/30 hover:bg-[#ea580c]/5 text-[#c2410c] text-xs font-bold transition-all text-center bg-white"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    Download Official Receipt
+                                </a>
+                            </div>
                         </div>
                     );
                 })()}
